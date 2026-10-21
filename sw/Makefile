@@ -15,7 +15,7 @@ OBJDUMP  = $(CROSS)objdump
 ARCH    = -march=rv32imc -mabi=ilp32
 CFLAGS  = $(ARCH) -nostdlib -nostartfiles -O2 -T link.ld
 
-HARNESS = ..
+HARNESS ?= ../harness
 
 .PHONY: all clean run-hello run-dotp
 
