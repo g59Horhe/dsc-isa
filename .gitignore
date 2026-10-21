@@ -1,3 +1,4 @@
 obj_base/
 obj_pulp/
 test.hex
+riscv-gnu-toolchain/
