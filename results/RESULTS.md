@@ -1,79 +1,78 @@
-# Operand supply limits realised SIMD speedup
+# The software fix relocates the bottleneck instead of removing it
 
-CV32E40P. 8 channels, 16x16 input, 3x3 depthwise, 14x14 output.
-14,112 MACs. Checksum 64747 for all three variants -- identical arithmetic.
+CV32E40P, COREV_PULP=1. 8 channels, 16x16 input, 3x3 depthwise.
+14,112 MACs. Checksum 64747 for every variant.
 
-## Headline
+## Four variants
 
-| wait | naive | optimised scalar | cv.dotsp.b | vs optimised | SIMD c/MAC |
-|---|---|---|---|---|---|
-| 0 | 202,792 | 70,858 | 45,176 | 1.57x | 3.20 |
-| 1 | 364,554 | 114,548 | 68,308 | 1.68x | 4.84 |
-| 2 | 524,879 | 169,482 | 97,642 | 1.74x | 6.92 |
-| 3 | 725,972 | 225,960 | 127,200 | 1.78x | 9.01 |
+| wait | naive | opt scalar | SIMD unaligned | SIMD aligned |
+|---|---|---|---|---|
+| 0 | 202,792 | 70,858 | 45,176 | **38,969** |
+| 1 | 364,554 | 114,548 | 68,308 | **67,420** |
+| 2 | 524,879 | 169,482 | **97,642** | 99,961 |
+| 3 | 725,972 | 225,960 | **127,200** | 132,590 |
 
-cv.dotsp.b computes three useful MACs per instruction (fourth lane zeroed
-for a 3-tap window). Available arithmetic speedup: 3.00x.
-Realised speedup over the optimised scalar baseline: 1.57x.
+**The ranking inverts between one and two wait states.**
 
-**28% of the arithmetic capability is realised. The rest is lost to
-operand supply.**
+## Why
 
-## Where it goes
+The unaligned variant loads one word per output pixel per row. Two in
+three are misaligned, and the LSU splits those into two bus accesses
+(measured separately at ~2.1x for a word load).
 
-Two of every three activation loads are unaligned. Consecutive output
-pixels slide the 3-tap window by one byte, so a word-aligned load serves
-only every fourth pixel.
+The aligned variant loads two aligned words per row per four output pixels
+and shifts to extract the four windows. Half the load instructions, none
+misaligned.
 
-Measured cost of unaligned access on CV32E40P (50 word loads):
+It wins at low latency. It loses at high latency, because of this:
 
-    aligned:    402 cycles
-    unaligned:  853 cycles      ~2.1x
+    stack accesses in the compiled kernel
+      SIMD unaligned:  12
+      SIMD aligned:    32
 
-The LSU splits a misaligned word into two bus accesses. Widening the
-arithmetic three-fold did not widen the supply path, so the supply path
-became the limit.
+Six activation words, three weight words, three row pointers and the
+output pointer exceed what the register file holds comfortably. GCC
+spills. Spills are memory accesses, so they scale with wait states
+exactly like the unaligned penalty they were introduced to avoid -- and
+at two or more wait states they cost more.
 
-## Second-order result
+## What this means for the hardware
 
-Speedup over the scalar baseline grows with memory latency: 1.57x at zero
-wait states, 1.78x at three. The SIMD version issues fewer load
-instructions in total, so it suffers less as each load gets more
-expensive. The gap widens exactly where supply pressure is highest.
+The software workaround does not remove the operand-supply bottleneck. It
+moves it from the load/store unit to the register file.
 
-The same trend appeared between naive and optimised scalar (2.86x to
-3.21x). Any mechanism that reduces operand traffic should show it, and
-the slope is a measurement in its own right.
+That is a measured argument for architecturally visible storage rather
+than an assumed one. A weight-stationary unit or line buffer holds
+operands without consuming architectural registers, so it is the only one
+of the three approaches that addresses both pressures at once. Biswas et
+al. (IEEE TCAD 26(3), 2007) made the same architectural argument for
+AFU-resident memory; this is the same effect appearing in a RISC-V SIMD
+context twenty years later.
 
-## Why this matters
+## What it means for the methodology
 
-Published ISA-extension papers report arithmetic capability and end-to-end
-speedup, rarely the gap between them, and almost never across memory
-latencies. XpulpNN reports ~11% area overhead; RI5CY-Accel reports ~108%;
-neither is comparable to the other because the cores, nodes, baselines and
-workloads all differ.
+There is no single answer to "which approach is fastest". It depends on
+memory latency, and the crossover sits inside the range real MCUs occupy.
 
-This measurement is on one core, one workload, one open toolchain, with a
-hand-optimised denominator and an identical checksum across variants. It
-says: a 3x-wide MAC unit returns 1.57x on this workload because the
-operand path was not widened with it.
+Published ISA-extension papers generally report one memory configuration
+and one speedup number. If the ranking of approaches can invert between
+zero and two wait states on the same core, same workload and same
+compiler, then a single-configuration result is a point on an unlabelled
+curve.
 
 ## Threats
 
-- One workload, one layer shape. Larger channel counts or different kernel
-  sizes may shift the balance.
-- Scalar baseline is compiler-version sensitive (~0.7% between GCC 13.2
-  and 16.1 on the optimised version; the naive version was identical).
-- The harness memory model is a flat array with uniform wait states. No
-  cache, no burst behaviour.
-- Alignment handling is left to the LSU. Restructuring the loop to process
-  four output pixels per aligned load is an obvious alternative and is not
-  yet measured.
+- One layer shape, one channel count.
+- Register pressure is GCC's allocation, not a hardware limit. A hand-
+  written assembly version might spill less. The direction of the effect
+  is robust; the exact crossover point is not.
+- Flat memory model with uniform wait states. No cache, no bursts.
+- The aligned variant handles OW=14 as 12 + a 2-pixel unaligned tail,
+  so it is not purely aligned.
 
 ## Next
 
-1. Aligned variant: process 4 output pixels per load, shifting to realign.
-   Tests whether the unaligned penalty can be traded for shift
-   instructions profitably.
+1. Hand-written assembly for the aligned variant, to separate the
+   register-pressure effect from GCC's allocator.
 2. Weight-stationary and line-buffer mechanisms in RTL.
-3. Area: Sky130 + OpenROAD for baseline and each variant.
+3. Area: Sky130 + OpenROAD, baseline vs each variant.
