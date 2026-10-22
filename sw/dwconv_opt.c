@@ -18,9 +18,15 @@
 
 #include "bench.h"
 
+#ifndef CH
 #define CH   8
+#endif
+#ifndef H
 #define H    16
+#endif
+#ifndef W
 #define W    16
+#endif
 #define K    3
 #define OH   (H - K + 1)
 #define OW   (W - K + 1)
@@ -48,10 +54,23 @@ static void init_data(void) {
     }
 }
 
+/* Branchless saturation.
+ *
+ * The obvious form --
+ *     if (acc >  127) acc =  127;
+ *     if (acc < -128) acc = -128;
+ * -- puts two data-dependent branches on the per-output-pixel path. How
+ * often they are taken depends on the test data, and on CV32E40P a taken
+ * branch costs extra cycles. Measured effect: using the branching form
+ * shifted the aligned/unaligned cycle ratio by up to 10% and made the
+ * result appear to depend on channel count when it does not.
+ *
+ * Benchmarks of quantised kernels that saturate with branches are partly
+ * measuring their input distribution. Use this form instead. */
 static signed char requant(int acc) {
     acc >>= SHIFT;
-    if (acc >  127) acc =  127;
-    if (acc < -128) acc = -128;
+    acc = acc ^ ((acc ^  127) & -(acc >  127));
+    acc = acc ^ ((acc ^ -128) & -(acc < -128));
     return (signed char)acc;
 }
 
