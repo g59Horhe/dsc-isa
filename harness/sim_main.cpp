@@ -9,6 +9,15 @@
 //   0x10000000  halt, report the stored word
 //   0x10000004  start cycle counter
 //   0x10000008  stop cycle counter
+//   0x1000000C  report an auxiliary word (printed as AUX <n>)
+//
+// --wait N   wait states on the data port (and on the instruction port
+//            unless --iwait is given)
+// --iwait N  wait states on the instruction port only
+//
+// While the cycle counter runs, the harness counts data-port reads and
+// writes and instruction-port fetches (32-bit words), reported on the
+// MEASURED line. An unaligned word load from the core shows as two reads.
 
 #include <verilated.h>
 #include "Vcv32e40p_core.h"
@@ -21,6 +30,7 @@ static const uint32_t BOOT_ADDR   = 0x00000080;
 static const uint32_t MAGIC_HALT  = 0x10000000;
 static const uint32_t MAGIC_START = 0x10000004;
 static const uint32_t MAGIC_STOP  = 0x10000008;
+static const uint32_t MAGIC_AUX   = 0x1000000C;   // store -> print as AUX (perf counter deltas etc.)
 
 static uint32_t mem[MEM_WORDS];
 
@@ -31,12 +41,14 @@ int main(int argc, char** argv) {
 
     const char* hexfile = nullptr;
     uint64_t max_cycles = 100000;
-    uint32_t wait_states = 0;
+    uint32_t wait_states = 0; uint32_t iwait = 0xFFFFFFFFu; uint64_t n_dread=0, n_dwrite=0, n_ifetch=0;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--hex")    && i + 1 < argc) hexfile = argv[++i];
         if (!strcmp(argv[i], "--cycles") && i + 1 < argc) max_cycles = strtoull(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--wait")   && i + 1 < argc) wait_states = (uint32_t)strtoul(argv[++i], nullptr, 0);
+        if (!strcmp(argv[i], "--iwait")  && i + 1 < argc) iwait = (uint32_t)strtoul(argv[++i], nullptr, 0);
     }
+    if (iwait == 0xFFFFFFFFu) iwait = wait_states;
     if (!hexfile) { fprintf(stderr, "usage: %s --hex <f> [--cycles N] [--wait N]\n", argv[0]); return 1; }
 
     memset(mem, 0, sizeof(mem));
@@ -85,7 +97,7 @@ int main(int argc, char** argv) {
         if (dut->instr_req_o && dut->instr_gnt_i) {
             uint32_t a = dut->instr_addr_o;
             i_data = in_range(a) ? mem[a >> 2] : 0;
-            i_delay = (int)wait_states;
+            i_delay = (int)iwait; if (counting) n_ifetch++;
         }
 
         if (dut->data_req_o && dut->data_gnt_i) {
@@ -97,17 +109,20 @@ int main(int argc, char** argv) {
                     halt_value = dut->data_wdata_o; halted = true;
                 } else if (a == MAGIC_START) {
                     counting = true; count_start = cycle;
+                } else if (a == MAGIC_AUX) {
+                    printf("AUX %u\n", dut->data_wdata_o);
                 } else if (a == MAGIC_STOP) {
                     if (counting) { measured = cycle - count_start;
                                     measured_valid = true; counting = false; }
                 } else if (in_range(a)) {
+                    if (counting) n_dwrite++;
                     uint32_t old = mem[a >> 2], wd = dut->data_wdata_o, m = 0;
                     for (int b = 0; b < 4; b++) if (be & (1u << b)) m |= 0xFFu << (b * 8);
                     mem[a >> 2] = (old & ~m) | (wd & m);
                 }
                 d_data = 0;
             } else {
-                d_data = in_range(a) ? mem[a >> 2] : 0;
+                d_data = in_range(a) ? mem[a >> 2] : 0; if (counting) n_dread++;
             }
         }
 
@@ -126,8 +141,8 @@ int main(int argc, char** argv) {
         printf("HALT at cycle %llu, value = %u (0x%08x)\n",
                (unsigned long long)cycle, halt_value, halt_value);
         if (measured_valid)
-            printf("MEASURED %llu cycles (wait_states=%u)\n",
-                   (unsigned long long)measured, wait_states);
+            printf("MEASURED %llu cycles (wait_states=%u iwait=%u) dread=%llu dwrite=%llu ifetch=%llu\n",
+                   (unsigned long long)measured, wait_states, iwait, (unsigned long long)n_dread, (unsigned long long)n_dwrite, (unsigned long long)n_ifetch);
         return 0;
     }
     printf("TIMEOUT after %llu cycles\n", (unsigned long long)cycle);
