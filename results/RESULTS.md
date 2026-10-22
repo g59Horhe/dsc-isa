@@ -1,59 +1,79 @@
-# Scalar baselines: int8 depthwise 3x3 convolution
+# Operand supply limits realised SIMD speedup
 
-CV32E40P, COREV_PULP=0, GCC -O2, no custom instructions.
-8 channels, 16x16 input, 3x3 kernel, 14x14 output. 14,112 MACs.
-Checksum 64747 (0xfceb) for both versions -- same arithmetic, same result.
+CV32E40P. 8 channels, 16x16 input, 3x3 depthwise, 14x14 output.
+14,112 MACs. Checksum 64747 for all three variants -- identical arithmetic.
 
-## Naive vs hand-optimised
+## Headline
 
-| wait | naive | optimised | speedup | naive c/MAC | opt c/MAC |
+| wait | naive | optimised scalar | cv.dotsp.b | vs optimised | SIMD c/MAC |
 |---|---|---|---|---|---|
-| 0 | 202,792 | 70,858 | 2.86x | 14.37 | 5.02 |
-| 1 | 364,554 | 114,548 | 3.18x | 25.83 | 8.12 |
-| 2 | 524,879 | 169,482 | 3.10x | 37.19 | 12.01 |
-| 3 | 725,972 | 225,960 | 3.21x | 51.44 | 16.01 |
+| 0 | 202,792 | 70,858 | 45,176 | 1.57x | 3.20 |
+| 1 | 364,554 | 114,548 | 68,308 | 1.68x | 4.84 |
+| 2 | 524,879 | 169,482 | 97,642 | 1.74x | 6.92 |
+| 3 | 725,972 | 225,960 | 127,200 | 1.78x | 9.01 |
 
-**The optimised version is the denominator.** Measuring custom hardware
-against the naive version would credit it with a 2.86x speedup that comes
-entirely from writing better C.
+cv.dotsp.b computes three useful MACs per instruction (fourth lane zeroed
+for a 3-tap window). Available arithmetic speedup: 3.00x.
+Realised speedup over the optimised scalar baseline: 1.57x.
 
-## What changed
+**28% of the arithmetic capability is realised. The rest is lost to
+operand supply.**
 
-Three source-level changes, no hardware, no SIMD, no intrinsics:
+## Where it goes
 
-1. Nine weights hoisted into registers once per channel. In depthwise conv
-   they are constant across the whole spatial map; GCC reloaded them on
-   every MAC in the naive version.
-2. Three row pointers walked with increments instead of recomputing
-   addresses from [c][y][x] on every access.
-3. 3x3 loops fully unrolled, removing loop control from the MAC path.
+Two of every three activation loads are unaligned. Consecutive output
+pixels slide the 3-tap window by one byte, so a word-aligned load serves
+only every fourth pixel.
 
-GCC then software-pipelines the result, loading the next pixel's
-activations while multiplying the current one.
+Measured cost of unaligned access on CV32E40P (50 word loads):
 
-## What is left
+    aligned:    402 cycles
+    unaligned:  853 cycles      ~2.1x
 
-Roughly nine byte loads per output pixel against nine multiplies. Every
-activation is loaded fresh even though adjacent output pixels share six of
-their nine inputs. The compiler cannot exploit this -- each `lb` is a
-separate byte access it cannot prove redundant.
-
-That residual sliding-window reuse is what a line buffer or weight-
-stationary unit exists to capture, and 5.02 cycles/MAC is the number any
-such mechanism now has to beat.
+The LSU splits a misaligned word into two bus accesses. Widening the
+arithmetic three-fold did not widen the supply path, so the supply path
+became the limit.
 
 ## Second-order result
 
-The speedup grows with memory latency: 2.86x at zero wait states, 3.21x at
-three. Hoisting the weights removes memory traffic, which matters more when
-memory is slower. Any mechanism that reduces operand traffic should show
-the same trend, and the slope is itself a measurement.
+Speedup over the scalar baseline grows with memory latency: 1.57x at zero
+wait states, 1.78x at three. The SIMD version issues fewer load
+instructions in total, so it suffers less as each load gets more
+expensive. The gap widens exactly where supply pressure is highest.
+
+The same trend appeared between naive and optimised scalar (2.86x to
+3.21x). Any mechanism that reduces operand traffic should show it, and
+the slope is a measurement in its own right.
+
+## Why this matters
+
+Published ISA-extension papers report arithmetic capability and end-to-end
+speedup, rarely the gap between them, and almost never across memory
+latencies. XpulpNN reports ~11% area overhead; RI5CY-Accel reports ~108%;
+neither is comparable to the other because the cores, nodes, baselines and
+workloads all differ.
+
+This measurement is on one core, one workload, one open toolchain, with a
+hand-optimised denominator and an identical checksum across variants. It
+says: a 3x-wide MAC unit returns 1.57x on this workload because the
+operand path was not widened with it.
+
+## Threats
+
+- One workload, one layer shape. Larger channel counts or different kernel
+  sizes may shift the balance.
+- Scalar baseline is compiler-version sensitive (~0.7% between GCC 13.2
+  and 16.1 on the optimised version; the naive version was identical).
+- The harness memory model is a flat array with uniform wait states. No
+  cache, no burst behaviour.
+- Alignment handling is left to the LSU. Restructuring the loop to process
+  four output pixels per aligned load is an obvious alternative and is not
+  yet measured.
 
 ## Next
 
-1. cv.dotsp.b version -- four MACs per instruction, operands packed into
-   words. Tests whether supply or arithmetic binds once the multiplier is
-   four times wider.
-2. Sweep across wait states; the ranking of mechanisms may differ by
-   memory latency.
-3. Synthesis: area of baseline vs each variant, Sky130 + OpenROAD.
+1. Aligned variant: process 4 output pixels per load, shifting to realign.
+   Tests whether the unaligned penalty can be traded for shift
+   instructions profitably.
+2. Weight-stationary and line-buffer mechanisms in RTL.
+3. Area: Sky130 + OpenROAD for baseline and each variant.
