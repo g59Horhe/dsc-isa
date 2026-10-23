@@ -10,7 +10,9 @@ reproduced, not that they come from the best available PDK.
 
 ## Status
 
-Infrastructure works end to end. No measurements yet.
+Infrastructure works end to end and the first measurement set is in
+`results/RESULTS.md`. Read `HANDOFF.md` for the reasoning that is not in
+the code, including why the project's original premise was retired.
 
 | Step | State |
 |---|---|
@@ -19,23 +21,35 @@ Infrastructure works end to end. No measurements yet.
 | Xpulp (`COREV_PULP=1`) builds and runs | done |
 | Bare-metal C flow, no libc | done |
 | Custom instructions via `.insn` | done |
-| Cycle counting between markers | not started |
-| Memory wait states | not started |
-| int8 depthwise conv kernel | not started |
+| Cycle counting between markers | done |
+| Memory wait states, per port | done |
+| Bus-access and hardware performance counters | done |
+| int8 depthwise conv kernels, scalar and SIMD | done, measured |
+| Cycle model validated against counters | done |
+| Tightly coupled instruction memory / I-cache model | not started |
 | Sky130 + OpenROAD synthesis | not started |
 
 ## Layout
 
-    harness/        Verilator C++ testbench and build
-    sw/             bare-metal programs, linker script, crt0
+    harness/        Verilator C++ testbench, build, sweep and collection scripts
+    sw/             bare-metal kernels, requant.h, linker script, crt0
     third_party/    CV32E40P submodule
-    results/        measurements (empty)
+    results/        RESULTS.md, the raw counter CSVs it is built from, model script
+    HANDOFF.md      project reasoning for a fresh session
 
 ## Quick start
 
     cd harness && make all        # builds obj_base/ and obj_pulp/
     cd ../sw   && make run-hello  # expect: HALT at cycle 38, value = 42
                   make run-dotp   # expect: 10 on Xpulp, TIMEOUT on baseline
+    cd ../harness && ./sweep.sh   # all kernels x shapes, data-port wait states 0-3
+    ./collect_wait0.sh out.csv "1 2 5 9"   # wait 0 with hardware counters
+
+Simulator flags: `--hex`, `--cycles`, `--wait N` (data port), `--iwait N`
+(instruction port, defaults to the data value). The MEASURED line carries
+data reads, data writes and instruction fetches for the bracketed region.
+`-DPERF_EVENT=<bit>` with `-march=rv32imc_zicsr` reports one hardware
+counter; `-DCODE_PAD=<n>` shifts code alignment. See `sw/bench.h`.
 
 The toolchain must be on PATH:
 
@@ -108,18 +122,21 @@ toolchain work is needed for the rest of the project.
 
 ## Known gaps
 
-**The memory model is perfect.** Every request is granted in one cycle, no
-wait states. Real MCU memory stalls, and since this study is specifically
-about operand supply, the memory model shapes the answer. Configurable
-wait states are needed before any cycle count means anything, and whatever
-is used must be reported.
+**Instruction and data share one flat memory.** With `--wait` on both
+ports the core is fetch-starved and latency sweeps measure instruction
+count. Default sweeps now put wait states on the data port only. A real
+MCU has tightly coupled instruction memory or an instruction cache; that
+model does not exist here yet, and it is the next infrastructure item.
 
-**Cycle counts include startup.** The harness counts from reset. Benchmarks
-need markers the program writes itself so the measured region excludes
-reset and fetch-enable.
+**No area numbers.** Cycles alone are half a trade-off.
 
-**`COREV_PULP=1` has only been exercised by one instruction.** Building is
-not the same as being correct across the extension.
+**One kernel size, one quantisation scheme, one synthetic input.** The test
+data never saturate the int8 output, so the saturation path is exercised
+for cost but not for correctness under saturation.
+
+**`COREV_PULP=1` has been exercised by one instruction, `cv.dotsp.b`.**
+Hardware loops and post-increment loads are available through `.insn` and
+have not been measured.
 
 ## References
 
