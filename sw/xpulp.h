@@ -4,6 +4,7 @@
  *   LB_INC(rd, rs1, imm)   cv.lb  rd,(rs1),imm   rd = sext(mem8[rs1]);  rs1 += imm
  *   LW_INC(rd, rs1, imm)   cv.lw  rd,(rs1),imm   rd = mem32[rs1];       rs1 += imm
  *   SB_INC(rs2, rs1, imm)  cv.sb  rs2,(rs1),imm  mem8[rs1] = rs2;       rs1 += imm
+ *   SW_INC(rs2, rs1, imm)  cv.sw  rs2,(rs1),imm  mem32[rs1] = rs2;      rs1 += imm
  *   HWLOOP0(cnt, words)    cv.setup 0, cnt, uimmL   with uimmL = words (a string)
  *
  * cv.setup L, rs1, uimmL: lpstart = PC+4, lpend = PC + (uimmL << 2), count = rs1.
@@ -26,6 +27,7 @@
 #define LB_INC(rd, rs1, imm)  ".insn i 0x0b, 0x0, " rd ", " rs1 ", " imm "\n"
 #define LW_INC(rd, rs1, imm)  ".insn i 0x0b, 0x2, " rd ", " rs1 ", " imm "\n"
 #define SB_INC(rs2, rs1, imm) ".insn s 0x2b, 0x0, " rs2 ", " imm "(" rs1 ")\n"
+#define SW_INC(rs2, rs1, imm) ".insn s 0x2b, 0x2, " rs2 ", " imm "(" rs1 ")\n"
 #define HWLOOP0(cnt, words)   ".insn i 0x2b, 0x4, x14, " cnt ", " words "\n"
 #define XPULP_ASM_BEGIN       ".option push\n.balign 4\n.option norvc\n"
 #define XPULP_ASM_END         ".option pop\n"
