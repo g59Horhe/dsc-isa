@@ -41,7 +41,9 @@ survive verification. The retired claims and why are listed at the end.
    addressing are worth 1 to 5% on an unrolled scalar loop and 21 to 24%
    on a short SIMD loop. The fastest kernel, unaligned SIMD with Xpulp
    control, is 1.65x over the hand scalar and 2.13x over the original -O2
-   C baseline, and split loads are 10% of its cycles.
+   C baseline at zero wait states, and split loads are 10% of its cycles.
+   A data wait state costs exactly one cycle per bus access, so the
+   aligned kernel overtakes it from two wait states.
 
 ## Kernels
 
@@ -437,6 +439,67 @@ What the grid says:
   instruction ratio and its 1.65 cycle ratio is entirely the 3,360 extra
   bus accesses. Operand supply is not the first-order story, but in the
   best kernel it is now the largest remaining one.
+
+### Decomposition under data-port latency
+
+`harness/sweep.sh` with the six hand-written kernels, wait states on the
+data port only, instruction port zero-wait:
+
+| shape | kernel | w0 | w1 | w2 | w3 | reads + writes | max error of cycles(0) + w x accesses |
+|---|---|---|---|---|---|---|---|
+| 8x16x16 | scalar, RV32IMC ctrl | 53,889 | 62,300 | 70,711 | 79,122 | 8,410 | 3 cycles |
+|  | scalar, Xpulp ctrl | 52,562 | 61,429 | 70,304 | 79,179 | 8,874 | 7 cycles |
+|  | SIMD unaligned, RV32IMC ctrl | 40,245 | 49,950 | 59,655 | 69,360 | 9,704 | 3 cycles |
+|  | SIMD unaligned, Xpulp ctrl | 32,519 | 42,224 | 51,929 | 61,634 | 9,704 | 3 cycles |
+|  | SIMD aligned, RV32IMC ctrl | 39,078 | 43,519 | 48,072 | 52,737 | 4,664 | 334 cycles |
+|  | SIMD aligned, Xpulp ctrl | 37,840 | 42,281 | 46,834 | 51,499 | 4,664 | 334 cycles |
+| 16x16x16 | scalar, RV32IMC ctrl | 107,335 | 124,137 | 140,939 | 157,741 | 16,801 | 3 cycles |
+|  | scalar, Xpulp ctrl | 104,648 | 122,362 | 140,092 | 157,822 | 17,729 | 15 cycles |
+|  | SIMD unaligned, RV32IMC ctrl | 80,454 | 99,863 | 119,272 | 138,681 | 19,408 | 3 cycles |
+|  | SIMD unaligned, Xpulp ctrl | 65,030 | 84,439 | 103,848 | 123,257 | 19,408 | 3 cycles |
+|  | SIMD aligned, RV32IMC ctrl | 78,151 | 87,032 | 96,137 | 105,466 | 9,328 | 670 cycles |
+|  | SIMD aligned, Xpulp ctrl | 75,657 | 84,538 | 93,643 | 102,972 | 9,328 | 670 cycles |
+| 8x32x32 | scalar, RV32IMC ctrl | 230,366 | 260,727 | 291,088 | 321,449 | 30,360 | 3 cycles |
+|  | scalar, Xpulp ctrl | 220,055 | 250,674 | 281,293 | 311,912 | 30,618 | 3 cycles |
+|  | SIMD unaligned, RV32IMC ctrl | 189,622 | 234,335 | 279,048 | 323,761 | 44,712 | 3 cycles |
+|  | SIMD unaligned, Xpulp ctrl | 147,391 | 192,104 | 236,817 | 281,530 | 44,712 | 3 cycles |
+|  | SIMD aligned, RV32IMC ctrl | 174,320 | 193,353 | 212,626 | 232,139 | 19,512 | 718 cycles |
+|  | SIMD aligned, Xpulp ctrl | 166,648 | 185,681 | 204,954 | 224,467 | 19,512 | 718 cycles |
+| 32x8x8 | scalar, RV32IMC ctrl | 38,754 | 44,867 | 50,980 | 57,093 | 6,112 | 3 cycles |
+|  | scalar, Xpulp ctrl | 38,370 | 44,835 | 51,300 | 57,765 | 6,464 | 3 cycles |
+|  | SIMD unaligned, RV32IMC ctrl | 30,403 | 37,604 | 44,805 | 52,006 | 7,200 | 3 cycles |
+|  | SIMD unaligned, Xpulp ctrl | 25,220 | 32,421 | 39,622 | 46,823 | 7,200 | 3 cycles |
+|  | SIMD aligned, RV32IMC ctrl | 31,237 | 35,174 | 39,303 | 43,624 | 4,320 | 574 cycles |
+|  | SIMD aligned, Xpulp ctrl | 30,821 | 34,758 | 38,887 | 43,208 | 4,320 | 574 cycles |
+
+On this core a data wait state is never overlapped with anything: every
+bus access costs exactly one extra cycle per wait state, and the identity
+cycles(w) = cycles(0) + w x (reads + writes) holds to within 718 cycles
+over all 96 runs. The latency dimension therefore adds no information
+beyond the access counts already in the tables, which is why the wait-0
+tables carry the counts.
+
+Two consequences. The control-and-addressing gain on the scalar kernel
+vanishes with latency, because post-increment addressing issues a few
+more loads per row; at three wait states the Xpulp scalar kernel is
+level with or marginally behind the RV32IMC one. And the choice of
+fastest SIMD kernel depends on latency. Aligned over unaligned, both with
+Xpulp control (below 1.00 means aligned is faster):
+
+| shape | w0 | w1 | w2 | w3 |
+|---|---|---|---|---|
+| 8x16x16 | 1.16 | 1.00 | 0.90 | 0.84 |
+| 16x16x16 | 1.16 | 1.00 | 0.90 | 0.84 |
+| 8x32x32 | 1.13 | 0.97 | 0.87 | 0.80 |
+| 32x8x8 | 1.22 | 1.07 | 0.98 | 0.92 |
+
+The unaligned kernel wins at zero wait states, the two are level at one,
+and the aligned kernel wins from two. This is the crossover the earlier
+RESULTS.md reported under GCC 13.2 and then retired as compiler
+dependent; measured with hand-written kernels and data-only latency, it
+is real, and its position follows directly from the access counts: the
+unaligned kernel issues 8,136 reads to the aligned kernel's 3,096 at
+8x16x16, so each wait state costs it 5,040 more cycles.
 
 Paired with the area attribution: the dot-product multiplier (+12.1 kGE,
 28% of the base core) buys 1.26 to 1.37x; hardware loops, controller and
