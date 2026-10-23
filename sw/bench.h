@@ -25,6 +25,18 @@
 #ifndef BENCH_H
 #define BENCH_H
 
+/* Optional -DCODE_PAD=<n> inserts n compressed nops at the top of main.
+ * On CV32E40P a loop whose first word straddles a 32-bit boundary after a
+ * taken back-edge costs 2 extra cycles per iteration, so measure each
+ * kernel at both code alignments (CODE_PAD=0 and 1) and report both. */
+#ifdef CODE_PAD
+#define BENCH_XS_(x) BENCH_S_(x)
+#define BENCH_S_(x) #x
+#define BENCH_PAD() asm volatile (".rept " BENCH_XS_(CODE_PAD) "\n c.nop\n .endr")
+#else
+#define BENCH_PAD() do {} while (0)
+#endif
+
 #ifdef PERF_EVENT
 static unsigned int perf_start_;
 static inline unsigned int perf_read_(void) {
