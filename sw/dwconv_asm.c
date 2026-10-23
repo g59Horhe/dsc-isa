@@ -6,9 +6,19 @@
  * compile-time row offsets, loop control once per three pixels.
  * Requantisation comes from requant.h and is identical to the C kernels.
  * The OW mod 3 tail is handled in C.
+ *
+ * XPULP_CTRL=1 replaces the loop control and addressing with Xpulp features:
+ * one hardware loop for the pixel loop (no counter, no branch) and
+ * post-increment byte loads and stores (no pointer arithmetic). Arithmetic
+ * is unchanged, so the difference isolates control and addressing.
  */
 #include "bench.h"
 #include "requant.h"
+#include "xpulp.h"
+
+#ifndef XPULP_CTRL
+#define XPULP_CTRL 0   /* 1: hardware loop + post-increment loads/stores (COREV_PULP=1) */
+#endif
 
 #ifndef CH
 #define CH 8
@@ -66,7 +76,15 @@ static void init_data(void) {
   "mul %[t]," C0 ",%[w6]\n add %[acc],%[acc],%[t]\n mul %[t]," C1 ",%[w7]\n add %[acc],%[acc],%[t]\n" \
   "mul %[t]," C2 ",%[w8]\n add %[acc],%[acc],%[t]\n" \
   REQUANT_ASM("%[acc]", "%[t]", "%[u]") \
-  "sb %[acc]," OFF "(%[op])\n"
+  STORE(OFF)
+
+#if XPULP_CTRL
+#define STORE(OFF) SB_INC("%[acc]", "%[op]", "1")
+#define LOAD3(A, B, C, OFF) LB_INC(A, "%[r0]", "1") LB_INC(B, "%[r1]", "1") LB_INC(C, "%[r2]", "1")
+#else
+#define STORE(OFF) "sb %[acc]," OFF "(%[op])\n"
+#define LOAD3(A, B, C, OFF) "lb " A "," XS(OFF) "(%[p])\n lb " B "," XS(W+OFF) "(%[p])\n lb " C "," XS(2*W+OFF) "(%[p])\n"
+#endif
 
 static void dwconv_asm(void) {
     for (int c = 0; c < CH; c++) {
@@ -78,15 +96,38 @@ static void dwconv_asm(void) {
             const signed char *p = &input[c][oy][0];
             const signed char *pend = p + (OW / 3) * 3;
             int a0, a1, a2, b0, b1, b2, c0, c1, c2, acc, t, u;
+#if XPULP_CTRL
+            const signed char *r0 = p + 2, *r1 = p + W + 2, *r2 = p + 2 * W + 2;
+            int cnt = OW / 3;
+            asm volatile (
+              XPULP_ASM_BEGIN
+              "lb %[a0],-2(%[r0])\n lb %[a1],-1(%[r0])\n lb %[b0],-2(%[r1])\n lb %[b1],-1(%[r1])\n"
+              "lb %[c0],-2(%[r2])\n lb %[c1],-1(%[r2])\n"
+              HWLOOP0("%[cnt]", "91")   /* 3 pixels x (3 loads + 27) = 90 instructions + 1 */
+              LOAD3("%[a2]","%[b2]","%[c2]",2)
+              PIX("%[a0]","%[a1]","%[a2]","%[b0]","%[b1]","%[b2]","%[c0]","%[c1]","%[c2]","0")
+              LOAD3("%[a0]","%[b0]","%[c0]",3)
+              PIX("%[a1]","%[a2]","%[a0]","%[b1]","%[b2]","%[b0]","%[c1]","%[c2]","%[c0]","1")
+              LOAD3("%[a1]","%[b1]","%[c1]",4)
+              PIX("%[a2]","%[a0]","%[a1]","%[b2]","%[b0]","%[b1]","%[c2]","%[c0]","%[c1]","2")
+              XPULP_ASM_END
+              : [r0]"+r"(r0), [r1]"+r"(r1), [r2]"+r"(r2), [op]"+r"(op), [acc]"=&r"(acc), [t]"=&r"(t), [u]"=&r"(u),
+                [a0]"=&r"(a0), [a1]"=&r"(a1), [a2]"=&r"(a2), [b0]"=&r"(b0), [b1]"=&r"(b1),
+                [b2]"=&r"(b2), [c0]"=&r"(c0), [c1]"=&r"(c1), [c2]"=&r"(c2)
+              : [cnt]"r"(cnt), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2), [w3]"r"(w3),
+                [w4]"r"(w4), [w5]"r"(w5), [w6]"r"(w6), [w7]"r"(w7), [w8]"r"(w8)
+              : "memory");
+            (void)pend; (void)p;
+#else
             asm volatile (
               "lb %[a0],0(%[p])\n lb %[a1],1(%[p])\n lb %[b0]," W1 "(%[p])\n lb %[b1]," W1p1 "(%[p])\n"
               "lb %[c0]," W2 "(%[p])\n lb %[c1]," W2p1 "(%[p])\n"
               "1:\n"
-              "lb %[a2],2(%[p])\n lb %[b2]," W1p2 "(%[p])\n lb %[c2]," W2p2 "(%[p])\n"
+              LOAD3("%[a2]","%[b2]","%[c2]",2)
               PIX("%[a0]","%[a1]","%[a2]","%[b0]","%[b1]","%[b2]","%[c0]","%[c1]","%[c2]","0")
-              "lb %[a0],3(%[p])\n lb %[b0]," W1p3 "(%[p])\n lb %[c0]," W2p3 "(%[p])\n"
+              LOAD3("%[a0]","%[b0]","%[c0]",3)
               PIX("%[a1]","%[a2]","%[a0]","%[b1]","%[b2]","%[b0]","%[c1]","%[c2]","%[c0]","1")
-              "lb %[a1],4(%[p])\n lb %[b1]," W1p4 "(%[p])\n lb %[c1]," W2p4 "(%[p])\n"
+              LOAD3("%[a1]","%[b1]","%[c1]",4)
               PIX("%[a2]","%[a0]","%[a1]","%[b2]","%[b0]","%[b1]","%[c2]","%[c0]","%[c1]","2")
               "addi %[p],%[p],3\n addi %[op],%[op],3\n bne %[p],%[pend],1b\n"
               : [p]"+r"(p), [op]"+r"(op), [acc]"=&r"(acc), [t]"=&r"(t), [u]"=&r"(u),
@@ -95,6 +136,7 @@ static void dwconv_asm(void) {
               : [pend]"r"(pend), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2), [w3]"r"(w3),
                 [w4]"r"(w4), [w5]"r"(w5), [w6]"r"(w6), [w7]"r"(w7), [w8]"r"(w8)
               : "memory");
+#endif
             for (int ox = (OW / 3) * 3; ox < OW; ox++) {
                 const signed char *r0 = &input[c][oy][ox], *r1 = r0 + W, *r2 = r0 + 2 * W;
                 int s = r0[0]*w0 + r0[1]*w1 + r0[2]*w2 + r1[0]*w3 + r1[1]*w4 + r1[2]*w5
