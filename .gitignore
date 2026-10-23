@@ -5,3 +5,4 @@ obj_base/
 obj_pulp/
 riscv-gnu-toolchain/
 test.hex
+syn/build/

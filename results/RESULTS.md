@@ -34,6 +34,9 @@ survive verification. The retired claims and why are listed at the end.
 6. Instruction words fetched outnumber data words moved by 3.1 to 7.6x in
    every kernel. On a flat shared bus, latency lands on instruction fetch
    first; latency sweeps must put wait states on the data port only.
+7. Sky130 synthesis: the RV32IMC core is 43.6 kGE, the full Xpulp
+   extension adds 57%. Half of that is the dot-product multiplier, which is
+   the only part of the extension the measured kernels use.
 
 ## Kernels
 
@@ -267,6 +270,77 @@ few dozen misses, so "zero-wait instruction memory" is a measured statement
 for this code size, not an assumption. A 256 B direct-mapped cache thrashes
 on the two kernels whose loops exceed it; no MCU ships one that small.
 
+## Area: Sky130 HD, synthesis only
+
+Flow: sv2v 0.0.13 converts the SystemVerilog to Verilog, Yosys 0.70 (OSS
+CAD Suite 2026-10-23) synthesises `cv32e40p_core` with the generic `synth`
+flow and maps to `sky130_fd_sc_hd__tt_025C_1v80.lib` with `dfflibmap` and
+`abc`. No timing constraints, no placement, no routing. Flip-flop register
+file; FPU excluded; the behavioural clock gate is a latch plus AND.
+`syn/Makefile` reproduces everything in under a minute. Gate equivalents
+use `sky130_fd_sc_hd__nand2_1` = 3.7536 um^2.
+
+| configuration | cells | area (um^2) | GE | flops |
+|---|---|---|---|---|
+| COREV_PULP=0 (RV32IMC) | 19,945 | 163,661 | 43,601 | 2,128 |
+| COREV_PULP=1 (Xpulp) | 33,533 | 256,893 | 68,439 | 2,479 |
+| delta | | | +24,838 | +351 |
+
+The whole Xpulp extension costs 57% of the RV32IMC core at this flow. That
+is the entire extension: SIMD ALU and dot products, hardware loops,
+post-increment addressing, bit manipulation, and the third register read
+port they need. XpulpNN's reported ~11% is for its NN additions on top of
+an Xpulp core, so the two numbers are not comparable, and this is why the
+literature's 11% / 35% / 108% spread needed a controlled measurement.
+
+### Where the extension's area lives
+
+Per-module attribution. Every cell is tagged with its module of origin
+before flattening; the design is flattened so the COREV_PULP constants
+propagate and dead logic is removed; the surviving cells are partitioned
+back into per-origin modules (`submod`) before mapping. A plain
+hierarchical synthesis cannot do this: without flattening, the multiplier
+keeps its dot-product datapath in both configurations (21 kGE either way)
+because the decoder's constant zeros never cross the module boundary.
+
+| module of origin | RV32IMC (GE) | Xpulp (GE) | delta (GE) | delta | share of delta |
+|---|---|---|---|---|---|
+| mult | 8,637 | 20,777 | 12,140 | 141% | 50% |
+| alu | 2,866 | 5,562 | 2,696 | 94% | 11% |
+| register_file | 15,319 | 17,540 | 2,221 | 14% | 9% |
+| hwloop_regs | 0 | 2,088 | 2,088 | nan% | 9% |
+| id_stage | 4,147 | 6,060 | 1,912 | 46% | 8% |
+| controller | 523 | 2,087 | 1,564 | 299% | 6% |
+| decoder | 697 | 1,309 | 612 | 88% | 3% |
+| aligner | 826 | 1,404 | 578 | 70% | 2% |
+| cs_registers | 6,958 | 7,211 | 253 | 4% | 1% |
+| (untagged, created by opt) | 373 | 568 | 195 | 52% | 1% |
+| prefetch_controller | 580 | 669 | 89 | 15% | 0% |
+| fifo | 770 | 774 | 4 | 1% | 0% |
+| ex_stage | 270 | 274 | 4 | 1% | 0% |
+| ff_one | 105 | 106 | 1 | 1% | 0% |
+| load_store_unit | 1,363 | 1,359 | -4 | -0% | -0% |
+| compressed_decoder | 327 | 319 | -8 | -2% | -0% |
+| alu_div | 2,006 | 1,995 | -12 | -1% | -0% |
+| if_stage | 1,148 | 1,086 | -62 | -5% | -0% |
+| **total** | **47,978** | **72,250** | **24,272** | **51%** | |
+
+Totals in this pass are 10% above the flat pass because the partition
+blocks cross-origin optimisation in ABC; the delta agrees with the flat
+pass within 2%. Yosys reports undriven-wire warnings after partitioning
+(x0 write-enable bit and similar), not investigated further.
+
+Half of the extension is the dot-product multiplier (+12.1 kGE). Hardware
+loops, controller and decoder together are +4.3 kGE, 18%. The register
+file grows by 2.2 kGE because the third read port is dead logic without
+the extension. The cv.dotsp.b kernel in this study uses the multiplier and
+nothing else from the extension: it gains 1.28 to 1.41x in cycles against
+a -O3 or asm scalar baseline for a 12.1 kGE (28%) multiplier plus whatever
+share of decoder and register-file growth one attributes to it, and 57% if
+the whole extension is counted. The measured speedup from hardware loops
+and post-increment addressing, the other 40% of the area, is zero in this
+study because the kernels do not use them. That is the next measurement.
+
 ## Retired claims from the previous RESULTS.md
 
 | claim | status | what the data say |
@@ -293,7 +367,8 @@ on the two kernels whose loops exceed it; no MCU ships one that small.
 - Single compiler version for the equalised dataset. The earlier 7%
   disagreement between GCC 13.2 and 16.1 on the unaligned SIMD kernel
   was not re-examined after equalisation.
-- No area numbers.
+- Area is synthesis-only at Sky130 with no timing constraints; placement and
+  routing may change the ratios. One PDK, one flow.
 
 ## Reproducing
 
@@ -302,6 +377,7 @@ on the two kernels whose loops exceed it; no MCU ships one that small.
     ./collect_wait0.sh ../results/pad1.csv "1 2 5 9" "-DCODE_PAD=1"
     cd ../results && python3 wait0_eqrequant_model.py
     cd ../harness && ./sweep.sh        # data-port latency, IWAIT=0
+    cd ../syn && make all attrib       # Sky130 area, flat and per-module
 
 Regression values: hello 38 cycles / 42; dotp 41 / 10 on Xpulp, TIMEOUT on
 baseline; scalar -O2 at 8x16x16 wait 0: 69,275 cycles, checksum 64747.

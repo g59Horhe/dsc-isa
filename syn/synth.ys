@@ -1,0 +1,10 @@
+# Generic synthesis of cv32e40p_core (flattened). Technology mapping to the
+# liberty file is appended by the Makefile, which knows the path.
+hierarchy -check -top cv32e40p_core
+proc
+flatten -wb
+opt -full
+memory -nomap
+opt_clean
+synth -top cv32e40p_core -run coarse:
+opt -full
