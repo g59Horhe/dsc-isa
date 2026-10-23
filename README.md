@@ -26,7 +26,7 @@ the code, including why the project's original premise was retired.
 | Bus-access and hardware performance counters | done |
 | int8 depthwise conv kernels, scalar and SIMD | done, measured |
 | Cycle model validated against counters | done |
-| Tightly coupled instruction memory / I-cache model | not started |
+| Instruction-cache model (`--icache`) | done |
 | Sky130 + OpenROAD synthesis | not started |
 
 ## Layout
@@ -46,7 +46,7 @@ the code, including why the project's original premise was retired.
     ./collect_wait0.sh out.csv "1 2 5 9"   # wait 0 with hardware counters
 
 Simulator flags: `--hex`, `--cycles`, `--wait N` (data port), `--iwait N`
-(instruction port, defaults to the data value). The MEASURED line carries
+(instruction port, defaults to the data value), `--icache SIZE LINE`. The MEASURED line carries
 data reads, data writes and instruction fetches for the bracketed region.
 `-DPERF_EVENT=<bit>` with `-march=rv32imc_zicsr` reports one hardware
 counter; `-DCODE_PAD=<n>` shifts code alignment. See `sw/bench.h`.
@@ -124,9 +124,9 @@ toolchain work is needed for the rest of the project.
 
 **Instruction and data share one flat memory.** With `--wait` on both
 ports the core is fetch-starved and latency sweeps measure instruction
-count. Default sweeps now put wait states on the data port only. A real
-MCU has tightly coupled instruction memory or an instruction cache; that
-model does not exist here yet, and it is the next infrastructure item.
+count. Default sweeps now put wait states on the data port only. A
+`--icache SIZE LINE` direct-mapped model exists; a 1 KB cache matches the
+zero-wait instruction port to 0.1% on these kernels (see RESULTS.md).
 
 **No area numbers.** Cycles alone are half a trade-off.
 

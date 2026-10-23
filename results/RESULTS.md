@@ -247,6 +247,26 @@ did, the scalar -O2 kernel at 8x16x16 goes from 70,979 to 227,557 cycles
 at wait 3, and 225,957 of that is reproduced by instruction-port wait
 alone. Those sweeps measured fetch starvation.
 
+### Instruction-cache check
+
+The data-only sweep models instruction memory as zero-wait. To check that an
+instruction cache behaves the same way for these kernels, the harness has a
+direct-mapped I-cache model (`--icache SIZE LINE`): a hit answers with zero
+wait, a miss pays the instruction-port wait and fills the line. At 8x16x16
+with three data-port wait states and a three-cycle miss penalty:
+
+| kernel | both ports wait 3 | instruction port zero-wait | 1 KB I-cache, 16 B lines | hits / misses | 256 B I-cache | hits / misses |
+|---|---|---|---|---|---|---|
+| scalar -O2 | 207,085 | 89,526 | 89,546 | 51,754 / 16 | 89,546 | 51,754 / 16 |
+| scalar asm | 179,808 | 79,122 | 79,178 | 44,857 / 37 | 92,089 | 38,109 / 6,785 |
+| SIMD unaligned | 130,512 | 77,521 | 77,538 | 30,653 / 14 | 77,538 | 30,653 / 14 |
+| SIMD aligned | 130,488 | 54,778 | 54,845 | 32,136 / 36 | 63,511 | 27,349 / 4,823 |
+
+A 1 KB cache reproduces the zero-wait instruction port to within 0.1% with a
+few dozen misses, so "zero-wait instruction memory" is a measured statement
+for this code size, not an assumption. A 256 B direct-mapped cache thrashes
+on the two kernels whose loops exceed it; no MCU ships one that small.
+
 ## Retired claims from the previous RESULTS.md
 
 | claim | status | what the data say |
@@ -264,8 +284,8 @@ alone. Those sweeps measured fetch starvation.
 
 - One core, one kernel size (3x3 depthwise), one quantisation scheme, one
   synthetic input distribution that never saturates.
-- Flat memory with no cache and no bus contention between ports; no
-  tightly coupled instruction memory model yet.
+- Flat memory with no bus contention between ports. Instruction memory
+  is zero-wait or a direct-mapped I-cache model; no data cache.
 - Both SIMD kernels are compiler output from C with `.insn`. Hardware
   loops and post-increment loads exist on this core and were not used;
   a hand-written SIMD kernel would be the fair counterpart to the hand
