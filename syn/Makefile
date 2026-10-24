@@ -74,7 +74,42 @@ attrib-base attrib-pulp: build/cv32e40p.v
 	$(eval CFG := $(subst attrib-,,$@))
 	$(eval PULP := $(if $(filter pulp,$(CFG)),1,0))
 	mkdir -p build/attrib-$(CFG)
-	$(YOSYS) -q -l build/attrib-$(CFG)/yosys.log -p "read_verilog -sv build/cv32e40p.v; chparam -set COREV_PULP $(PULP) cv32e40p_core; hierarchy -check -top cv32e40p_core; proc; $(TAG) flatten -wb; opt; opt_clean; submod; hierarchy -top cv32e40p_core; synth -top cv32e40p_core -run coarse:; opt -full; dfflibmap -liberty $(LIB); abc -liberty $(LIB); opt_clean -purge; tee -q -o build/attrib-$(CFG)/stat.json stat -liberty $(LIB) -json"
+	$(YOSYS) -q -l build/attrib-$(CFG)/yosys.log -p "read_verilog -sv build/cv32e40p.v; chparam -set COREV_PULP $(PULP) cv32e40p_core; hierarchy -check -top cv32e40p_core; proc; $(TAG) flatten -wb; opt; opt_clean; submod; hierarchy -top cv32e40p_core; synth -top cv32e40p_core -run coarse:; opt -full; techmap; opt -fast; dfflibmap -liberty $(LIB); abc -liberty $(LIB); opt_clean -purge; tee -q -o build/attrib-$(CFG)/stat.json stat -liberty $(LIB) -json"
 
 attrib: attrib-base attrib-pulp
 	python3 hier_area.py build/attrib-base/stat.json build/attrib-pulp/stat.json $(NAND2_AREA) | tee build/attrib_area.txt
+
+# ---------------------------------------------------------------------------
+# Timing. Two mappings per configuration: area-oriented (abc default, the
+# numbers in the area tables) and delay-oriented (abc -D target, in ps).
+# OpenSTA (the sta binary from the litex-hub conda openroad package, ~/tools/eda)
+# reports the critical path of the mapped netlist against PERIOD_NS.
+STA ?= $(HOME)/tools/eda/bin/sta
+ABC_D    ?= 8000        # ps, delay target for the delay-oriented mapping
+PERIOD_NS ?= 10
+
+net-%: build/cv32e40p.v
+	$(eval CFG := $(word 1,$(subst -, ,$*)))
+	$(eval MAP := $(word 2,$(subst -, ,$*)))
+	$(eval PULP := $(if $(filter pulp,$(CFG)),1,0))
+	$(eval ABCOPT := $(if $(filter delay,$(MAP)),-D $(ABC_D),))
+	mkdir -p build/net-$*
+	$(YOSYS) -q -l build/net-$*/yosys.log -p "read_verilog -sv build/cv32e40p.v; chparam -set COREV_PULP $(PULP) cv32e40p_core; script synth.ys; dfflibmap -liberty $(LIB); abc $(ABCOPT) -liberty $(LIB); opt_clean -purge; tee -q -o build/net-$*/stat.json stat -liberty $(LIB) -json; write_verilog -noattr build/net-$*/netlist.v"
+	python3 area.py build/net-$*/stat.json $(NAND2_AREA) | head -3
+
+sta-%: net-%
+	LIB=$(LIB) NETLIST=build/net-$*/netlist.v TOP=cv32e40p_core PERIOD_NS=$(PERIOD_NS) $(STA) -exit sta.tcl > build/net-$*/sta.txt 2>&1; grep -E "WORST_SLACK|TNS|slack \(|data arrival time" build/net-$*/sta.txt | tail -5
+
+timing: sta-base-area sta-pulp-area sta-base-delay sta-pulp-delay
+	@for c in base-area pulp-area base-delay pulp-delay; do printf "%-12s " $$c; python3 area.py build/net-$$c/stat.json $(NAND2_AREA) | grep "NAND2" | tr '\n' ' '; grep WORST_SLACK build/net-$$c/sta.txt; done
+
+# Placement-aware timing (OpenROAD: floorplan, global/detailed placement, DRV
+# repair, placement parasitics, repair_timing). Uses the area-mapped netlists.
+OPENROAD ?= $(HOME)/tools/eda/bin/openroad
+TLEF  ?= $(HOME)/tools/sky130/sky130_fd_sc_hd.tlef
+LEF   ?= $(HOME)/tools/sky130/sky130_fd_sc_hd_merged.lef
+TRACKS ?= $(HOME)/tools/sky130/make_tracks.tcl
+UTIL  ?= 45
+place-%:
+	mkdir -p build/place-$*
+	TLEF=$(TLEF) LEF=$(LEF) LIB=$(LIB) TRACKS=$(TRACKS) NETLIST=build/net-$*-area/netlist.v TOP=cv32e40p_core PERIOD_NS=$(PERIOD_NS) UTIL=$(UTIL) $(OPENROAD) -exit place.tcl > build/place-$*/openroad.txt 2>&1; grep -E "WORST_SLACK|Design area|ERROR" build/place-$*/openroad.txt | tail -6

@@ -8,3 +8,7 @@ memory -nomap
 opt_clean
 synth -top cv32e40p_core -run coarse:
 opt -full
+# opt -full (opt_share) can re-create coarse $mux cells after techmap; map them
+# back to gates so nothing reaches the liberty mapping unmapped.
+techmap
+opt -fast

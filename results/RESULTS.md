@@ -34,7 +34,7 @@ survive verification. The retired claims and why are listed at the end.
 6. Instruction words fetched outnumber data words moved by 3.1 to 7.6x in
    every kernel. On a flat shared bus, latency lands on instruction fetch
    first; latency sweeps must put wait states on the data port only.
-7. Sky130 synthesis: the RV32IMC core is 43.6 kGE, the full Xpulp
+7. Sky130 synthesis: the RV32IMC core is 43.8 kGE, the full Xpulp
    extension adds 57%. Half of that is the dot-product multiplier.
 8. Decomposed with hand-written kernel pairs: the dot-product datapath is
    worth 1.26 to 1.37x on its own; hardware loops and post-increment
@@ -69,6 +69,11 @@ survive verification. The retired claims and why are listed at the end.
    the scalar kernel and 2 to 4% on aligned SIMD, and still save 20 to 26%
    on the short unaligned SIMD loop. The control term's sign depends on the
    instruction memory.
+14. After placement and repair in OpenROAD, area overhead is 58.6% (57% at
+   synthesis) and the extension lengthens the critical path by 12.7%,
+   through the ALU result forwarding network into the dot-product operand
+   register. Wall-clock speedups are the cycle speedups divided by 1.13:
+   2.2x / 3.8x / 4.8x.
 
 ## Kernels
 
@@ -302,21 +307,22 @@ few dozen misses, so "zero-wait instruction memory" is a measured statement
 for this code size, not an assumption. A 256 B direct-mapped cache thrashes
 on the two kernels whose loops exceed it; no MCU ships one that small.
 
-## Area: Sky130 HD, synthesis only
+## Area: Sky130 HD, synthesis
 
 Flow: sv2v 0.0.13 converts the SystemVerilog to Verilog, Yosys 0.70 (OSS
 CAD Suite 2026-10-23) synthesises `cv32e40p_core` with the generic `synth`
 flow and maps to `sky130_fd_sc_hd__tt_025C_1v80.lib` with `dfflibmap` and
-`abc`. No timing constraints, no placement, no routing. Flip-flop register
+`abc`. No timing constraints at this stage; placement-aware area and
+timing follow in the next section. Flip-flop register
 file; FPU excluded; the behavioural clock gate is a latch plus AND.
 `syn/Makefile` reproduces everything in under a minute. Gate equivalents
 use `sky130_fd_sc_hd__nand2_1` = 3.7536 um^2.
 
 | configuration | cells | area (um^2) | GE | flops |
 |---|---|---|---|---|
-| COREV_PULP=0 (RV32IMC) | 19,945 | 163,661 | 43,601 | 2,128 |
-| COREV_PULP=1 (Xpulp) | 33,533 | 256,893 | 68,439 | 2,479 |
-| delta | | | +24,838 | +351 |
+| COREV_PULP=0 (RV32IMC) | 19,989 | 164,298 | 43,771 | 2,128 |
+| COREV_PULP=1 (Xpulp) | 33,418 | 257,885 | 68,703 | 2,479 |
+| delta | | | +24,932 | +351 |
 
 The whole Xpulp extension costs 57% of the RV32IMC core at this flow. That
 is the entire extension: SIMD ALU and dot products, hardware loops,
@@ -338,24 +344,24 @@ because the decoder's constant zeros never cross the module boundary.
 | module of origin | RV32IMC (GE) | Xpulp (GE) | delta (GE) | delta | share of delta |
 |---|---|---|---|---|---|
 | mult | 8,637 | 20,777 | 12,140 | 141% | 50% |
-| alu | 2,866 | 5,562 | 2,696 | 94% | 11% |
+| alu | 2,866 | 5,554 | 2,688 | 94% | 11% |
 | register_file | 15,319 | 17,540 | 2,221 | 14% | 9% |
 | hwloop_regs | 0 | 2,088 | 2,088 | nan% | 9% |
 | id_stage | 4,147 | 6,060 | 1,912 | 46% | 8% |
-| controller | 523 | 2,087 | 1,564 | 299% | 6% |
+| controller | 514 | 2,031 | 1,518 | 295% | 6% |
 | decoder | 697 | 1,309 | 612 | 88% | 3% |
 | aligner | 826 | 1,404 | 578 | 70% | 2% |
 | cs_registers | 6,958 | 7,211 | 253 | 4% | 1% |
 | (untagged, created by opt) | 373 | 568 | 195 | 52% | 1% |
 | prefetch_controller | 580 | 669 | 89 | 15% | 0% |
-| fifo | 770 | 774 | 4 | 1% | 0% |
 | ex_stage | 270 | 274 | 4 | 1% | 0% |
+| fifo | 770 | 774 | 4 | 1% | 0% |
+| compressed_decoder | 315 | 319 | 4 | 1% | 0% |
 | ff_one | 105 | 106 | 1 | 1% | 0% |
-| load_store_unit | 1,363 | 1,359 | -4 | -0% | -0% |
-| compressed_decoder | 327 | 319 | -8 | -2% | -0% |
 | alu_div | 2,006 | 1,995 | -12 | -1% | -0% |
+| load_store_unit | 1,375 | 1,360 | -14 | -1% | -0% |
 | if_stage | 1,148 | 1,086 | -62 | -5% | -0% |
-| **total** | **47,978** | **72,250** | **24,272** | **51%** | |
+| **total** | **47,969** | **72,187** | **24,218** | **50%** | |
 
 Totals in this pass are 10% above the flat pass because the partition
 blocks cross-origin optimisation in ABC; the delta agrees with the flat
@@ -371,6 +377,52 @@ a -O3 or asm scalar baseline for a 12.1 kGE (28%) multiplier plus whatever
 share of decoder and register-file growth one attributes to it, and 57% if
 the whole extension is counted. Hardware loops and post-increment
 addressing are measured separately in the decomposition section below.
+
+## Timing and placement
+
+Static timing on the raw synthesised netlist is not meaningful: the
+netlist has no buffer trees, so a minimum-size gate driving a few hundred
+pins shows a 15 ns slew, and both configurations report 22 to 29 ns
+register-to-register paths dominated by such nets (`syn/sta.tcl`, kept as
+the negative example). The numbers below come from OpenROAD
+(`syn/place.tcl`): floorplan at 45% target utilisation on the sky130hd
+site, pin placement, timing-driven global placement, DRV repair
+(buffering and resizing), detailed placement, placement-based parasitics,
+then `repair_timing` against a 10 ns clock. Pre-CTS, pre-route; the
+reset is a false path (it would be a synchronised tree in a real system).
+
+| configuration | placed area (um^2) | GE | utilisation | worst reg-to-reg slack at 10 ns | estimated minimum period | estimated Fmax | path stages |
+|---|---|---|---|---|---|---|---|
+| RV32IMC | 187,770 | 50,024 | 52% | -1.52 ns | 11.5 ns | 87 MHz | 50 |
+| Xpulp | 297,737 | 79,320 | 52% | -2.98 ns | 13.0 ns | 77 MHz | 62 |
+| delta | | +58.6% | | | +12.7% | -11% | |
+
+Three things follow.
+
+- **Synthesis tracks placement.** The area overhead is 57% at synthesis
+  and 58.6% after placement with buffering and resizing. The 14% absolute
+  growth from synthesis to placement is the same in both configurations.
+  The synthesis-only attribution table above can be read as placed area to
+  within two points.
+- **The extension costs 11 to 13% of clock frequency** in this flow. Both
+  critical paths start at the EX-stage operator register, run through the
+  ALU adder's carry chain (the maj3 cells), the result forwarding mux, and
+  end at a multiplier operand register in EX; the Xpulp path ends at the
+  dot-product operand register and is 12 stages longer, because the
+  forwarding network has one more source and the operand mux is wider.
+  This is a forwarding-path cost, not a multiplier cost.
+- **Wall-clock speedups are the cycle speedups divided by 1.13.** The full
+  extension's 2.5x / 4.3x / 5.4x in cycles become 2.2x / 3.8x / 4.8x in
+  time on this core if the two configurations are each clocked at their
+  own limit. Every speedup elsewhere in this document is a cycle ratio;
+  this is the correction.
+
+Caveats: one PDK and one flow; pre-CTS and pre-route, so absolute periods
+will move after clock tree and routing (ORFS results for cores of this
+size at sky130hd land in the same 10 to 16 ns range); `repair_timing` did
+not close at 10 ns in either configuration, so the minimum period is read
+from residual slack rather than found by search; register-to-register
+paths only, the I/O paths depend on the system around the core.
 
 ## Decomposition: datapath versus control and addressing
 
@@ -1061,8 +1113,9 @@ nothing in them was an artefact of the synthetic distribution.
 - Single compiler version for the equalised dataset. The earlier 7%
   disagreement between GCC 13.2 and 16.1 on the unaligned SIMD kernel
   was not re-examined after equalisation.
-- Area is synthesis-only at Sky130 with no timing constraints; placement and
-  routing may change the ratios. One PDK, one flow.
+- Area and timing are placement-aware but pre-CTS and pre-route, Sky130 HD
+  only, one flow. Minimum period is read from residual slack at a 10 ns
+  target.
 
 ## Reproducing
 
@@ -1072,6 +1125,8 @@ nothing in them was an artefact of the synthetic distribution.
     cd ../results && python3 wait0_eqrequant_model.py
     cd ../harness && ./sweep.sh        # data-port latency, IWAIT=0
     cd ../syn && make all attrib       # Sky130 area, flat and per-module
+    make timing                        # yosys netlists + OpenSTA (raw netlist; see caveat)
+    make place-base place-pulp         # OpenROAD placement, repair, timing
     cd ../harness && KERNELS="scalar_asm_rv|sw/dwconv_asm.c|-O2 scalar_asm_xp|sw/dwconv_asm.c|-O2+-DXPULP_CTRL=1 ..." \
       ./collect_wait0.sh ../results/decomp_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # decomposition grid
     SHAPES="16:16:8:8 8:8:16:16 16:32:8:8 16:16:16:16" KERNELS="pw_C_O3|sw/pwconv.c|-O3 ..." \
