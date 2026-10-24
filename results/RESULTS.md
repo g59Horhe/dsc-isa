@@ -18,9 +18,11 @@ survive verification. The retired claims and why are listed at the end.
    alignments). The residual is under 0.5% at the headline shape and at
    most 2.2% anywhere. The coefficients are fixed from microbenchmarks, not
    fitted; the mean absolute error is 0.57% over those 48 runs and 0.73%
-   (maximum 6.4%, the alignment effect on one pointwise kernel) over the
-   256 hand-written-kernel runs of all three families
-   (`results/clip_model.py`).
+   (maximum 6.4%) over the 256 hand-written-kernel runs of all three
+   families. A fifth term, Ba = redirects whose target is a 32-bit
+   instruction at an address 2 mod 4 (the aligner penalty, counted from
+   the harness's fetch stream by `results/align_term.py`), brings those
+   to 0.09% / 0.74% (R^2 1.0000) and 0.14% / 1.81%.
 2. The cv.dotsp.b kernel's cycle speedup equals its instruction-count
    ratio to within 0 to 7% at every shape and against every baseline. The
    win is three MACs per instruction, i.e. instruction count, not operand
@@ -34,7 +36,8 @@ survive verification. The retired claims and why are listed at the end.
 5. Code alignment moves single-run cycle counts by up to 2.3% (7.2% before
    requantisation was equalised): a taken branch whose first 32-bit
    instruction sits at an address 2 mod 4 costs one extra cycle in the
-   aligner.
+   aligner. Counted per run, it is the fifth term of the cycle model
+   (point 1).
 6. Instruction words fetched outnumber data words moved by 3.1 to 7.6x in
    every kernel. On a flat shared bus, latency lands on instruction fetch
    first; latency sweeps must put wait states on the data port only.
@@ -174,6 +177,53 @@ the R^2 is that of a fixed-form prediction. Mean absolute error 0.57%,
 maximum 2.24%, over the 48 runs; 0.73% and 6.4% over the 256 hand-written
 kernel runs of all three families, with and without clip
 (`results/clip_model.py`).
+
+### Fifth term: branch-target alignment
+
+The residual of the four-term model is the aligner effect of the code
+alignment section: a taken branch, jump or hardware-loop return whose
+target is a 32-bit instruction at an address 2 mod 4 costs one cycle,
+because the fetched word holds only its lower half. `harness/sim_main.cpp
+--redir <file>` writes the histogram of non-sequential instruction fetches
+(word addresses) in the measured window; `results/align_term.py` rebuilds
+every hand-written and equalised run (304; the rebuilt binary must
+reproduce the committed cycle count, which it does in every case), resolves
+each redirect to its target PC from the ELF, and counts the penalised
+redirects, Ba. Three rules for which targets pay were tested against all
+304 runs; rule A is the one above and is used:
+
+rule | mean |resid| | max | runs over 1% (all 304 runs)
+A | 0.13% | 1.81% | 5
+B | 0.24% | 3.17% | 15
+C | 0.26% | 3.17% | 17
+rule A written as ba
+equalised 3x3 set (6 kernels x 4 shapes x 2 alignments): 48 runs; four-term model mean |resid| 0.57% max 2.24%; with the alignment term mean 0.09% max 0.74%; runs over 1%: 9 -> 0; runs with Ba > 0: 42
+hand-written runs (three families, with and without clip): 256 runs; four-term model mean |resid| 0.73% max 6.36%; with the alignment term mean 0.14% max 1.81%; runs over 1%: 52 -> 5; runs with Ba > 0: 144
+all: 304 runs; four-term model mean |resid| 0.71% max 6.36%; with the alignment term mean 0.13% max 1.81%; runs over 1%: 61 -> 5; runs with Ba > 0: 186
+
+With Ba the model is `cycles = I + 2 x taken branches + load-use stalls +
+split-load accesses + Ba`: R^2 1.0000 (four decimals), mean 0.09%, maximum
+0.74% over the 48 runs; mean 0.14%, maximum 1.81% over the 256 hand-written
+runs, where the five runs still above 1% are 3x3 SIMD kernels, four of
+them at 32x8x8. `results/wait0_align.csv` holds Ba per run and the model
+scripts add it when the file is present; every residual quoted below is
+five-term. Worst four-term runs:
+
+| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | residual, four terms | residual, five terms |
+|---|---|---|---|---|---|---|---|---|---|
+| pw_simd_asm_rv_clip 8x8x16x16 pad0 | 28,165 | 22,280 | 4,094 | 0 | 0 | 2,047 | 1,792 | +6.36% | -0.00% |
+| pw_simd_asm_rv_clip 16x32x8x8 pad1 | 35,333 | 29,256 | 4,094 | 0 | 0 | 2,047 | 1,984 | +5.61% | -0.00% |
+| pw_simd_asm_rv_clip 16x16x16x16 pad0 | 71,687 | 59,656 | 8,190 | 0 | 0 | 4,095 | 3,840 | +5.36% | +0.00% |
+| pw_simd_asm_rv_clip 16x16x8x8 pad1 | 17,924 | 14,918 | 2,046 | 0 | 0 | 1,023 | 960 | +5.36% | +0.00% |
+| simd_unal_asm_rv_clip 8x32x32 pad0 | 139,222 | 101,784 | 14,398 | 0 | 15,840 | 7,199 | 7,199 | +5.17% | +0.00% |
+| simd_unal_asm_rv_clip 16x16x16 pad1 | 61,221 | 45,303 | 6,270 | 0 | 6,720 | 3,135 | 2,927 | +4.78% | +0.00% |
+| simd_unal_asm_rv_clip 32x8x8 pad0 | 23,428 | 17,703 | 2,302 | 0 | 2,304 | 1,151 | 1,120 | +4.78% | -0.00% |
+| simd_unal_asm_rv_clip 8x16x16 pad1 | 30,614 | 22,664 | 3,134 | 0 | 3,360 | 1,567 | 1,456 | +4.76% | +0.00% |
+| pw_simd_asm_rv 8x8x16x16 pad0 | 42,501 | 36,616 | 4,094 | 0 | 0 | 2,047 | 1,792 | +4.21% | -0.00% |
+| pw_simd_asm_rv 16x32x8x8 pad0 | 49,669 | 43,592 | 4,094 | 0 | 0 | 2,047 | 1,984 | +3.99% | -0.00% |
+| pw_simd_asm_rv 16x16x16x16 pad0 | 100,359 | 88,328 | 8,190 | 0 | 0 | 4,095 | 3,840 | +3.83% | +0.00% |
+| pw_simd_asm_rv 16x16x8x8 pad1 | 25,092 | 22,086 | 2,046 | 0 | 0 | 1,023 | 960 | +3.83% | +0.00% |
+
 
 The 2 cycles per taken branch and 1 cycle per load-use hazard were
 confirmed with microbenchmarks (`sw/ubench_unaligned.c` and a load-use
@@ -824,7 +874,7 @@ every checksum. Generated by `results/dw5_os_model.py` from
 | shape | kernel | cycles (pad 0) | cycles (pad 1) | cycles/MAC | instructions per output | data reads | data writes | taken branches | load-use stalls | model residual | checksum |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 8x16x16 | scalar C, -O3 | 156,762 | 156,570 | 5.44 | 121.3 | 41,904 | 4,376 | 1,343 | 14,088 | +0.0% | 64862 |
-|  | row-wise asm, RV32IMC ctrl | 162,501 | 157,421 | 5.47 | 119.7 | 15,840 | 6,912 | 6,719 | 5,760 | +0.2% | 64862 |
+|  | row-wise asm, RV32IMC ctrl | 162,501 | 157,421 | 5.47 | 119.7 | 15,840 | 6,912 | 6,719 | 5,760 | +0.0% | 64862 |
 |  | row-wise asm, Xpulp ctrl | 123,431 | 123,615 | 4.29 | 101.2 | 15,840 | 6,912 | 383 | 5,760 | +0.2% | 64862 |
 |  | output-stationary asm, RV32IMC ctrl | 131,675 | 132,819 | 4.57 | 112.3 | 57,600 | 1,152 | 1,151 | 0 | -0.0% | 64862 |
 |  | output-stationary asm, Xpulp ctrl | 127,454 | 127,358 | 4.42 | 110.4 | 57,600 | 1,152 | 95 | 0 | +0.1% | 64862 |
@@ -832,7 +882,7 @@ every checksum. Generated by `results/dw5_os_model.py` from
 |  | output-stationary asm, Xpulp ctrl, clip | 119,390 | 119,294 | 4.14 | 103.4 | 57,600 | 1,152 | 95 | 0 | +0.1% | 64862 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 36,499 | 36,396 | 1.26 | 24.0 | 20,480 | 1,184 | 95 | 0 | -0.0% | 64862 |
 | 16x16x16 | scalar C, -O3 | 313,160 | 313,544 | 5.44 | 121.4 | 83,808 | 8,752 | 2,687 | 28,192 | +0.0% | 64854 |
-|  | row-wise asm, RV32IMC ctrl | 314,838 | 324,998 | 5.47 | 119.7 | 31,680 | 13,824 | 13,439 | 11,520 | +0.2% | 64854 |
+|  | row-wise asm, RV32IMC ctrl | 314,838 | 324,998 | 5.47 | 119.7 | 31,680 | 13,824 | 13,439 | 11,520 | +0.0% | 64854 |
 |  | row-wise asm, Xpulp ctrl | 247,224 | 246,856 | 4.29 | 101.3 | 31,680 | 13,824 | 767 | 11,520 | +0.2% | 64854 |
 |  | output-stationary asm, RV32IMC ctrl | 265,618 | 263,330 | 4.57 | 112.3 | 115,200 | 2,304 | 2,303 | 0 | -0.0% | 64854 |
 |  | output-stationary asm, Xpulp ctrl | 254,691 | 254,883 | 4.42 | 110.5 | 115,200 | 2,304 | 191 | 0 | +0.1% | 64854 |
@@ -840,7 +890,7 @@ every checksum. Generated by `results/dw5_os_model.py` from
 |  | output-stationary asm, Xpulp ctrl, clip | 238,563 | 238,755 | 4.14 | 103.5 | 115,200 | 2,304 | 191 | 0 | +0.1% | 64854 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 72,756 | 72,933 | 1.26 | 23.9 | 40,944 | 2,352 | 191 | 0 | +0.0% | 64854 |
 | 8x32x32 | scalar C, -O3 | 831,750 | 831,558 | 5.30 | 118.5 | 219,056 | 20,376 | 6,463 | 75,656 | +0.0% | 62512 |
-|  | row-wise asm, RV32IMC ctrl | 835,159 | 853,759 | 5.33 | 115.3 | 72,816 | 37,641 | 37,183 | 31,360 | +0.8% | 62512 |
+|  | row-wise asm, RV32IMC ctrl | 835,159 | 853,759 | 5.33 | 115.3 | 72,816 | 37,641 | 37,183 | 31,360 | +0.0% | 62512 |
 |  | row-wise asm, Xpulp ctrl | 642,959 | 643,399 | 4.10 | 97.2 | 72,800 | 37,632 | 895 | 31,360 | +0.0% | 62512 |
 |  | output-stationary asm, RV32IMC ctrl | 715,741 | 722,005 | 4.56 | 112.1 | 313,600 | 6,272 | 6,271 | 0 | +0.0% | 62512 |
 |  | output-stationary asm, Xpulp ctrl | 691,551 | 691,327 | 4.41 | 110.2 | 313,600 | 6,272 | 223 | 0 | -0.0% | 62512 |
@@ -848,11 +898,11 @@ every checksum. Generated by `results/dw5_os_model.py` from
 |  | output-stationary asm, Xpulp ctrl, clip | 647,647 | 647,423 | 4.13 | 103.2 | 313,600 | 6,272 | 223 | 0 | -0.0% | 62512 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 193,688 | 193,471 | 1.23 | 23.3 | 110,217 | 6,305 | 223 | 0 | +0.0% | 62512 |
 | 32x8x8 | scalar C, -O3 | 77,289 | 77,961 | 6.04 | 136.5 | 21,440 | 3,808 | 1,279 | 4,768 | +0.1% | 65080 |
-|  | row-wise asm, RV32IMC ctrl | 79,557 | 77,925 | 6.09 | 135.5 | 10,880 | 3,072 | 2,815 | 2,560 | +0.5% | 65080 |
+|  | row-wise asm, RV32IMC ctrl | 79,557 | 77,925 | 6.09 | 135.5 | 10,880 | 3,072 | 2,815 | 2,560 | +0.0% | 65080 |
 |  | row-wise asm, Xpulp ctrl | 62,984 | 63,208 | 4.92 | 116.0 | 10,881 | 3,072 | 511 | 2,560 | +0.0% | 65080 |
-|  | output-stationary asm, RV32IMC ctrl | 59,206 | 59,494 | 4.63 | 113.5 | 25,600 | 512 | 511 | 0 | +0.2% | 65080 |
+|  | output-stationary asm, RV32IMC ctrl | 59,206 | 59,494 | 4.63 | 113.5 | 25,600 | 512 | 511 | 0 | +0.0% | 65080 |
 |  | output-stationary asm, Xpulp ctrl | 57,447 | 57,319 | 4.48 | 111.5 | 25,600 | 512 | 127 | 0 | -0.2% | 65080 |
-|  | output-stationary asm, RV32IMC ctrl, clip | 55,622 | 55,910 | 4.35 | 106.5 | 25,600 | 512 | 511 | 0 | +0.2% | 65080 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 55,622 | 55,910 | 4.35 | 106.5 | 25,600 | 512 | 511 | 0 | +0.0% | 65080 |
 |  | output-stationary asm, Xpulp ctrl, clip | 53,863 | 53,735 | 4.20 | 104.5 | 25,600 | 512 | 127 | 0 | -0.2% | 65080 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 19,013 | 18,854 | 1.47 | 29.1 | 9,985 | 640 | 127 | 0 | +0.0% | 65080 |
 
@@ -864,7 +914,7 @@ every checksum. Generated by `results/dw5_os_model.py` from
 | 32x8x8 | 1.32x | 1.31x | 4.13x | 3.14x | 4.10x | 3.94 | 1.03x | 1.06x | 2.39x |
 
 8x16x16: row-wise 157,421 cycles = 137,935 instructions + 13,438 taken-branch cycles + 5,760 load-use stalls (6,912 stores); output-stationary 131,675 = 129,375 + 2,302 + 0 (1,152 stores, 57,600 loads = 50 per output). Instructions per output 119.7 vs 112.3; cycles per output 136.7 vs 114.3.
-checksum mismatches against the row-wise kernel: 0; max |model residual| over the output-stationary runs: 0.92%
+checksum mismatches against the row-wise kernel: 0; max |model residual| over the output-stationary runs: 0.24%
 
 The output-stationary kernel is 17 to 32% faster than the row-wise one and
 16 to 31% faster than -O3, with fewer instructions per output (112 against
@@ -953,7 +1003,7 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.26x | 1.51x | 1.36x |
 | product | | | 2.49x (measured 2.49x) |
 
-3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.91; instruction ratio with the split-load cost on the accelerated side only 2.45; cycle model applied to both sides 2.47; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 240 residual); full-Xpulp split-load share 15.6%; activation words loaded 4,704 = 3.00 MACs per activation word (loads retired 4,776)
+3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.91; instruction ratio with the split-load cost on the accelerated side only 2.45; cycle model applied to both sides 2.47; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 128 residual); full-Xpulp split-load share 15.6%; activation words loaded 4,704 = 3.00 MACs per activation word (loads retired 4,776)
 
 ### 5x5 depthwise
 
@@ -1023,7 +1073,7 @@ Better alignment per kernel, zero wait states, cycles:
 
 Clip saves exactly 7.00 cycles per output in every cell (6.86 at one 3x3
 shape, where the removed instructions changed a branch target's alignment).
-The model residual on the full-Xpulp kernels is under 1.1%.
+The five-term model residual on the full-Xpulp kernels is under 1.9%.
 
 What changes:
 
@@ -1112,8 +1162,10 @@ asymmetric. The measured shapes are crops of the model's tensors (the first
 CH or CI channels, a top-left spatial window), not a smaller model.
 Activations are post-ReLU6 with zero point 0 and are used as unsigned
 bytes; weights have a per-layer zero point and become int8 by subtracting
-it exactly (one weight per layer falls outside int8 and is clipped), so
-the kernels' inputs are the model's own tensors. The real requantisation multiplier is within 3% of a power of
+it exactly (one weight per layer in the whole tensor falls outside int8
+and is clipped; none in the crops the single-layer kernels use, one of 144
+in the block's depthwise crop, 135 -> 127), so the kernels' inputs are the
+model's own tensors. The real requantisation multiplier is within 3% of a power of
 two for both layers (0.0605 vs 2^-4, 0.0304 vs 2^-5), so the kernels keep a
 shift. Output = clamp(acc >> shift, 0, 255), which is ReLU6 in the
 quantised domain. Rounding is truncation. Because the multiplier is a
@@ -1562,6 +1614,7 @@ that remains the limit of the study.
       && python3 wait0_dw5_model.py && python3 dw5_os_model.py && python3 summary_kernels.py && python3 real_data_model.py \
       && python3 clip_model.py --latex ../paper/tab_decomp.tex && python3 area_table.py --latex ../paper/tab_area.tex \
       && python3 block_model.py && ~/tools/venv/bin/python ibex_model.py
+    cd ../results && python3 align_term.py      # Ba per run (rebuilds and reruns 304 binaries, ~5 min); run before the model scripts
     cd ../paper && pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper   # tables are \input from the generated fragments
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
