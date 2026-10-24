@@ -1,0 +1,80 @@
+### IWAIT=0
+shape      kernel                 w0      chk
+8x16x16    scalar_rv           43025    64747
+8x16x16    scalar_xp           41586    64747
+8x16x16    unal_rv             29269    64747
+8x16x16    unal_xp             21543    64747
+8x16x16    al_rv               28110    64747
+8x16x16    al_xp               26856    64747
+32x8x8     scalar_rv           30690    65171
+32x8x8     scalar_xp           30306    65171
+32x8x8     unal_rv             23428    65171
+32x8x8     unal_xp             17317    65171
+32x8x8     al_rv               23173    65171
+32x8x8     al_xp               22757    65171
+### IWAIT=1
+shape      kernel                 w0      chk
+8x16x16    scalar_rv           69866    64747
+8x16x16    scalar_xp           79740    64747
+8x16x16    unal_rv             45223    64747
+8x16x16    unal_xp             36265    64747
+8x16x16    al_rv               48842    64747
+8x16x16    al_xp               50363    64747
+32x8x8     scalar_rv           51265    65171
+32x8x8     scalar_xp           59458    65171
+32x8x8     unal_rv             36996    65171
+32x8x8     unal_xp             29190    65171
+32x8x8     al_rv               38151    65171
+32x8x8     al_xp               39622    65171
+### IWAIT=2
+shape      kernel                 w0      chk
+8x16x16    scalar_rv          104799    64747
+8x16x16    scalar_xp          119610    64747
+8x16x16    unal_rv             67834    64747
+8x16x16    unal_xp             54397    64747
+8x16x16    al_rv               73095    64747
+8x16x16    al_xp               75376    64747
+32x8x8     scalar_rv           76897    65171
+32x8x8     scalar_xp           89187    65171
+32x8x8     unal_rv             55494    65171
+32x8x8     unal_xp             43785    65171
+32x8x8     al_rv               56939    65171
+32x8x8     al_xp               59145    65171
+### IWAIT=3
+shape      kernel                 w0      chk
+8x16x16    scalar_rv          139732    64747
+8x16x16    scalar_xp          159480    64747
+8x16x16    unal_rv             90445    64747
+8x16x16    unal_xp             72529    64747
+8x16x16    al_rv               97460    64747
+8x16x16    al_xp              100501    64747
+32x8x8     scalar_rv          102529    65171
+32x8x8     scalar_xp          118916    65171
+32x8x8     unal_rv             73992    65171
+32x8x8     unal_xp             58380    65171
+32x8x8     al_rv               75919    65171
+32x8x8     al_xp               78860    65171
+### IWAIT=0
+shape      kernel                 w0      chk
+16x16x8x8  pw_rv               57668    64922
+16x16x8x8  pw_xp               52740    64922
+16x16x8x8  pws_rv              16964    64922
+16x16x8x8  pws_xp              12038    64922
+### IWAIT=1
+shape      kernel                 w0      chk
+16x16x8x8  pw_rv               98692    64922
+16x16x8x8  pw_xp              105221    64922
+16x16x8x8  pws_rv              31620    64922
+16x16x8x8  pws_xp              23816    64922
+### IWAIT=2
+shape      kernel                 w0      chk
+16x16x8x8  pw_rv              148038    64922
+16x16x8x8  pw_xp              157832    64922
+16x16x8x8  pws_rv              47430    64922
+16x16x8x8  pws_xp              35724    64922
+### IWAIT=3
+shape      kernel                 w0      chk
+16x16x8x8  pw_rv              197384    64922
+16x16x8x8  pw_xp              210443    64922
+16x16x8x8  pws_rv              63240    64922
+16x16x8x8  pws_xp              47632    64922

@@ -16,14 +16,15 @@ printf "%-10s %-16s" shape kernel
 for w in $WAITS; do printf "%9s" "w$w"; done
 printf "%9s\n" chk
 for shape in $SHAPES; do
-  IFS=: read -r CH H W <<< "$shape"
+  IFS=: read -r f1 f2 f3 f4 <<< "$shape"
+  if [ -n "$f4" ]; then DEFS="-DCI=$f1 -DCO=$f2 -DH=$f3 -DW=$f4"; SNAME="${f1}x${f2}x${f3}x${f4}"; else DEFS="-DCH=$f1 -DH=$f2 -DW=$f3"; SNAME="${f1}x${f2}x${f3}"; fi
   for spec in $KERNELS; do
     IFS='|' read -r k src opt <<< "$spec"; opt=${opt//+/ }
     $GCC -I. -march=rv32imc -mabi=ilp32 -nostdlib -nostartfiles $opt \
-      -DCH=$CH -DH=$H -DW=$W -T link.ld crt0.S $src -o /tmp/s.elf 2>/dev/null || continue
+      $DEFS -T link.ld crt0.S $src -o /tmp/s.elf 2>/dev/null || continue
     $OBJCOPY -O binary /tmp/s.elf /tmp/s.bin
     python3 bin2hex.py /tmp/s.bin > /tmp/s.hex
-    printf "%-10s %-16s" "${CH}x${H}x${W}" "$k"
+    printf "%-10s %-16s" "$SNAME" "$k"
     chk=""
     for w in $WAITS; do
       r=$($SIM --hex /tmp/s.hex --cycles 50000000 --wait $w --iwait $IWAIT 2>/dev/null)

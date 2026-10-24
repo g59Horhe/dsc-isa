@@ -63,6 +63,12 @@ survive verification. The retired claims and why are listed at the end.
    0.73 to 1.53 cycles per MAC. Clip alone is worth 1.2 to 1.6x on top of
    SIMD and hardware loops, more than the loop hardware itself on two of
    three kernels, for 2.7 kGE.
+13. Behind instruction memory with wait states the core is fetch-bound and
+   cycles follow instruction words fetched. Hardware-loop bodies cannot be
+   compressed, so hardware loops and post-increment then cost 14 to 16% on
+   the scalar kernel and 2 to 4% on aligned SIMD, and still save 20 to 26%
+   on the short unaligned SIMD loop. The control term's sign depends on the
+   instruction memory.
 
 ## Kernels
 
@@ -808,6 +814,43 @@ What changes:
 - The earlier sections' "fastest kernel" and "split-load share" numbers
   stand for the extension without clip and are superseded here.
 
+## Hardware loops under instruction-fetch latency
+
+Hardware-loop bodies may not contain compressed instructions, so the Xpulp
+control variants are larger in code and fetch more words. At zero wait
+states that costs nothing. Flash-based microcontrollers execute from
+instruction memory with wait states while data sits in zero-wait SRAM, so
+the opposite corner of the memory model matters too: instruction port
+with 0 to 3 wait states, data port zero-wait, all kernels with clip
+(`harness/sweep.sh` with `WAITS=0 IWAIT=n`).
+
+| kernel | shape | RV32IMC ctrl, IWAIT 0 / 1 / 2 / 3 | Xpulp ctrl, IWAIT 0 / 1 / 2 / 3 | Xpulp / RV32IMC at IWAIT 0 | at IWAIT 1 | 2 | 3 | fetch words Xpulp / RV32IMC (8x16x16) |
+|---|---|---|---|---|---|---|---|---|
+| scalar | 8x16x16 | 43,025 / 69,866 / 104,799 / 139,732 | 41,586 / 79,740 / 119,610 / 159,480 | 0.97 | 1.14 | 1.14 | 1.14 | 1.14 |
+| SIMD unaligned | 8x16x16 | 29,269 / 45,223 / 67,834 / 90,445 | 21,543 / 36,265 / 54,397 / 72,529 | 0.74 | 0.80 | 0.80 | 0.80 | 0.76 |
+| SIMD aligned | 8x16x16 | 28,110 / 48,842 / 73,095 / 97,460 | 26,856 / 50,363 / 75,376 / 100,501 | 0.96 | 1.03 | 1.03 | 1.03 | 1.02 |
+| scalar | 32x8x8 | 30,690 / 51,265 / 76,897 / 102,529 | 30,306 / 59,458 / 89,187 / 118,916 | 0.99 | 1.16 | 1.16 | 1.16 |  |
+| SIMD unaligned | 32x8x8 | 23,428 / 36,996 / 55,494 / 73,992 | 17,317 / 29,190 / 43,785 / 58,380 | 0.74 | 0.79 | 0.79 | 0.79 |  |
+| SIMD aligned | 32x8x8 | 23,173 / 38,151 / 56,939 / 75,919 | 22,757 / 39,622 / 59,145 / 78,860 | 0.98 | 1.04 | 1.04 | 1.04 |  |
+| pointwise scalar | 16x16x8x8 | 57,668 / 98,692 / 148,038 / 197,384 | 52,740 / 105,221 / 157,832 / 210,443 | 0.91 | 1.07 | 1.07 | 1.07 |  |
+| pointwise SIMD | 16x16x8x8 | 16,964 / 31,620 / 47,430 / 63,240 | 12,038 / 23,816 / 35,724 / 47,632 | 0.71 | 0.75 | 0.75 | 0.75 |  |
+
+From one instruction-port wait state on, the core is fetch-bound and
+cycles are proportional to instruction words fetched: the Xpulp / RV32IMC
+ratios at IWAIT 1 to 3 are identical to two decimals and equal the
+fetch-word ratios measured at zero wait. Hardware loops and post-increment
+then *cost* 14 to 16% on the scalar kernel and 2 to 4% on the aligned SIMD
+kernel, because the non-compressed body outweighs the removed instructions.
+On the unaligned SIMD kernel, where control was a fifth of the body, they
+still save 20 to 26%. The same holds on pointwise.
+
+The decomposition's control term therefore has a sign that depends on the
+instruction memory: +3 to +30% with zero-wait instruction memory, -16 to
++26% behind a flash with wait states. Compressed-instruction support inside
+hardware-loop bodies, which CV32E40P excludes by specification, would
+remove the penalty; a one-line constraint in the ISA document is a
+first-order effect on fetch-limited systems.
+
 ## Real weights and activations
 
 The synthetic LCG data never saturate. To test the kernels on the data they
@@ -1007,7 +1050,9 @@ nothing in them was an artefact of the synthetic distribution.
   data from one image and two MobileNetV1 layers, with the pointwise
   input channels cropped to 16; 5x5 has no real-data source in MobileNetV1
   and stays synthetic. Power-of-two requantisation, truncating rounding.
-  No fused block, no layout change between the two halves.
+  No fused block, no layout change between the two halves. No
+  compressed-instruction variant of the hardware-loop kernels is possible on
+  this core.
 - Flat memory with no bus contention between ports. Instruction memory
   is zero-wait or a direct-mapped I-cache model; no data cache.
 - The compiler-generated SIMD kernels in Tables 1 and 2 carry load-use
@@ -1037,6 +1082,7 @@ nothing in them was an artefact of the synthetic distribution.
       ./collect_wait0.sh ../results/real_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"  # real data
     KERNELS="simd_unal_asm_xp_clip|sw/dwconv_simd_asm.c|-O2+-DXPULP_CTRL=1+-DREQUANT_CLIP=1 ..." \
       ./collect_wait0.sh ../results/clip_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # clip
+    for iw in 0 1 2 3; do WAITS=0 IWAIT=$iw KERNELS="..." ./sweep.sh; done   # instruction-port latency
     cd ../results && python3 wait0_decomp_model.py && python3 wait0_pw_model.py \
       && python3 wait0_dw5_model.py && python3 summary_kernels.py && python3 real_data_model.py \
       && python3 clip_model.py
