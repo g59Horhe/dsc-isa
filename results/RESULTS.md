@@ -58,6 +58,11 @@ survive verification. The retired claims and why are listed at the end.
    the same code path in 95 of 96 runs, and one cycle per output less than
    the int8 synthetic runs, as the shorter clamp predicts. Over half the
    real outputs clamp to zero; nothing on the measured path depends on it.
+12. With cv.clip replacing the branch-free saturation, the complete Xpulp
+   extension is worth 2.5x (3x3), 4.3x (5x5) and 5.4x (1x1) against -O3,
+   0.73 to 1.53 cycles per MAC. Clip alone is worth 1.2 to 1.6x on top of
+   SIMD and hardware loops, more than the loop hardware itself on two of
+   three kernels, for 2.7 kGE.
 
 ## Kernels
 
@@ -520,8 +525,9 @@ unaligned kernel issues 8,136 reads to the aligned kernel's 3,096 at
 Paired with the area attribution: the dot-product multiplier (+12.1 kGE,
 28% of the base core) buys 1.26 to 1.37x; hardware loops, controller and
 decoder (+4.3 kGE, 10%) buy 1 to 5% on a well-unrolled scalar loop and
-21 to 24% on a short SIMD loop. The SIMD ALU (+2.7 kGE) and the
-bit-manipulation and other decode paths are unused by every kernel here.
+21 to 24% on a short SIMD loop; the SIMD ALU (+2.7 kGE) carries cv.clip,
+measured in the saturation section below at 1.2 to 1.6x on top of both.
+The bit-manipulation and other decode paths are unused by every kernel.
 
 ## Pointwise 1x1 convolution
 
@@ -688,20 +694,119 @@ model; no output saturates.
 
 Headline shapes, better alignment, zero wait states:
 
-| kernel | MACs | lanes used | scalar -O3 c/MAC | hand scalar c/MAC | best SIMD c/MAC | extension vs -O3 | vs hand scalar | instr ratio vs hand | datapath only | control on top of SIMD | SIMD loads/MAC | split-load share of best |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 3x3 depthwise, 8x16x16 | 14,112 | 3 of 4 | 3.86 | 3.80 | 2.30 | 1.68x | 1.65x | 1.81 | 1.33x | 1.24x | 0.34 | 10.3% |
-| 5x5 depthwise, 8x16x16 | 28,800 | 5 of 8 | 5.44 | 5.47 | 1.54 | 3.52x | 3.54x | 3.87 | 3.16x | 1.12x | 0.41 | 19.4% |
-| 1x1 pointwise, 16x16x8x8 | 16,384 | 4 of 4 | 3.96 | 3.96 | 1.17 | 3.38x | 3.38x | 3.28 | 2.69x | 1.26x | 0.27 | 0.0% |
+| kernel | MACs | lanes used | scalar -O3 c/MAC | hand scalar c/MAC | SIMD + hw loop c/MAC | full Xpulp (+ clip) c/MAC | full Xpulp vs -O3 | vs hand scalar | instr ratio vs hand | datapath only | control on top of SIMD | clip on top of that | SIMD loads/MAC | split-load share of full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 3x3 depthwise, 8x16x16 | 14,112 | 3 of 4 | 3.86 | 3.80 | 2.30 | 1.53 | 2.53x | 2.49x | 2.91 | 1.33x | 1.24x | 1.51x | 0.34 | 15.6% |
+| 5x5 depthwise, 8x16x16 | 28,800 | 5 of 8 | 5.44 | 5.47 | 1.54 | 1.26 | 4.30x | 4.33x | 5.00 | 3.16x | 1.12x | 1.22x | 0.41 | 23.7% |
+| 1x1 pointwise, 16x16x8x8 | 16,384 | 4 of 4 | 3.96 | 3.96 | 1.17 | 0.73 | 5.39x | 5.39x | 5.24 | 2.69x | 1.26x | 1.60x | 0.27 | 0.0% |
 
-Three kernels, one core, one 57% extension. The same silicon returns 1.7x
-on 3x3 depthwise, 3.5x on 5x5 depthwise and 3.4x on 1x1 pointwise against
--O3 C, and in every case the cycle speedup is the instruction-count ratio
+Three kernels, one core, one 57% extension. The same silicon returns 2.5x
+on 3x3 depthwise, 4.3x on 5x5 depthwise and 5.4x on 1x1 pointwise against
+-O3 C once all of it is used (dot product, hardware loop, post-increment,
+clip), and in every case the cycle speedup is the instruction-count ratio
 minus the split-load cost. The variation comes from lane utilisation, from
 the number of MACs each load feeds, and from whether the scalar baseline
 fits its working set in the register file. A single speedup number for an
 ISA extension on "the depthwise-separable block" would be wrong by a factor
 of two depending on which half of the block it was measured on.
+
+## Saturation: the clip instructions
+
+Xpulp includes cv.clip and cv.clipu, one-instruction saturation to a
+signed or unsigned power-of-two range. Every kernel above paid a nine
+instruction (int8) or eight instruction (unsigned) branch-free sequence
+for the same operation, between a third and a half of the short SIMD loop
+bodies. `-DREQUANT_CLIP=1` replaces it with `srai` plus `cv.clip 8` (int8)
+or `cv.clipu 9` (0..255): two instructions. Encodings from the spec
+(R-type, opcode 0x2b, funct3 011, funct7 0x38 / 0x39, the range in the rs2
+field), semantics verified on the core at the boundaries and illegal on
+the RV32IMC build. Hardware-loop lengths follow RQ_N, so every clip build
+passes the loop check; all 240 clip runs match their checksums, synthetic
+and real.
+
+Clip is an Xpulp feature like the others, so it is a third component in the
+decomposition. Applied alone to the scalar kernel it measures saturation
+cost; applied on top of SIMD and hardware loops it completes the extension.
+Better alignment per kernel, zero wait states, cycles:
+
+### 3x3 depthwise
+
+| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | 54,527 | 53,673 | 42,585 | 52,330 | 41,354 | 40,245 | 29,269 | 32,519 | 21,543 | 2.53x | 2.49x | 2.91 | 7.00 | -0.5% |
+| 16x16x16 | 109,048 | 107,335 | 85,159 | 104,648 | 82,696 | 80,454 | 58,502 | 65,030 | 43,078 | 2.53x | 2.49x | 2.93 | 7.00 | +0.0% |
+| 8x32x32 | 249,063 | 230,366 | 179,966 | 220,055 | 169,655 | 182,423 | 132,023 | 147,144 | 96,744 | 2.57x | 2.38x | 2.80 | 7.00 | -0.2% |
+| 32x8x8 | 38,536 | 38,754 | 30,690 | 38,370 | 30,306 | 30,403 | 22,339 | 25,220 | 17,317 | 2.23x | 2.24x | 2.63 | 6.86 | +1.1% |
+
+| component set | speedup over scalar asm |
+|---|---|
+| datapath (cv.dotsp.b) alone | 1.33x |
+| control alone (scalar) | 1.03x |
+| clip alone (scalar) | 1.26x |
+| SIMD + control | 1.65x |
+| SIMD + clip | 1.83x |
+| SIMD + control + clip (full Xpulp) | 2.49x   = cycles/MAC 1.53 |
+| clip on top of SIMD + control | 1.51x |
+
+### 5x5 depthwise
+
+| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | 156,570 | 157,421 | 149,357 | 123,431 | 115,367 | 49,828 | 41,764 | 44,460 | 36,396 | 4.30x | 4.33x | 5.00 | 7.00 | -0.0% |
+| 16x16x16 | 313,160 | 314,838 | 298,710 | 246,856 | 230,728 | 99,604 | 83,476 | 88,884 | 72,756 | 4.30x | 4.33x | 5.01 | 7.00 | +0.0% |
+| 8x32x32 | 831,558 | 835,159 | 791,255 | 642,959 | 599,055 | 267,815 | 223,911 | 237,375 | 193,471 | 4.30x | 4.32x | 4.95 | 7.00 | +0.0% |
+| 32x8x8 | 77,289 | 77,925 | 74,341 | 62,984 | 59,400 | 24,772 | 21,188 | 22,438 | 18,854 | 4.10x | 4.13x | 4.70 | 7.00 | +0.0% |
+
+| component set | speedup over scalar asm |
+|---|---|
+| datapath (cv.dotsp.b) alone | 3.16x |
+| control alone (scalar) | 1.28x |
+| clip alone (scalar) | 1.05x |
+| SIMD + control | 3.54x |
+| SIMD + clip | 3.77x |
+| SIMD + control + clip (full Xpulp) | 4.33x   = cycles/MAC 1.26 |
+| clip on top of SIMD + control | 1.22x |
+
+### 1x1 pointwise
+
+| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 16x16x8x8 | 64,834 | 64,836 | 57,668 | 59,909 | 52,740 | 24,132 | 16,964 | 19,206 | 12,038 | 5.39x | 5.39x | 5.24 | 7.00 | -0.5% |
+| 8x8x16x16 | 79,001 | 81,157 | 66,821 | 71,685 | 57,349 | 40,709 | 26,373 | 31,237 | 16,901 | 4.67x | 4.80x | 4.70 | 7.00 | -0.0% |
+| 16x32x8x8 | 128,323 | 128,323 | 113,987 | 118,275 | 103,939 | 47,685 | 33,349 | 37,636 | 23,300 | 5.51x | 5.51x | 5.36 | 7.00 | -0.0% |
+| 16x16x16x16 | 268,292 | 259,592 | 230,920 | 239,880 | 211,208 | 96,519 | 67,847 | 76,807 | 48,135 | 5.57x | 5.39x | 5.25 | 7.00 | -0.5% |
+
+| component set | speedup over scalar asm |
+|---|---|
+| datapath (cv.dotsp.b) alone | 2.69x |
+| control alone (scalar) | 1.08x |
+| clip alone (scalar) | 1.12x |
+| SIMD + control | 3.38x |
+| SIMD + clip | 3.82x |
+| SIMD + control + clip (full Xpulp) | 5.39x   = cycles/MAC 0.73 |
+| clip on top of SIMD + control | 1.60x |
+
+Clip saves exactly 7.00 cycles per output in every cell (6.86 at one 3x3
+shape, where the removed instructions changed a branch target's alignment).
+The model residual on the full-Xpulp kernels is under 1.1%.
+
+What changes:
+
+- **The full extension is worth 2.5x, 4.3x and 5.4x** against -O3 on the
+  three kernels, against 1.7x, 3.5x and 3.4x without clip. The instruction
+  ratios are 2.9, 5.0 and 5.2; the gap to the cycle ratios is split loads,
+  now 16% and 24% of the depthwise kernels' cycles because everything else
+  got cheaper.
+- **Clip is worth more than hardware loops on two of three kernels.** On
+  top of SIMD and control it is 1.51x (3x3), 1.22x (5x5) and 1.60x (1x1);
+  hardware loops and post-increment on top of SIMD were 1.24x, 1.12x and
+  1.26x. The two are comparable in area: clip lives in the SIMD ALU
+  (+2.7 kGE), the loop hardware in hwloop_regs, controller and decoder
+  (+4.3 kGE).
+- **The best kernel is now below one cycle per MAC**: 0.73 on pointwise,
+  1.26 on 5x5, 1.53 on 3x3.
+- The earlier sections' "fastest kernel" and "split-load share" numbers
+  stand for the extension without clip and are superseded here.
 
 ## Real weights and activations
 
@@ -930,8 +1035,11 @@ nothing in them was an artefact of the synthetic distribution.
       ./collect_wait0.sh ../results/dw5_pad0.csv "1 2 5 9" "-DCODE_PAD=0"      # 5x5
     REAL_HDR_PREFIX=real/dw3 KERNELS="scalar_asm_xp|sw/dwconv_asm.c|-O2+-DXPULP_CTRL=1 ..." \
       ./collect_wait0.sh ../results/real_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"  # real data
+    KERNELS="simd_unal_asm_xp_clip|sw/dwconv_simd_asm.c|-O2+-DXPULP_CTRL=1+-DREQUANT_CLIP=1 ..." \
+      ./collect_wait0.sh ../results/clip_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # clip
     cd ../results && python3 wait0_decomp_model.py && python3 wait0_pw_model.py \
-      && python3 wait0_dw5_model.py && python3 summary_kernels.py && python3 real_data_model.py
+      && python3 wait0_dw5_model.py && python3 summary_kernels.py && python3 real_data_model.py \
+      && python3 clip_model.py
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
 (needs numpy, Pillow, ai-edge-litert; the headers are committed, so this is
