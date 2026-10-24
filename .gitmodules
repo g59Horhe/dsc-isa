@@ -1,3 +1,6 @@
 [submodule "third_party/cv32e40p"]
 	path = third_party/cv32e40p
 	url = https://github.com/openhwgroup/cv32e40p.git
+[submodule "third_party/ibex"]
+	path = third_party/ibex
+	url = https://github.com/lowRISC/ibex.git

@@ -19,6 +19,8 @@
  *   7 jumps                    8 branches             9 taken branches
  *  10 compressed instructions
  * PERF_EVENT builds need -march=rv32imc_zicsr for the csr instructions.
+ * Add -DIBEX_COUNTERS when running on the Ibex harness (fixed-event
+ * counters, see below).
  * The CSR accesses add about ten cycles inside the bracket, so take cycle
  * counts from builds without PERF_EVENT.
  */
@@ -39,6 +41,45 @@
 
 #ifdef PERF_EVENT
 static unsigned int perf_start_;
+#ifdef IBEX_COUNTERS
+/* Ibex has fixed-event counters (ibex_cs_registers.sv): 3 data-side wait
+ * cycles, 4 instruction-side wait cycles, 5 loads, 6 stores, 7 jumps,
+ * 8 branches, 9 taken branches, 10 compressed instructions, 11 multiply
+ * wait, 12 divide wait; minstret is 0xB02. PERF_EVENT numbers are kept
+ * compatible with the CV32E40P event bits where the meaning matches
+ * (1 instructions, 5 loads, 6 stores, 8 branches, 9 taken branches,
+ * 10 compressed); 2 maps to data-side wait and 4 to instruction-side wait. */
+#if PERF_EVENT == 1
+#define PERF_CSR "0xB02"
+#elif PERF_EVENT == 2
+#define PERF_CSR "0xB03"
+#elif PERF_EVENT == 4
+#define PERF_CSR "0xB04"
+#elif PERF_EVENT == 5
+#define PERF_CSR "0xB05"
+#elif PERF_EVENT == 6
+#define PERF_CSR "0xB06"
+#elif PERF_EVENT == 7
+#define PERF_CSR "0xB07"
+#elif PERF_EVENT == 8
+#define PERF_CSR "0xB08"
+#elif PERF_EVENT == 9
+#define PERF_CSR "0xB09"
+#elif PERF_EVENT == 10
+#define PERF_CSR "0xB0A"
+#elif PERF_EVENT == 11
+#define PERF_CSR "0xB0B"
+#else
+#error "no Ibex counter for this PERF_EVENT"
+#endif
+static inline unsigned int perf_read_(void) {
+    unsigned int v; asm volatile ("csrr %0, " PERF_CSR : "=r"(v)); return v;
+}
+#define CYC_START() do { \
+    asm volatile ("csrw 0x320, zero"); \
+    (*(volatile int *)0x10000004 = 1); \
+    perf_start_ = perf_read_(); } while (0)
+#else
 static inline unsigned int perf_read_(void) {
     unsigned int v; asm volatile ("csrr %0, 0xB03" : "=r"(v)); return v;
 }
@@ -47,6 +88,7 @@ static inline unsigned int perf_read_(void) {
     asm volatile ("csrw 0x320, zero"); \
     (*(volatile int *)0x10000004 = 1); \
     perf_start_ = perf_read_(); } while (0)
+#endif
 #define CYC_STOP() do { \
     unsigned int perf_end_ = perf_read_(); \
     (*(volatile int *)0x10000008 = 1); \

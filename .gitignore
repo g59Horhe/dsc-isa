@@ -6,3 +6,9 @@ obj_pulp/
 riscv-gnu-toolchain/
 test.hex
 syn/build/
+syn/ibex/ibex.v
+syn/ibex/wb0/
+syn/ibex/wb1/
+harness_ibex/obj_*/
+harness_ibex/*.log
+harness_ibex/sim_trace.cpp
