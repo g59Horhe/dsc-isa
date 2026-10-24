@@ -14,9 +14,16 @@ def load(fn):
         v['instr'] = v['ev1']; v['ldstall'] = v['ev2']; v['loads'] = v['ev5']; v['brtaken'] = v['ev9']
         v['split'] = v['dread'] - v['loads']; v['pred'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['resid'] = v['cycles'] - v['pred']
     return d
+try:   # branch-target alignment term Ba, measured per run by results/align_term.py
+    ALIGN = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+except FileNotFoundError:
+    ALIGN = {}
 P = [collections.OrderedDict(), collections.OrderedDict()]
 for base in ('wait0_dw5', 'wait0_clip_dw5', 'wait0_dw5os'):
-    for p in (0, 1): P[p].update(load(f'{base}_pad{p}.csv'))
+    for p in (0, 1):
+        d = load(f'{base}_pad{p}.csv')
+        for k, v in d.items(): v['pred'] += ALIGN.get((k[0], k[1], p), 0); v['resid'] = v['cycles'] - v['pred']
+        P[p].update(d)
 shapes = []; [shapes.append(k[0]) for k in P[0] if k[0] not in shapes]
 best = lambda s, k: min(P[0][(s, k)], P[1][(s, k)], key=lambda v: v['cycles'])
 def macs(s):

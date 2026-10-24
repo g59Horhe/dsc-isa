@@ -22,6 +22,7 @@
 // writes and instruction-port fetches (32-bit words), reported on the
 // MEASURED line. An unaligned word load from the core shows as two reads.
 
+#include <map>
 #include <verilated.h>
 #include "Vcv32e40p_core.h"
 #include <cstdio>
@@ -46,11 +47,16 @@ int main(int argc, char** argv) {
     uint64_t max_cycles = 100000;
     uint32_t wait_states = 0; uint32_t iwait = 0xFFFFFFFFu;
     uint32_t ic_size = 0, ic_line = 16; uint64_t ic_hit = 0, ic_miss = 0; uint64_t n_dread=0, n_dwrite=0, n_ifetch=0;
+    // --redir <file>: histogram of non-sequential instruction fetches (branch, jump and hardware-loop
+    // targets, by word address) while counting; results/align_term.py pairs it with the ELF to count
+    // redirects whose target's first 32-bit instruction sits at an address 2 mod 4 (aligner penalty).
+    const char* redir_file = nullptr; std::map<uint32_t, uint64_t> redirs; uint32_t last_ia = 0; bool last_ia_valid = false;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--hex")    && i + 1 < argc) hexfile = argv[++i];
         if (!strcmp(argv[i], "--cycles") && i + 1 < argc) max_cycles = strtoull(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--wait")   && i + 1 < argc) wait_states = (uint32_t)strtoul(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--iwait")  && i + 1 < argc) iwait = (uint32_t)strtoul(argv[++i], nullptr, 0);
+        if (!strcmp(argv[i], "--redir")  && i + 1 < argc) redir_file = argv[++i];
         if (!strcmp(argv[i], "--icache") && i + 2 < argc) { ic_size = (uint32_t)strtoul(argv[++i], nullptr, 0); ic_line = (uint32_t)strtoul(argv[++i], nullptr, 0); }
     }
     if (iwait == 0xFFFFFFFFu) iwait = wait_states;
@@ -112,6 +118,8 @@ int main(int argc, char** argv) {
                 else { ic_tag[set] = tag; if (counting) ic_miss++; }
             }
             i_delay = d; if (counting) n_ifetch++;
+            if (counting && last_ia_valid && a != last_ia + 4) redirs[a]++;
+            last_ia = a; last_ia_valid = true;
         }
 
         if (dut->data_req_o && dut->data_gnt_i) {
@@ -148,6 +156,7 @@ int main(int argc, char** argv) {
         if (cycle == 10) dut->fetch_enable_i = 1;
     }
 
+    if (redir_file) { FILE* rf = fopen(redir_file, "w"); if (rf) { for (auto& kv : redirs) fprintf(rf, "%08x %llu\n", kv.first, (unsigned long long)kv.second); fclose(rf); } }
     dut->final();
     delete dut;
 

@@ -20,10 +20,19 @@ def load(fn):
         v['instr'] = v['ev1']; v['ldstall'] = v['ev2']; v['loads'] = v['ev5']; v['brtaken'] = v['ev9']
         v['split'] = v['dread'] - v['loads']; v['pred'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['resid'] = v['cycles'] - v['pred']
     return d
+try:   # branch-target alignment term Ba, measured per run by results/align_term.py
+    ALIGN = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+except FileNotFoundError:
+    ALIGN = {}
+def align(d, p):
+    """five-term model: add Ba (redirects whose target's first 32-bit instruction is at 2 mod 4) when measured"""
+    for k, v in d.items():
+        v['ba'] = ALIGN.get((k[0], k[1], p), 0); v['pred'] += v['ba']; v['resid'] = v['cycles'] - v['pred']
+    return d
 def merge(*fns):
     out = [collections.OrderedDict(), collections.OrderedDict()]
     for base in fns:
-        for p in (0, 1): out[p].update(load(f'{base}_pad{p}.csv'))
+        for p in (0, 1): out[p].update(align(load(f'{base}_pad{p}.csv'), p))
     return out
 fam = {
  '3x3 depthwise': (merge('wait0_decomp', 'wait0_clip_dw3'), 'scalar_asm_rv', 'scalar_asm_xp', 'simd_unal_asm_rv', 'simd_unal_asm_xp', 'simd_unal_asm_rv_clip', 'simd_unal_asm_xp_clip', 'scalar_asm_rv_clip', 'scalar_asm_xp_clip', lambda s: (lambda c, h, w: c * (h - 2) * (w - 2))(*map(int, s.split('x'))), 'wait0_eqrequant', 'scalar_O3', 3, 14112),
@@ -104,11 +113,13 @@ print(f"\nmax |model residual| over clip runs: {worst:.1%}; checksum mismatches 
 hw = []
 for base, pat in (('wait0_decomp', 'asm'), ('wait0_clip_dw3', 'asm'), ('wait0_dw5', 'dw5_asm|dw5_simd'), ('wait0_clip_dw5', 'dw5_asm|dw5_simd'), ('wait0_dw5os', 'dw5_os'), ('wait0_pw', 'pw_asm|pw_simd_asm'), ('wait0_clip_pw', 'pw_asm|pw_simd_asm')):
     for p in (0, 1):
-        for k, v in load(f'{base}_pad{p}.csv').items():
+        for k, v in align(load(f'{base}_pad{p}.csv'), p).items():
             if re.search(pat, k[1]): hw.append((base, k, v))
-ape = [abs(v['resid']) / v['cycles'] for _, _, v in hw]; w = max(hw, key=lambda t: abs(t[2]['resid']) / t[2]['cycles'])
+ape4 = [abs(v['resid'] + v['ba']) / v['cycles'] for _, _, v in hw]; ape5 = [abs(v['resid']) / v['cycles'] for _, _, v in hw]
+w4 = max(hw, key=lambda t: abs(t[2]['resid'] + t[2]['ba']) / t[2]['cycles'])
 fullx = [t for t in hw if t[1][1].endswith('_xp_clip')]
-print(f"cycle model over all {len(hw)} hand-written runs (three families, with and without clip, both alignments): mean |residual| {sum(ape)/len(ape):.2%}, max {max(ape):.2%} ({w[1][1]} {w[1][0]} {w[0]}_pad?, the alignment effect); "
+print(f"cycle model over all {len(hw)} hand-written runs (three families, with and without clip, both alignments): four terms mean |residual| {sum(ape4)/len(ape4):.2%}, max {max(ape4):.2%} ({w4[1][1]} {w4[1][0]} {w4[0]}_pad?); "
+      f"with the alignment term Ba ({sum(1 for _, _, v in hw if v['ba'])} runs have Ba > 0) mean {sum(ape5)/len(ape5):.2%}, max {max(ape5):.2%}; "
       f"full-Xpulp kernels only ({len(fullx)} runs): max {max(abs(v['resid'])/v['cycles'] for _, _, v in fullx):.2%}")
 if LATEX:
     heads = TEX.pop('__heads__')

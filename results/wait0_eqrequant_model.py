@@ -44,3 +44,10 @@ for x in ['instr','ifetch','loads','dread','dwrite','pred']: print(f"{x:<8} R2={
 print(f"max |resid|/cycles = {max(abs(v['resid'])/v['cycles'] for v in allv)*100:.1f}%")
 ape=[abs(v['resid'])/v['cycles'] for v in allv]
 print(f"coefficients fixed from microbenchmarks (not fitted): mean |resid|/cycles = {sum(ape)/len(ape)*100:.2f}% (MAPE), max {max(ape)*100:.2f}%, over {len(allv)} runs")
+try:   # five-term model: + Ba, the branch-target alignment term measured per run by results/align_term.py
+    A={(r['shape'],r['kernel'],int(r['pad'])):int(r['ba']) for r in csv.DictReader(open(f"{S}/wait0_align.csv"))}
+    for p in (0,1):
+        for k,v in P[p].items(): v['pred5']=v['pred']+A[(k[0],k[1],p)]
+    ape5=[abs(v['cycles']-v['pred5'])/v['cycles'] for v in allv]
+    print(f"with the alignment term Ba (cycles = I + 2 Bt + Slu + Asplit + Ba): R2={r2([v['pred5'] for v in allv],ys):.4f}, mean |resid| {sum(ape5)/len(ape5)*100:.2f}%, max {max(ape5)*100:.2f}%")
+except FileNotFoundError: pass
