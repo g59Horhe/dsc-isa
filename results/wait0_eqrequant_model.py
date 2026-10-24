@@ -42,3 +42,5 @@ allv=[v for p in (0,1) for v in P[p].values()]; ys=[v['cycles'] for v in allv]
 print("\n=== R^2 over all 48 runs ===")
 for x in ['instr','ifetch','loads','dread','dwrite','pred']: print(f"{x:<8} R2={r2([v[x] for v in allv],ys):.4f}")
 print(f"max |resid|/cycles = {max(abs(v['resid'])/v['cycles'] for v in allv)*100:.1f}%")
+ape=[abs(v['resid'])/v['cycles'] for v in allv]
+print(f"coefficients fixed from microbenchmarks (not fitted): mean |resid|/cycles = {sum(ape)/len(ape)*100:.2f}% (MAPE), max {max(ape)*100:.2f}%, over {len(allv)} runs")

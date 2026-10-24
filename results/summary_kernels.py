@@ -13,10 +13,11 @@ def load(fn):
 def best(ds, s, k): return min((ds[0][(s, k)], ds[1][(s, k)]), key=lambda v: v['cycles'])
 D3 = [load(f'wait0_decomp_pad{p}.csv') for p in (0, 1)]; E3 = [load(f'wait0_eqrequant_pad{p}.csv') for p in (0, 1)]
 D5 = [load(f'wait0_dw5_pad{p}.csv') for p in (0, 1)]; D1 = [load(f'wait0_pw_pad{p}.csv') for p in (0, 1)]
+O5 = [load(f'wait0_dw5os_pad{p}.csv') for p in (0, 1)]   # 5x5 hand scalar = output-stationary kernel, the stronger baseline (dw5_os_model.py)
 C3 = [load(f'wait0_clip_dw3_pad{p}.csv') for p in (0, 1)]; C5 = [load(f'wait0_clip_dw5_pad{p}.csv') for p in (0, 1)]; C1 = [load(f'wait0_clip_pw_pad{p}.csv') for p in (0, 1)]
 rows = [
   ("3x3 depthwise, 8x16x16", 14112, "3 of 4", best(E3, '8x16x16', 'scalar_O3'), best(D3, '8x16x16', 'scalar_asm_rv'), best(D3, '8x16x16', 'simd_unal_asm_rv'), best(D3, '8x16x16', 'simd_unal_asm_xp'), best(C3, '8x16x16', 'simd_unal_asm_xp_clip')),
-  ("5x5 depthwise, 8x16x16", 28800, "5 of 8", best(D5, '8x16x16', 'dw5_C_O3'), best(D5, '8x16x16', 'dw5_asm_rv'), best(D5, '8x16x16', 'dw5_simd_rv'), best(D5, '8x16x16', 'dw5_simd_xp'), best(C5, '8x16x16', 'dw5_simd_xp_clip')),
+  ("5x5 depthwise, 8x16x16", 28800, "5 of 8", best(D5, '8x16x16', 'dw5_C_O3'), best(O5, '8x16x16', 'dw5_os_asm_rv'), best(D5, '8x16x16', 'dw5_simd_rv'), best(D5, '8x16x16', 'dw5_simd_xp'), best(C5, '8x16x16', 'dw5_simd_xp_clip')),
   ("1x1 pointwise, 16x16x8x8", 16384, "4 of 4", best(D1, '16x16x8x8', 'pw_C_O3'), best(D1, '16x16x8x8', 'pw_asm_rv'), best(D1, '16x16x8x8', 'pw_simd_asm_rv'), best(D1, '16x16x8x8', 'pw_simd_asm_xp'), best(C1, '16x16x8x8', 'pw_simd_asm_xp_clip')),
 ]
 print("| kernel | MACs | lanes used | scalar -O3 c/MAC | hand scalar c/MAC | SIMD + hw loop c/MAC | full Xpulp (+ clip) c/MAC | full Xpulp vs -O3 | vs hand scalar | instr ratio vs hand | datapath only | control on top of SIMD | clip on top of that | SIMD loads/MAC | split-load share of full |")
