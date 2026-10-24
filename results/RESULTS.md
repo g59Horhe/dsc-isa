@@ -74,6 +74,11 @@ survive verification. The retired claims and why are listed at the end.
    through the ALU result forwarding network into the dot-product operand
    register. Wall-clock speedups are the cycle speedups divided by 1.13:
    2.2x / 3.8x / 4.8x.
+15. A whole depthwise-separable block on real data composes exactly from
+   its stages (3 cycles off the sum). The layout change between them costs
+   21% of the accelerated block and the extension does not touch it; a
+   strided store in the depthwise kernel removes it for free. Block
+   speedup: 3.3x to 4.1x over -O3 C depending on who fuses.
 
 ## Kernels
 
@@ -1083,6 +1088,59 @@ the taken-branch alignment effect moving between builds. The speedups in
 the rest of this document carry over to real MobileNet data unchanged;
 nothing in them was an artefact of the synthetic distribution.
 
+## One block: depthwise into pointwise with the layout change
+
+The two halves of a depthwise-separable block disagree on layout: the
+depthwise kernels produce channel-first data, the pointwise kernel wants
+channel-last. `sw/block.c` composes the two stages from the kernel sources
+(renamed statics, `NO_MAIN`) on real data from MobilenetV1 Conv2d_1
+depthwise and pointwise, 16 channels, 16x16 input, 14x14 x 16 output
+(`sw/real/block_16x16x16_16.h`; depthwise multiplier 0.292 approximated by
+2^-2, 14% low; pointwise 2^-5, 3% high; both stage checksums verified).
+Two ways to cross the layout boundary: a scalar byte transpose between the
+stages, or the depthwise stage storing channel-last directly through a
+strided store (`OSTRIDE = CH`, `DW_OUT_PTR`), which costs nothing extra
+on either ISA because the store already advances a pointer.
+
+| block variant | cycles (pad 0 / pad 1) | cycles/MAC | instructions | data reads | data writes | taken branches | split loads | model residual | checksum (pw) |
+|---|---|---|---|---|---|---|---|---|---|
+| C -O3, transform | 339,691 / 332,079 | 4.24 | 310,120 | 70,026 | 9,938 | 7,837 | -1 | +0.0% | 596 |
+| C -O3, fused store | 311,611 / 313,014 | 3.97 | 294,388 | 66,906 | 6,818 | 4,702 | -1 | +0.5% | 596 |
+| SIMD asm, RV32IMC ctrl, transform | 172,864 / 176,190 | 2.20 | 144,394 | 32,736 | 9,408 | 9,405 | 6,720 | +1.7% | 596 |
+| SIMD asm, RV32IMC ctrl, fused | 153,738 / 148,079 | 1.89 | 128,614 | 29,600 | 6,272 | 6,270 | 6,720 | +0.1% | 596 |
+| SIMD + hw loops, transform | 139,837 / 139,628 | 1.78 | 125,774 | 32,736 | 9,408 | 3,553 | 6,720 | -0.1% | 596 |
+| SIMD + hw loops, fused | 117,967 / 117,758 | 1.50 | 110,190 | 29,600 | 6,272 | 418 | 6,720 | -0.2% | 596 |
+| full Xpulp (+ clip), transform | 102,205 / 101,996 | 1.30 | 88,142 | 32,736 | 9,408 | 3,553 | 6,720 | -0.2% | 596 |
+| full Xpulp (+ clip), fused | 80,335 / 80,126 | 1.02 | 72,558 | 29,600 | 6,272 | 418 | 6,720 | -0.3% | 596 |
+
+| quantity | value |
+|---|---|
+| layout transform, scalar C, cost in cycles (C -O3 block) | 20,468 = 6.2% of that block |
+| layout transform cost in the full-Xpulp block | 21,870 = 21.4% of that block |
+| full Xpulp fused vs C -O3 with transform | 4.14x |
+| full Xpulp fused vs C -O3 fused | 3.89x |
+| full Xpulp with transform vs C -O3 with transform | 3.26x |
+| datapath only (SIMD asm, RV32IMC ctrl, fused) vs C -O3 fused | 2.10x |
+| + hardware loops | 1.26x |
+| + clip | 1.47x |
+| fused full-Xpulp block vs sum of standalone stages (43,080 + 37,049) | -3 cycles |
+
+- **Composition is exact.** The fused full-Xpulp block takes 80,335 cycles;
+  the two stages measured alone take 43,080 + 37,049 = 80,129. The cycle
+  model and the per-kernel numbers add. Three cycles of difference.
+- **The layout transform is worth 21% of the accelerated block and 6% of
+  the scalar one**, and the extension does nothing for it: about 21,000
+  cycles either way. Quoting the kernel speedups for the block without
+  accounting for it would overstate by 27%. Fusing it away is free when the
+  depthwise kernel has a store stride, a software decision, not a hardware
+  one.
+- **Block-level numbers:** the full extension is 4.14x over -O3 C if the
+  accelerated code fuses the layout and the baseline does not, 3.89x if
+  both fuse, 3.26x if neither does. The kernel-level 2.5x (depthwise) and
+  5.4x (pointwise) bracket all three, weighted by where the block spends
+  its MACs (36% depthwise, 64% pointwise).
+- Cycles per MAC for the whole block: 3.97 scalar, 1.02 full Xpulp fused.
+
 ## Retired claims from the previous RESULTS.md
 
 | claim | status | what the data say |
@@ -1101,10 +1159,10 @@ nothing in them was an artefact of the synthetic distribution.
 - One core, three kernels (3x3 and 5x5 depthwise, 1x1 pointwise). Real
   data from one image and two MobileNetV1 layers, with the pointwise
   input channels cropped to 16; 5x5 has no real-data source in MobileNetV1
-  and stays synthetic. Power-of-two requantisation, truncating rounding.
-  No fused block, no layout change between the two halves. No
-  compressed-instruction variant of the hardware-loop kernels is possible on
-  this core.
+  and stays synthetic. Power-of-two requantisation, truncating rounding;
+  the block's depthwise shift is 14% off the real multiplier. One block
+  shape. No compressed-instruction variant of the hardware-loop kernels is
+  possible on this core.
 - Flat memory with no bus contention between ports. Instruction memory
   is zero-wait or a direct-mapped I-cache model; no data cache.
 - The compiler-generated SIMD kernels in Tables 1 and 2 carry load-use
@@ -1138,9 +1196,11 @@ nothing in them was an artefact of the synthetic distribution.
     KERNELS="simd_unal_asm_xp_clip|sw/dwconv_simd_asm.c|-O2+-DXPULP_CTRL=1+-DREQUANT_CLIP=1 ..." \
       ./collect_wait0.sh ../results/clip_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # clip
     for iw in 0 1 2 3; do WAITS=0 IWAIT=$iw KERNELS="..." ./sweep.sh; done   # instruction-port latency
+    SHAPES=16:16:16 KERNELS="blk_full_fused|sw/block.c|-O2+-DBLOCK_SIMD=1+-DXPULP_CTRL=1+-DREQUANT_CLIP=1+-DBLOCK_FUSED=1 ..." \
+      ./collect_wait0.sh ../results/block_pad0.csv "1 2 5 9" "-DCODE_PAD=0 -DREAL_HDR=real/block_16x16x16_16.h"   # block
     cd ../results && python3 wait0_decomp_model.py && python3 wait0_pw_model.py \
       && python3 wait0_dw5_model.py && python3 summary_kernels.py && python3 real_data_model.py \
-      && python3 clip_model.py
+      && python3 clip_model.py && python3 block_model.py
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
 (needs numpy, Pillow, ai-edge-litert; the headers are committed, so this is
