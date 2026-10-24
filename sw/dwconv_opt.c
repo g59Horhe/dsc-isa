@@ -17,6 +17,7 @@
  */
 
 #include "bench.h"
+#include "requant.h"   /* shared saturating requantisation; also act_t/out_t */
 
 #ifndef CH
 #define CH   8
@@ -30,11 +31,13 @@
 #define K    3
 #define OH   (H - K + 1)
 #define OW   (W - K + 1)
+#ifndef SHIFT
 #define SHIFT 7
+#endif
 
-static signed char input[CH][H][W];
+static act_t input[CH][H][W] __attribute__((aligned(4)));
 static signed char weight[CH][K][K];
-static signed char output[CH][OH][OW];
+static out_t output[CH][OH][OW];
 
 static unsigned int rng_state;
 static int rnd(void) {
@@ -42,6 +45,10 @@ static int rnd(void) {
     return (int)((rng_state >> 16) & 0xFF) - 128;
 }
 
+#ifdef REAL_DATA
+#include "real_init.h"
+REAL_INIT(input, CH*H*W, weight, CH*K*K)
+#else
 static void init_data(void) {
     rng_state = 1;
     for (int c = 0; c < CH; c++) {
@@ -53,8 +60,8 @@ static void init_data(void) {
                 weight[c][i][j] = (signed char)(rnd() >> 3);
     }
 }
+#endif
 
-#include "requant.h"   /* shared saturating requantisation, see header */
 
 static void dwconv_opt(void) {
     for (int c = 0; c < CH; c++) {
@@ -69,9 +76,9 @@ static void dwconv_opt(void) {
 
         for (int oy = 0; oy < OH; oy++) {
             /* Three row pointers, advanced by one byte per output pixel. */
-            const signed char *r0 = &input[c][oy + 0][0];
-            const signed char *r1 = &input[c][oy + 1][0];
-            const signed char *r2 = &input[c][oy + 2][0];
+            const act_t *r0 = &input[c][oy + 0][0];
+            const act_t *r1 = &input[c][oy + 1][0];
+            const act_t *r2 = &input[c][oy + 2][0];
 
             for (int ox = 0; ox < OW; ox++) {
                 int acc = r0[0] * w00 + r0[1] * w01 + r0[2] * w02

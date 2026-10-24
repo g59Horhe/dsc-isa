@@ -13,7 +13,7 @@ def scalar_body(ci, xp):
         L.append('"mul %[acc],%[a0],%[w0]\\n"' if i == 0 else f'"mul %[t],%[a{i}],%[w{i%2}]\\n add %[acc],%[acc],%[t]\\n"')
     L.append('REQUANT_ASM("%[acc]", "%[t]", "%[u]")')
     L.append('SB_INC("%[acc]", "%[op]", "1")' if xp else '"sb %[acc],0(%[op])\\n"')
-    n = ci + 1 + 2 * (ci - 1) + 9 + 1
+    n = f"{ci + 1 + 2 * (ci - 1) + 1}+RQ_N"
     return "\n              ".join(L), n
 
 def simd_body(ci, xp):
@@ -21,7 +21,7 @@ def simd_body(ci, xp):
     loads = [(f'LW_INC("%[w{k}]", "%[wp]", "4")' if xp else f'"lw %[w{k}],{4*k}(%[wp])\\n"') for k in range(nw)]
     ops = ['DOTSP("%[acc]", "%[x0]", "%[w0]")'] + [f'SDOTSP("%[acc]", "%[x{k}]", "%[w{k}]")' for k in range(1, nw)]
     L = loads + ops + ['REQUANT_ASM("%[acc]", "%[t]", "%[u]")', 'SB_INC("%[acc]", "%[op]", "1")' if xp else '"sb %[acc],0(%[op])\\n"']
-    return "\n              ".join(L), 2 * nw + 9 + 1
+    return "\n              ".join(L), f"{2 * nw + 1}+RQ_N"
 
 HDR = '''/* Pointwise 1x1 convolution -- hand-written {kind} inner loop.
  *
@@ -46,7 +46,7 @@ def block(ci, xp, decl, preload, body, n, outs):
         asm volatile (
               {"XPULP_ASM_BEGIN" if xp else ""}
               {preload}
-              {f'HWLOOP0("%[cnt]", "{n+1}")   /* {n} instructions in the body */' if xp else '"1:\\n"'}
+              {f'HWLOOP0("%[cnt]", RQ_XS({n}+1))   /* body: {n} instructions */' if xp else '"1:\\n"'}
               {body}
               {"" if xp else f'"addi %[wp],%[wp],{ci}\\n addi %[op],%[op],1\\n bne %[wp],%[wend],1b\\n"'}
               {"XPULP_ASM_END" if xp else ""}
@@ -61,14 +61,14 @@ s = HDR.format(kind="scalar", desc="The CI activations of one pixel are held in 
 s += '''
 static void pwconv_asm(void) {
     for (int p = 0; p < P; p++) {
-        const signed char *xp_ = input[p];
+        const act_t *xp_ = input[p];
         const signed char *wp = &weight[0][0];
-        signed char *op = &output[p][0];
+        out_t *op = &output[p][0];
         int acc, t, u, w0, w1;
 '''
 for ci in (8, 16):
     decl = "int " + ", ".join(f"a{i}" for i in range(ci)) + ";"
-    preload = "\n              ".join(f'"lb %[a{i}],{i}(%[xp])\\n"' for i in range(ci))
+    preload = "\n              ".join(f'LBA " %[a{i}],{i}(%[xp])\\n"' for i in range(ci))
     outs = '[w0]"=&r"(w0), [w1]"=&r"(w1),\n                ' + ", ".join(f'[a{i}]"=&r"(a{i})' for i in range(ci))
     for xp in (1, 0):
         body, n = scalar_body(ci, xp); s += block(ci, xp, decl, preload, body, n, outs)
@@ -83,14 +83,12 @@ open('sw/pwconv_asm.c', 'w').write(s)
 
 # ---------------- SIMD ----------------
 s = HDR.format(kind="cv.dotsp.b", desc="The CI/4 activation words of one pixel are held in registers across all CO\n * output channels; each output costs CI/4 aligned weight-word loads, one\n * cv.dotsp.b plus CI/4-1 accumulating cv.sdotsp.b, the shared\n * requantisation and one store. All four lanes carry data.")
-s += '''#define DOTSP(rd, rs1, rs2)  ".insn r 0x7b, 0x1, 0x48, " rd ", " rs1 ", " rs2 "\\n"   /* cv.dotsp.b  rd  = dot */
-#define SDOTSP(rd, rs1, rs2) ".insn r 0x7b, 0x1, 0x54, " rd ", " rs1 ", " rs2 "\\n"   /* cv.sdotsp.b rd += dot */
-
+s += '''
 static void pwconv_simd_asm(void) {
     for (int p = 0; p < P; p++) {
-        const signed char *xp_ = input[p];
+        const act_t *xp_ = input[p];
         const signed char *wp = &weight[0][0];
-        signed char *op = &output[p][0];
+        out_t *op = &output[p][0];
         int acc, t, u; unsigned int w0, w1, w2, w3; (void)w2; (void)w3;
 '''
 for ci in (8, 16):

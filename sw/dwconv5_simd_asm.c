@@ -40,7 +40,7 @@ static void dwconv5_simd_asm(void) {
             asm volatile (
               XPULP_ASM_BEGIN
               
-              HWLOOP0("%[cnt]", "31")   /* 30 instructions in the body */
+              HWLOOP0("%[cnt]", RQ_XS(21+RQ_N+1))   /* body: 21+RQ_N instructions */
               LW_INC("%[l00]", "%[p]", "1")
               "lw %[l01]," XS(0*W+4-1) "(%[p])\n"
               "lw %[l10]," XS(1*W+0-1) "(%[p])\n"

@@ -15,14 +15,12 @@
 #ifndef XPULP_CTRL
 #define XPULP_CTRL 0
 #endif
-#define DOTSP(rd, rs1, rs2)  ".insn r 0x7b, 0x1, 0x48, " rd ", " rs1 ", " rs2 "\n"   /* cv.dotsp.b  rd  = dot */
-#define SDOTSP(rd, rs1, rs2) ".insn r 0x7b, 0x1, 0x54, " rd ", " rs1 ", " rs2 "\n"   /* cv.sdotsp.b rd += dot */
 
 static void pwconv_simd_asm(void) {
     for (int p = 0; p < P; p++) {
-        const signed char *xp_ = input[p];
+        const act_t *xp_ = input[p];
         const signed char *wp = &weight[0][0];
-        signed char *op = &output[p][0];
+        out_t *op = &output[p][0];
         int acc, t, u; unsigned int w0, w1, w2, w3; (void)w2; (void)w3;
 #if CI == 8 && XPULP_CTRL == 1
         unsigned int x0, x1;
@@ -31,7 +29,7 @@ static void pwconv_simd_asm(void) {
               XPULP_ASM_BEGIN
               "lw %[x0],0(%[xp])\n"
               "lw %[x1],4(%[xp])\n"
-              HWLOOP0("%[cnt]", "15")   /* 14 instructions in the body */
+              HWLOOP0("%[cnt]", RQ_XS(5+RQ_N+1))   /* body: 5+RQ_N instructions */
               LW_INC("%[w0]", "%[wp]", "4")
               LW_INC("%[w1]", "%[wp]", "4")
               DOTSP("%[acc]", "%[x0]", "%[w0]")
@@ -75,7 +73,7 @@ static void pwconv_simd_asm(void) {
               "lw %[x1],4(%[xp])\n"
               "lw %[x2],8(%[xp])\n"
               "lw %[x3],12(%[xp])\n"
-              HWLOOP0("%[cnt]", "19")   /* 18 instructions in the body */
+              HWLOOP0("%[cnt]", RQ_XS(9+RQ_N+1))   /* body: 9+RQ_N instructions */
               LW_INC("%[w0]", "%[wp]", "4")
               LW_INC("%[w1]", "%[wp]", "4")
               LW_INC("%[w2]", "%[wp]", "4")

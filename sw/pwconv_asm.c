@@ -18,24 +18,24 @@
 
 static void pwconv_asm(void) {
     for (int p = 0; p < P; p++) {
-        const signed char *xp_ = input[p];
+        const act_t *xp_ = input[p];
         const signed char *wp = &weight[0][0];
-        signed char *op = &output[p][0];
+        out_t *op = &output[p][0];
         int acc, t, u, w0, w1;
 #if CI == 8 && XPULP_CTRL == 1
         int a0, a1, a2, a3, a4, a5, a6, a7;
         int cnt = CO;
         asm volatile (
               XPULP_ASM_BEGIN
-              "lb %[a0],0(%[xp])\n"
-              "lb %[a1],1(%[xp])\n"
-              "lb %[a2],2(%[xp])\n"
-              "lb %[a3],3(%[xp])\n"
-              "lb %[a4],4(%[xp])\n"
-              "lb %[a5],5(%[xp])\n"
-              "lb %[a6],6(%[xp])\n"
-              "lb %[a7],7(%[xp])\n"
-              HWLOOP0("%[cnt]", "34")   /* 33 instructions in the body */
+              LBA " %[a0],0(%[xp])\n"
+              LBA " %[a1],1(%[xp])\n"
+              LBA " %[a2],2(%[xp])\n"
+              LBA " %[a3],3(%[xp])\n"
+              LBA " %[a4],4(%[xp])\n"
+              LBA " %[a5],5(%[xp])\n"
+              LBA " %[a6],6(%[xp])\n"
+              LBA " %[a7],7(%[xp])\n"
+              HWLOOP0("%[cnt]", RQ_XS(24+RQ_N+1))   /* body: 24+RQ_N instructions */
               LB_INC("%[w0]", "%[wp]", "1")
               LB_INC("%[w1]", "%[wp]", "1")
               "mul %[acc],%[a0],%[w0]\n"
@@ -66,14 +66,14 @@ static void pwconv_asm(void) {
         const signed char *wend = wp + CO * CI;
         asm volatile (
               
-              "lb %[a0],0(%[xp])\n"
-              "lb %[a1],1(%[xp])\n"
-              "lb %[a2],2(%[xp])\n"
-              "lb %[a3],3(%[xp])\n"
-              "lb %[a4],4(%[xp])\n"
-              "lb %[a5],5(%[xp])\n"
-              "lb %[a6],6(%[xp])\n"
-              "lb %[a7],7(%[xp])\n"
+              LBA " %[a0],0(%[xp])\n"
+              LBA " %[a1],1(%[xp])\n"
+              LBA " %[a2],2(%[xp])\n"
+              LBA " %[a3],3(%[xp])\n"
+              LBA " %[a4],4(%[xp])\n"
+              LBA " %[a5],5(%[xp])\n"
+              LBA " %[a6],6(%[xp])\n"
+              LBA " %[a7],7(%[xp])\n"
               "1:\n"
               "lb %[w0],0(%[wp])\n"
               "lb %[w1],1(%[wp])\n"
@@ -105,23 +105,23 @@ static void pwconv_asm(void) {
         int cnt = CO;
         asm volatile (
               XPULP_ASM_BEGIN
-              "lb %[a0],0(%[xp])\n"
-              "lb %[a1],1(%[xp])\n"
-              "lb %[a2],2(%[xp])\n"
-              "lb %[a3],3(%[xp])\n"
-              "lb %[a4],4(%[xp])\n"
-              "lb %[a5],5(%[xp])\n"
-              "lb %[a6],6(%[xp])\n"
-              "lb %[a7],7(%[xp])\n"
-              "lb %[a8],8(%[xp])\n"
-              "lb %[a9],9(%[xp])\n"
-              "lb %[a10],10(%[xp])\n"
-              "lb %[a11],11(%[xp])\n"
-              "lb %[a12],12(%[xp])\n"
-              "lb %[a13],13(%[xp])\n"
-              "lb %[a14],14(%[xp])\n"
-              "lb %[a15],15(%[xp])\n"
-              HWLOOP0("%[cnt]", "58")   /* 57 instructions in the body */
+              LBA " %[a0],0(%[xp])\n"
+              LBA " %[a1],1(%[xp])\n"
+              LBA " %[a2],2(%[xp])\n"
+              LBA " %[a3],3(%[xp])\n"
+              LBA " %[a4],4(%[xp])\n"
+              LBA " %[a5],5(%[xp])\n"
+              LBA " %[a6],6(%[xp])\n"
+              LBA " %[a7],7(%[xp])\n"
+              LBA " %[a8],8(%[xp])\n"
+              LBA " %[a9],9(%[xp])\n"
+              LBA " %[a10],10(%[xp])\n"
+              LBA " %[a11],11(%[xp])\n"
+              LBA " %[a12],12(%[xp])\n"
+              LBA " %[a13],13(%[xp])\n"
+              LBA " %[a14],14(%[xp])\n"
+              LBA " %[a15],15(%[xp])\n"
+              HWLOOP0("%[cnt]", RQ_XS(48+RQ_N+1))   /* body: 48+RQ_N instructions */
               LB_INC("%[w0]", "%[wp]", "1")
               LB_INC("%[w1]", "%[wp]", "1")
               "mul %[acc],%[a0],%[w0]\n"
@@ -168,22 +168,22 @@ static void pwconv_asm(void) {
         const signed char *wend = wp + CO * CI;
         asm volatile (
               
-              "lb %[a0],0(%[xp])\n"
-              "lb %[a1],1(%[xp])\n"
-              "lb %[a2],2(%[xp])\n"
-              "lb %[a3],3(%[xp])\n"
-              "lb %[a4],4(%[xp])\n"
-              "lb %[a5],5(%[xp])\n"
-              "lb %[a6],6(%[xp])\n"
-              "lb %[a7],7(%[xp])\n"
-              "lb %[a8],8(%[xp])\n"
-              "lb %[a9],9(%[xp])\n"
-              "lb %[a10],10(%[xp])\n"
-              "lb %[a11],11(%[xp])\n"
-              "lb %[a12],12(%[xp])\n"
-              "lb %[a13],13(%[xp])\n"
-              "lb %[a14],14(%[xp])\n"
-              "lb %[a15],15(%[xp])\n"
+              LBA " %[a0],0(%[xp])\n"
+              LBA " %[a1],1(%[xp])\n"
+              LBA " %[a2],2(%[xp])\n"
+              LBA " %[a3],3(%[xp])\n"
+              LBA " %[a4],4(%[xp])\n"
+              LBA " %[a5],5(%[xp])\n"
+              LBA " %[a6],6(%[xp])\n"
+              LBA " %[a7],7(%[xp])\n"
+              LBA " %[a8],8(%[xp])\n"
+              LBA " %[a9],9(%[xp])\n"
+              LBA " %[a10],10(%[xp])\n"
+              LBA " %[a11],11(%[xp])\n"
+              LBA " %[a12],12(%[xp])\n"
+              LBA " %[a13],13(%[xp])\n"
+              LBA " %[a14],14(%[xp])\n"
+              LBA " %[a15],15(%[xp])\n"
               "1:\n"
               "lb %[w0],0(%[wp])\n"
               "lb %[w1],1(%[wp])\n"

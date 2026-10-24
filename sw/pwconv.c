@@ -2,7 +2,7 @@
 #include "pw_common.h"
 static void pwconv(void) {
     for (int p = 0; p < P; p++) {
-        const signed char *x = input[p];
+        const act_t *x = input[p];
         for (int o = 0; o < CO; o++) {
             const signed char *w = weight[o];
             int acc = 0;

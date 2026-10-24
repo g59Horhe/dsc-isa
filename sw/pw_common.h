@@ -24,16 +24,21 @@
 #define W 8
 #endif
 #define P (H * W)
-static signed char input[P][CI]  __attribute__((aligned(4)));
+static act_t input[P][CI]  __attribute__((aligned(4)));
 static signed char weight[CO][CI] __attribute__((aligned(4)));
-static signed char output[P][CO];
+static out_t output[P][CO];
 static unsigned int rng_state;
 static int rnd(void) { rng_state = rng_state * 1103515245u + 12345u; return (int)((rng_state >> 16) & 0xFF) - 128; }
+#ifdef REAL_DATA
+#include "real_init.h"
+REAL_INIT(input, P*CI, weight, CO*CI)
+#else
 static void init_data(void) {
     rng_state = 1;
     for (int p = 0; p < P; p++) for (int c = 0; c < CI; c++) input[p][c] = (signed char)(rnd() >> 2);
     for (int o = 0; o < CO; o++) for (int c = 0; c < CI; c++) weight[o][c] = (signed char)(rnd() >> 3);
 }
+#endif
 static int checksum(void) {
     int sum = 0;
     for (int p = 0; p < P; p++) for (int o = 0; o < CO; o++) sum += output[p][o];

@@ -26,7 +26,7 @@ def asm_block(xp, setup, body, nbody, loopctl, outs, ins):
     return f'''            asm volatile (
               {"XPULP_ASM_BEGIN" if xp else ""}
               {setup}
-              {f'HWLOOP0("%[cnt]", "{nbody+1}")   /* {nbody} instructions in the body */' if xp else '"1:\\n"'}
+              {f'HWLOOP0("%[cnt]", RQ_XS({nbody}+1))   /* body: {nbody} instructions */' if xp else '"1:\\n"'}
               {body}
               {"" if xp else loopctl}
               {"XPULP_ASM_END" if xp else ""}
@@ -39,31 +39,27 @@ def asm_block(xp, setup, body, nbody, loopctl, outs, ins):
 # kernel rows hold that row's 5 weights in registers and sweep the row with a
 # 5-wide sliding window (one new byte load per pixel, 4 register moves), adding
 # the 5-tap sum into the accumulator row; finally requantise the row.
-def scalar_row_body(xp):
+def scalar_row_body(xp, first=False):
     L = []
     L.append('LB_INC("%[x4]", "%[r]", "1")' if xp else '"lb %[x4],4(%[r])\\n"')
     L.append('"mul %[t],%[x0],%[w0]\\n mul %[acc],%[x1],%[w1]\\n add %[acc],%[acc],%[t]\\n"')
     for i in (2, 3, 4): L.append(f'"mul %[t],%[x{i}],%[w{i}]\\n add %[acc],%[acc],%[t]\\n"')
-    L.append('"lw %[t],0(%[ap])\\n add %[acc],%[acc],%[t]\\n"')
+    if not first: L.append('"lw %[t],0(%[ap])\\n add %[acc],%[acc],%[t]\\n"')
     L.append('SW_INC("%[acc]", "%[ap]", "4")' if xp else '"sw %[acc],0(%[ap])\\n"')
     L.append('"mv %[x0],%[x1]\\n mv %[x1],%[x2]\\n mv %[x2],%[x3]\\n mv %[x3],%[x4]\\n"')
-    return "\n              ".join(L), 1 + 9 + 3 + 4
+    return "\n              ".join(L), 1 + 9 + (1 if first else 3) + 4
 def scalar_rq_body(xp):
     L = ['LW_INC("%[acc]", "%[ap]", "4")' if xp else '"lw %[acc],0(%[ap])\\n"', 'REQUANT_ASM("%[acc]", "%[t]", "%[u]")',
          'SB_INC("%[acc]", "%[op]", "1")' if xp else '"sb %[acc],0(%[op])\\n"']
-    return "\n              ".join(L), 1 + 9 + 1
-s = HDR.format(kind="scalar", desc="Row-wise sliding accumulation: per output row, an int32 accumulator row is\n * zeroed; for each of the 5 kernel rows the 5 weights sit in registers and the\n * row is swept with a 5-wide sliding window (one byte load per pixel, four\n * register moves, five multiplies, accumulator read-modify-write); the row is\n * then requantised. Loads per pixel: 5 bytes + 5 accumulator words.")
+    return "\n              ".join(L), "2+RQ_N"
+s = HDR.format(kind="scalar", desc="Row-wise sliding accumulation: per output row, for each of the 5 kernel rows\n * the 5 weights sit in registers and the row is swept with a 5-wide sliding\n * window (one byte load per pixel, four register moves, five multiplies); the\n * first kernel row stores the 5-tap sums into an int32 accumulator row, the\n * other four read-modify-write it; the row is then requantised. Loads per\n * pixel: 5 bytes + 4 accumulator words.")
 s += '''
-/* no-tree-loop-distribute-patterns: keep GCC from turning the zeroing loop into
-   a memset call, there is no libc here */
-__attribute__((optimize("no-tree-loop-distribute-patterns")))
 static void dwconv5_asm(void) {
     int accrow[OW];
     for (int c = 0; c < CH; c++) {
         const signed char *wp = &weight[c][0][0];
         signed char *op = &output[c][0][0];
         for (int oy = 0; oy < OH; oy++) {
-            for (int i = 0; i < OW; i++) accrow[i] = 0;
             for (int ky = 0; ky < K; ky++) {
                 const signed char *r = &input[c][oy + ky][0];
                 int *ap = accrow;
@@ -71,13 +67,14 @@ static void dwconv5_asm(void) {
                 int x0, x1, x2, x3, x4, acc, t;
 '''
 for xp in (1, 0):
-    body, n = scalar_row_body(xp)
     setup = ('"lb %[x0],-4(%[r])\\n lb %[x1],-3(%[r])\\n lb %[x2],-2(%[r])\\n lb %[x3],-1(%[r])\\n"' if xp
              else '"lb %[x0],0(%[r])\\n lb %[x1],1(%[r])\\n lb %[x2],2(%[r])\\n lb %[x3],3(%[r])\\n"')
     pre = ("                r += 4; int cnt = OW;\n" if xp else "                const signed char *rend = r + OW;\n")
     outs = '[r]"+r"(r), [ap]"+r"(ap), [acc]"=&r"(acc), [t]"=&r"(t), [x0]"=&r"(x0), [x1]"=&r"(x1), [x2]"=&r"(x2), [x3]"=&r"(x3), [x4]"=&r"(x4)'
     ins = ('[cnt]"r"(cnt), ' if xp else '[rend]"r"(rend), ') + '[w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2), [w3]"r"(w3), [w4]"r"(w4)'
-    s += f"#if XPULP_CTRL == {xp}\n{pre}" + asm_block(xp, setup, body, n, '"addi %[r],%[r],1\\n addi %[ap],%[ap],4\\n bne %[r],%[rend],1b\\n"', outs, ins) + "#endif\n"
+    ctl = '"addi %[r],%[r],1\\n addi %[ap],%[ap],4\\n bne %[r],%[rend],1b\\n"'
+    body0, n0 = scalar_row_body(xp, first=True); body1, n1 = scalar_row_body(xp)
+    s += f"#if XPULP_CTRL == {xp}\n{pre}                if (ky == 0) {{\n" + asm_block(xp, setup, body0, n0, ctl, outs, ins) + "                } else {\n" + asm_block(xp, setup, body1, n1, ctl, outs, ins) + "                }\n#endif\n"
 s += '''            }
             {   /* requantise the accumulator row */
                 int *ap = accrow; int acc, t, u;
@@ -117,7 +114,7 @@ def simd_body(xp):
             w = f"%[w{'a' if half == 0 else 'b'}{ky}]"
             ops.append((f'DOTSP("%[acc]", "%[l{ky}{half}]", "{w}")' if first else f'SDOTSP("%[acc]", "%[l{ky}{half}]", "{w}")')); first = False
     L = loads + ops + ['REQUANT_ASM("%[acc]", "%[t]", "%[u]")', 'SB_INC("%[acc]", "%[op]", "1")' if xp else '"sb %[acc],0(%[op])\\n"']
-    return "\n              ".join(L), 10 + 10 + 9 + 1
+    return "\n              ".join(L), "21+RQ_N"
 s = HDR.format(kind="cv.dotsp.b, unaligned loads", desc="Per pixel and kernel row, two word loads at ox and ox+4 carry taps 0..3 and\n * tap 4 (other lanes meet zero weights); ten loads are issued first, then one\n * cv.dotsp.b and nine accumulating cv.sdotsp.b, requant, store. Three of\n * every four loads are misaligned at W=16.")
 s += '''#define DOTSP(rd, rs1, rs2)  ".insn r 0x7b, 0x1, 0x48, " rd ", " rs1 ", " rs2 "\\n"
 #define SDOTSP(rd, rs1, rs2) ".insn r 0x7b, 0x1, 0x54, " rd ", " rs1 ", " rs2 "\\n"

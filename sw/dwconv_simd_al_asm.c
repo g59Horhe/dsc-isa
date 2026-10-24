@@ -29,12 +29,16 @@
 #define XS(x) S_(x)
 #define S_(x) #x
 
-static signed char input[CH][H][W] __attribute__((aligned(4)));
+static act_t input[CH][H][W] __attribute__((aligned(4)));
 static signed char weight[CH][K][K];
-static signed char output[CH][OH][OW];
+static out_t output[CH][OH][OW];
 
 static unsigned int rng_state;
 static int rnd(void) { rng_state = rng_state * 1103515245u + 12345u; return (int)((rng_state >> 16) & 0xFF) - 128; }
+#ifdef REAL_DATA
+#include "real_init.h"
+REAL_INIT(input, CH*H*W, weight, CH*K*K)
+#else
 static void init_data(void) {
     rng_state = 1;
     for (int c = 0; c < CH; c++) {
@@ -42,13 +46,13 @@ static void init_data(void) {
         for (int i = 0; i < K; i++) for (int j = 0; j < K; j++) weight[c][i][j] = (signed char)(rnd() >> 3);
     }
 }
+#endif
 static inline unsigned int pack3(int a, int b, int c) {
     return ((unsigned)(a & 0xFF)) | ((unsigned)(b & 0xFF) << 8) | ((unsigned)(c & 0xFF) << 16);
 }
 static inline int cv_dotsp_b(unsigned int a, unsigned int b) {
-    int r; asm volatile (".insn r 0x7b, 0x1, 0x48, %0, %1, %2" : "=r"(r) : "r"(a), "r"(b)); return r;
+    int r; asm volatile (".insn r 0x7b, 0x1, " DOT_FUNCT7 ", %0, %1, %2" : "=r"(r) : "r"(a), "r"(b)); return r;
 }
-#define DOTSP(rd, rs1, rs2) ".insn r 0x7b, 0x1, 0x48, " rd ", " rs1 ", " rs2 "\n"
 /* dot products of the three window words in x,y,z, sum into x, requantise */
 #define MAC3 \
   DOTSP("%[x]", "%[x]", "%[w0]") DOTSP("%[y]", "%[y]", "%[w1]") DOTSP("%[z]", "%[z]", "%[w2]") \
@@ -70,15 +74,15 @@ static void dwconv_simd_al_asm(void) {
         const unsigned int w0 = pack3(wp[0], wp[1], wp[2]);
         const unsigned int w1 = pack3(wp[3], wp[4], wp[5]);
         const unsigned int w2 = pack3(wp[6], wp[7], wp[8]);
-        signed char *op = &output[ch][0][0];
+        out_t *op = &output[ch][0][0];
         for (int oy = 0; oy < OH; oy++) {
-            const signed char *p = &input[ch][oy][0];
+            const act_t *p = &input[ch][oy][0];
             unsigned int l0, h0, l1, h1, l2, h2, x, y, z; int t, u;
 #if XPULP_CTRL
             int cnt = OW / 4;
             asm volatile (
               XPULP_ASM_BEGIN
-              HWLOOP0("%[cnt]", "91")   /* 6 loads + (3+15) + (3+15) + (9+15) + (9+15) = 90, + 1 */
+              HWLOOP0("%[cnt]", RQ_XS(55+4*RQ_N))   /* 6 loads + 24 window ops + 4 x (5 + requant + 1), + 1 */
               LW_INC("%[l0]", "%[p]", "4")
               "lw %[h0],0(%[p])\n lw %[l1]," XS(W-4) "(%[p])\n lw %[h1]," XS(W) "(%[p])\n"
               "lw %[l2]," XS(2*W-4) "(%[p])\n lw %[h2]," XS(2*W) "(%[p])\n"
@@ -92,7 +96,7 @@ static void dwconv_simd_al_asm(void) {
               : [cnt]"r"(cnt), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
               : "memory");
 #else
-            const signed char *pend = p + (OW / 4) * 4;
+            const act_t *pend = p + (OW / 4) * 4;
             asm volatile (
               "1:\n"
               "lw %[l0],0(%[p])\n lw %[h0],4(%[p])\n lw %[l1]," XS(W) "(%[p])\n lw %[h1]," XS(W+4) "(%[p])\n"
@@ -109,7 +113,7 @@ static void dwconv_simd_al_asm(void) {
 #endif
             /* tail: unaligned path, identical in both variants */
             for (int ox = (OW / 4) * 4; ox < OW; ox++) {
-                const signed char *r0 = &input[ch][oy][ox];
+                const act_t *r0 = &input[ch][oy][ox];
                 int acc = cv_dotsp_b(*(const unsigned int *)(const void *)r0, w0)
                         + cv_dotsp_b(*(const unsigned int *)(const void *)(r0 + W), w1)
                         + cv_dotsp_b(*(const unsigned int *)(const void *)(r0 + 2 * W), w2);

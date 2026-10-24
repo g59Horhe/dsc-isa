@@ -2,6 +2,7 @@
  * Encodings from docs/source/instruction_set_extensions.rst.
  *
  *   LB_INC(rd, rs1, imm)   cv.lb  rd,(rs1),imm   rd = sext(mem8[rs1]);  rs1 += imm
+ *   LBU_INC(rd, rs1, imm)  cv.lbu rd,(rs1),imm   rd = zext(mem8[rs1]);  rs1 += imm
  *   LW_INC(rd, rs1, imm)   cv.lw  rd,(rs1),imm   rd = mem32[rs1];       rs1 += imm
  *   SB_INC(rs2, rs1, imm)  cv.sb  rs2,(rs1),imm  mem8[rs1] = rs2;       rs1 += imm
  *   SW_INC(rs2, rs1, imm)  cv.sw  rs2,(rs1),imm  mem32[rs1] = rs2;      rs1 += imm
@@ -25,10 +26,29 @@
 #ifndef XPULP_H
 #define XPULP_H
 #define LB_INC(rd, rs1, imm)  ".insn i 0x0b, 0x0, " rd ", " rs1 ", " imm "\n"
+#define LBU_INC(rd, rs1, imm) ".insn i 0x0b, 0x4, " rd ", " rs1 ", " imm "\n"
 #define LW_INC(rd, rs1, imm)  ".insn i 0x0b, 0x2, " rd ", " rs1 ", " imm "\n"
 #define SB_INC(rs2, rs1, imm) ".insn s 0x2b, 0x0, " rs2 ", " imm "(" rs1 ")\n"
 #define SW_INC(rs2, rs1, imm) ".insn s 0x2b, 0x2, " rs2 ", " imm "(" rs1 ")\n"
 #define HWLOOP0(cnt, words)   ".insn i 0x2b, 0x4, x14, " cnt ", " words "\n"
 #define XPULP_ASM_BEGIN       ".option push\n.balign 4\n.option norvc\n"
 #define XPULP_ASM_END         ".option pop\n"
+
+/* SIMD byte dot products (cv.dotsp.b / cv.sdotsp.b: signed x signed; in
+ * REAL_DATA mode cv.dotusp.b / cv.sdotusp.b: unsigned activations x signed
+ * weights). Same cost, same encoding class; only funct7 differs. The scalar
+ * kernels switch their activation loads lb -> lbu with LBA / LBA_INC. */
+#ifdef REAL_DATA
+#define DOTSP(rd, rs1, rs2)  ".insn r 0x7b, 0x1, 0x44, " rd ", " rs1 ", " rs2 "\n"
+#define SDOTSP(rd, rs1, rs2) ".insn r 0x7b, 0x1, 0x50, " rd ", " rs1 ", " rs2 "\n"
+#define DOT_FUNCT7 "0x44"
+#define LBA "lbu"
+#define LBA_INC LBU_INC
+#else
+#define DOTSP(rd, rs1, rs2)  ".insn r 0x7b, 0x1, 0x48, " rd ", " rs1 ", " rs2 "\n"
+#define SDOTSP(rd, rs1, rs2) ".insn r 0x7b, 0x1, 0x54, " rd ", " rs1 ", " rs2 "\n"
+#define DOT_FUNCT7 "0x48"
+#define LBA "lb"
+#define LBA_INC LB_INC
+#endif
 #endif
