@@ -79,6 +79,12 @@ survive verification. The retired claims and why are listed at the end.
    21% of the accelerated block and the extension does not touch it; a
    strided store in the depthwise kernel removes it for free. Block
    speedup: 3.3x to 4.1x over -O3 C depending on who fuses.
+16. On a second core, lowRISC Ibex, the same binaries run with identical
+   instruction counts; cycles are 1.05 to 1.27x (2-stage) and 0.90 to 1.00x
+   (3-stage) of CV32E40P's. The baseline-flag and code-alignment effects
+   reproduce at the same magnitude, and the cycle model keeps its structure
+   with core-specific stall terms. Two RV32IMC cores synthesise to within
+   0.5% of each other; the Xpulp extension is more than half of either.
 
 ## Kernels
 
@@ -1141,6 +1147,155 @@ on either ISA because the store already advances a pointer.
   its MACs (36% depthwise, 64% pointwise).
 - Cycles per MAC for the whole block: 3.97 scalar, 1.02 full Xpulp fused.
 
+## Second core: lowRISC Ibex
+
+Everything above is one core. To separate what belongs to CV32E40P from
+what belongs to the class of in-order single-issue embedded RISC-V cores,
+the scalar kernels were run unmodified on lowRISC Ibex (third_party/ibex at
+8f4c75c5, 2024-12-20), configured as RV32IMC with a single-cycle
+multiplier, flip-flop register file, no instruction cache or PMP, branch
+target ALU, and ten hardware performance counters, in both its pipeline
+options: 2-stage (default) and 3-stage (WritebackStage). Ibex has no Xpulp,
+so this is the scalar side only: the C kernels at -O2 and -O3 and the hand
+asm kernels, three families, four shapes, both code alignments. Same
+Verilator harness (`harness_ibex/`), same memory model, same binaries,
+same magic addresses; Ibex's counters are fixed-event (data-side wait,
+instruction-side wait, loads, stores, branches, taken branches, compressed)
+and were validated the same way, loads retired against bus reads and stores
+against bus writes.
+
+One harness detail cost an afternoon and belongs here: ibex_top gates the
+core clock until fetch is enabled, so a reset held low from time zero is
+never sampled by the core's flops. The privilege level then keeps its
+power-on value, user mode, and every machine-mode CSR read traps. The
+harness drives reset as a falling edge.
+
+### Cycles, same binaries
+
+| kernel | shape | instructions | CV32E40P cycles | Ibex 2-stage cycles | Ibex 3-stage cycles | Ibex2 / CV | Ibex3 / CV | alignment spread CV / Ibex2 / Ibex3 |
+|---|---|---|---|---|---|---|---|---|
+| 3x3 depthwise, C -O2 | 8x16x16 | 66,134 | 69,275 | 74,981 | 67,708 | 1.08 | 0.98 | 2.2% / 2.1% / 2.3% |
+| 3x3 depthwise, C -O3 | 8x16x16 | 52,952 | 54,527 | 61,153 | 53,744 | 1.12 | 0.99 | 1.4% / 1.3% / 1.4% |
+| 3x3 depthwise, hand asm | 8x16x16 | 52,507 | 53,673 | 61,621 | 53,210 | 1.15 | 0.99 | 0.4% / 0.4% / 0.4% |
+| 3x3 depthwise, C -O2 | 16x16x16 | 132,278 | 138,564 | 149,974 | 135,429 | 1.08 | 0.98 | 2.2% / 2.1% / 2.3% |
+| 3x3 depthwise, C -O3 | 16x16x16 | 105,899 | 109,048 | 122,299 | 107,481 | 1.12 | 0.99 | 1.4% / 1.3% / 1.4% |
+| 3x3 depthwise, hand asm | 16x16x16 | 105,000 | 107,335 | 123,210 | 106,408 | 1.15 | 0.99 | 0.4% / 0.4% / 0.4% |
+| 3x3 depthwise, C -O2 | 8x32x32 | 298,998 | 313,403 | 337,045 | 306,204 | 1.08 | 0.98 | 2.3% / 2.1% / 2.3% |
+| 3x3 depthwise, C -O3 | 8x32x32 | 241,625 | 249,063 | 276,307 | 245,464 | 1.11 | 0.99 | 1.3% / 1.1% / 1.3% |
+| 3x3 depthwise, hand asm | 8x32x32 | 225,545 | 230,366 | 258,328 | 227,967 | 1.12 | 0.99 | 1.0% / 0.9% / 1.0% |
+| 3x3 depthwise, C -O2 | 32x8x8 | 51,112 | 53,413 | 59,111 | 52,262 | 1.11 | 0.98 | 2.2% / 1.9% / 2.2% |
+| 3x3 depthwise, C -O3 | 32x8x8 | 37,960 | 38,536 | 45,356 | 38,345 | 1.18 | 1.00 | 0.4% / 0.4% / 0.4% |
+| 3x3 depthwise, hand asm | 32x8x8 | 37,990 | 38,754 | 44,484 | 38,371 | 1.15 | 0.99 | 1.0% / 0.9% / 1.0% |
+| 5x5 depthwise, C -O2 | 8x16x16 | 257,591 | 320,373 | 350,535 | 291,382 | 1.09 | 0.91 | 5.7% / 5.2% / 6.3% |
+| 5x5 depthwise, C -O3 | 8x16x16 | 139,793 | 156,570 | 187,420 | 155,227 | 1.20 | 0.99 | 0.1% / 0.1% / 0.1% |
+| 5x5 depthwise, hand asm | 8x16x16 | 137,935 | 157,421 | 167,695 | 150,702 | 1.07 | 0.96 | 3.2% / 3.0% / 3.4% |
+| 5x5 depthwise, C -O2 | 16x16x16 | 515,159 | 640,723 | 701,045 | 582,740 | 1.09 | 0.91 | 5.7% / 5.2% / 6.3% |
+| 5x5 depthwise, C -O3 | 16x16x16 | 279,594 | 313,160 | 374,842 | 310,473 | 1.20 | 0.99 | 0.1% / 0.1% / 0.1% |
+| 5x5 depthwise, hand asm | 16x16x16 | 275,863 | 314,838 | 335,384 | 301,399 | 1.07 | 0.96 | 3.2% / 3.0% / 3.4% |
+| 5x5 depthwise, C -O2 | 8x32x32 | 1,394,999 | 1,734,262 | 1,897,544 | 1,577,271 | 1.09 | 0.91 | 5.8% / 5.3% / 6.4% |
+| 5x5 depthwise, C -O3 | 8x32x32 | 742,973 | 831,558 | 988,872 | 825,095 | 1.19 | 0.99 | 0.0% / 0.0% / 0.0% |
+| 5x5 depthwise, hand asm | 8x32x32 | 723,167 | 835,159 | 877,074 | 797,976 | 1.05 | 0.96 | 2.2% / 2.1% / 2.3% |
+| 5x5 depthwise, C -O2 | 32x8x8 | 119,462 | 149,413 | 163,559 | 135,846 | 1.09 | 0.91 | 5.0% / 4.5% / 5.5% |
+| 5x5 depthwise, C -O3 | 32x8x8 | 69,864 | 77,289 | 96,491 | 76,010 | 1.25 | 0.98 | 0.9% / 0.7% / 0.9% |
+| 5x5 depthwise, hand asm | 32x8x8 | 69,351 | 77,925 | 86,503 | 75,110 | 1.11 | 0.96 | 2.1% / 1.9% / 2.2% |
+| 1x1 pointwise, C -O2 | 16x16x8x8 | 131,461 | 164,227 | 181,637 | 147,844 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
+| 1x1 pointwise, C -O3 | 16x16x8x8 | 62,918 | 64,834 | 82,244 | 63,811 | 1.27 | 0.98 | 1.6% / 1.2% / 1.6% |
+| 1x1 pointwise, hand asm | 16x16x8x8 | 62,790 | 64,836 | 82,246 | 63,813 | 1.27 | 0.98 | 1.5% / 1.2% / 1.5% |
+| 1x1 pointwise, C -O2 | 8x8x16x16 | 148,998 | 181,764 | 200,198 | 165,381 | 1.10 | 0.91 | 7.9% / 7.2% / 8.7% |
+| 1x1 pointwise, C -O3 | 8x8x16x16 | 67,709 | 79,001 | 85,748 | 78,746 | 1.09 | 1.00 | 0.3% / 0.3% / 0.3% |
+| 1x1 pointwise, hand asm | 8x8x16x16 | 77,064 | 81,157 | 99,591 | 79,110 | 1.23 | 0.97 | 2.2% / 1.8% / 2.3% |
+| 1x1 pointwise, C -O2 | 16x32x8x8 | 262,536 | 328,068 | 362,886 | 295,301 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
+| 1x1 pointwise, C -O3 | 16x32x8x8 | 124,230 | 128,323 | 162,117 | 126,276 | 1.26 | 0.98 | 1.6% / 1.3% / 1.6% |
+| 1x1 pointwise, hand asm | 16x32x8x8 | 124,233 | 128,323 | 162,118 | 126,276 | 1.26 | 0.98 | 1.5% / 1.2% / 1.6% |
+| 1x1 pointwise, C -O2 | 16x16x16x16 | 525,830 | 656,901 | 726,535 | 591,366 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
+| 1x1 pointwise, C -O3 | 16x16x16x16 | 251,654 | 268,292 | 330,246 | 264,197 | 1.23 | 0.98 | 1.3% / 1.1% / 1.4% |
+| 1x1 pointwise, hand asm | 16x16x16x16 | 251,402 | 259,592 | 329,485 | 255,497 | 1.27 | 0.98 | 1.5% / 1.2% / 1.5% |
+
+Instruction counts and checksums are identical across all three cores in
+all 72 run pairs, which they must be: the counters count the same binary.
+Cycle counts are not. Ibex's 2-stage pipeline takes 1.05 to 1.27x the
+cycles of CV32E40P on the same code, because every load and store stalls a
+cycle there; the 3-stage pipeline hides that and comes out at 0.90 to
+1.00x, slightly faster than CV32E40P on branch-heavy -O2 code because its
+branch target ALU takes a cycle off taken branches.
+
+### Do the methodology results transfer
+
+| kernel | shape | -O2 / -O3: CV32E40P | Ibex2 | Ibex3 | -O3 / hand asm: CV32E40P | Ibex2 | Ibex3 |
+|---|---|---|---|---|---|---|---|
+| 3x3 depthwise | 8x16x16 | 1.27x | 1.23x | 1.26x | 1.02x | 0.99x | 1.01x |
+| 3x3 depthwise | 16x16x16 | 1.27x | 1.23x | 1.26x | 1.02x | 0.99x | 1.01x |
+| 3x3 depthwise | 8x32x32 | 1.26x | 1.22x | 1.25x | 1.08x | 1.07x | 1.08x |
+| 3x3 depthwise | 32x8x8 | 1.39x | 1.30x | 1.36x | 0.99x | 1.02x | 1.00x |
+| 5x5 depthwise | 8x16x16 | 2.05x | 1.87x | 1.88x | 0.99x | 1.12x | 1.03x |
+| 5x5 depthwise | 16x16x16 | 2.05x | 1.87x | 1.88x | 0.99x | 1.12x | 1.03x |
+| 5x5 depthwise | 8x32x32 | 2.09x | 1.92x | 1.91x | 1.00x | 1.13x | 1.03x |
+| 5x5 depthwise | 32x8x8 | 1.93x | 1.70x | 1.79x | 0.99x | 1.12x | 1.01x |
+| 1x1 pointwise | 16x16x8x8 | 2.53x | 2.21x | 2.32x | 1.00x | 1.00x | 1.00x |
+| 1x1 pointwise | 8x8x16x16 | 2.30x | 2.33x | 2.10x | 0.97x | 0.86x | 1.00x |
+| 1x1 pointwise | 16x32x8x8 | 2.56x | 2.24x | 2.34x | 1.00x | 1.00x | 1.00x |
+| 1x1 pointwise | 16x16x16x16 | 2.45x | 2.20x | 2.24x | 1.03x | 1.00x | 1.03x |
+
+- **Baseline optimisation level**: -O2 to -O3 is worth 1.22 to 1.36x on
+  3x3, 1.70 to 1.92x on 5x5, and 2.1 to 2.3x on 1x1 on Ibex, against 1.26
+  to 1.39x, 1.93 to 2.09x and 2.3 to 2.6x on CV32E40P. Same direction,
+  same order, slightly smaller because Ibex's stall structure penalises the
+  -O3 code's extra loads.
+- **Code alignment**: the spread between the two alignments is the same on
+  all three cores to within half a point, 2% on the 3x3 -O2 kernel, 5 to
+  6% on the 5x5 -O2 kernel, 8.5 to 10.4% on the pointwise -O2 kernel. The
+  mechanism is the same: a taken branch whose first 32-bit instruction
+  straddles a fetch word costs one extra cycle, on any core that fetches
+  aligned words through a prefetch buffer.
+- **Hand asm versus -O3**: within 3% on both cores at all shapes but two,
+  where the hand scalar's design choices interact with the pipeline: the
+  row-wise 5x5 kernel gains 12% on the 2-stage Ibex because its stores do
+  not stall differently from -O3's loads, and the pointwise asm loses 14%
+  at 8x8x16x16 on the same core.
+- **The cycle model** transfers in structure, not in coefficients. On
+  CV32E40P the counters expose load-use stalls and split loads directly and
+  the model holds to under 1%. Ibex's counters expose data-side wait
+  cycles, which account for the memory stalls exactly (coefficient 0.99),
+  but fold the branch penalty into an instruction-side wait counter that
+  overlaps with other stalls (coefficient 0.35). The best fixed-form model,
+  cycles = instructions + data-side wait + 1.5 x taken branches, fits to a
+  mean 1.2% and a maximum 4.5% on the 2-stage core, 1.7% and 7.3% on the
+  3-stage; the 1.5 is the alignment effect averaged. A core's counters
+  determine how exact its cycle model can be.
+
+```
+ibex2: least squares, cycles - instructions = 0.99 x data-side wait + 0.35 x instruction-side wait + 0.98 x taken branches   (R^2 of the stall part 0.9898, worst |residual| 5.7% of cycles, 72 runs)
+fixed form cycles = instr + dwait + iwait: max |error| 8.5%, mean 1.6%, mean signed -0.0%
+fixed form cycles = instr + dwait + 2 x taken branches: max |error| 9.0%, mean 1.7%, mean signed -1.7%
+fixed form cycles = instr + dwait + taken branches + 0.35 x iwait: max |error| 6.1%, mean 1.4%, mean signed -0.2%
+fixed form cycles = instr + dwait + 1.5 x taken branches: max |error| 4.5%, mean 1.2%, mean signed -0.2%
+ibex3: least squares, cycles - instructions = 0.96 x data-side wait + 0.34 x instruction-side wait + 0.97 x taken branches   (R^2 of the stall part 0.9468, worst |residual| 7.1% of cycles, 72 runs)
+fixed form cycles = instr + dwait + iwait: max |error| 10.4%, mean 2.2%, mean signed -0.3%
+fixed form cycles = instr + dwait + 2 x taken branches: max |error| 11.1%, mean 2.3%, mean signed -2.3%
+fixed form cycles = instr + dwait + taken branches + 0.35 x iwait: max |error| 7.5%, mean 1.9%, mean signed -0.5%
+fixed form cycles = instr + dwait + 1.5 x taken branches: max |error| 7.3%, mean 1.7%, mean signed -0.5%
+```
+
+### Area
+
+Same sv2v and yosys flow as the CV32E40P numbers (`syn/ibex/Makefile`):
+
+| core | configuration | cells | GE |
+|---|---|---|---|
+| CV32E40P | RV32IMC | 19,989 | 43,771 |
+| Ibex | RV32IMC, 2-stage | 19,625 | 43,548 |
+| Ibex | RV32IMC, 3-stage | 20,215 | 44,746 |
+| CV32E40P | RV32IMC + Xpulp | 33,418 | 68,703 |
+
+Two independently designed RV32IMC cores land within 0.5% of each other in
+synthesised area, and the 3-stage pipeline costs 2.8%. The Xpulp extension
+costs more than half of either baseline core. Ibex here carries ten 40-bit
+counters against CV32E40P's one 64-bit counter, which inflates its number
+slightly; neither has been placed.
+
+What this does not show: anything about the extension on another core, and
+that remains the limit of the study.
+
 ## Retired claims from the previous RESULTS.md
 
 | claim | status | what the data say |
@@ -1156,7 +1311,10 @@ on either ISA because the store already advances a pointer.
 
 ## Threats to validity
 
-- One core, three kernels (3x3 and 5x5 depthwise, 1x1 pointwise). Real
+- One core for the extension; two cores (CV32E40P, Ibex in two pipeline
+  configurations) for the scalar baselines, the alignment and flag effects
+  and the cycle model. Three kernels (3x3 and 5x5 depthwise, 1x1
+  pointwise). Real
   data from one image and two MobileNetV1 layers, with the pointwise
   input channels cropped to 16; 5x5 has no real-data source in MobileNetV1
   and stays synthetic. Power-of-two requantisation, truncating rounding;
@@ -1198,9 +1356,13 @@ on either ISA because the store already advances a pointer.
     for iw in 0 1 2 3; do WAITS=0 IWAIT=$iw KERNELS="..." ./sweep.sh; done   # instruction-port latency
     SHAPES=16:16:16 KERNELS="blk_full_fused|sw/block.c|-O2+-DBLOCK_SIMD=1+-DXPULP_CTRL=1+-DREQUANT_CLIP=1+-DBLOCK_FUSED=1 ..." \
       ./collect_wait0.sh ../results/block_pad0.csv "1 2 5 9" "-DCODE_PAD=0 -DREAL_HDR=real/block_16x16x16_16.h"   # block
+    cd ../harness_ibex && make all && cd ../harness && \
+      SIM=harness_ibex/obj_ibex2/Vibex_top KERNELS="scalar_O2|sw/dwconv_opt.c|-O2 ..." \
+      ./collect_wait0.sh ../results/ibex2_dw3_pad0.csv "1 2 4 5 6 8 9 10" "-DCODE_PAD=0 -DIBEX_COUNTERS"  # second core
+    cd ../syn/ibex && make all                                                     # Ibex area
     cd ../results && python3 wait0_decomp_model.py && python3 wait0_pw_model.py \
       && python3 wait0_dw5_model.py && python3 summary_kernels.py && python3 real_data_model.py \
-      && python3 clip_model.py && python3 block_model.py
+      && python3 clip_model.py && python3 block_model.py && ~/tools/venv/bin/python ibex_model.py
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
 (needs numpy, Pillow, ai-edge-litert; the headers are committed, so this is
