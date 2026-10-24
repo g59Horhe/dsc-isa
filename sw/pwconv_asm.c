@@ -231,4 +231,6 @@ static void pwconv_asm(void) {
 #endif
     }
 }
+#ifndef NO_MAIN
 int main(void) { BENCH_PAD(); init_data(); CYC_START(); pwconv_asm(); CYC_STOP(); return checksum(); }
+#endif

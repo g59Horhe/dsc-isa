@@ -11,4 +11,6 @@ static void pwconv(void) {
         }
     }
 }
+#ifndef NO_MAIN
 int main(void) { BENCH_PAD(); init_data(); CYC_START(); pwconv(); CYC_STOP(); return checksum(); }
+#endif

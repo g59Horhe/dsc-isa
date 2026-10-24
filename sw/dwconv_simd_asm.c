@@ -13,6 +13,12 @@
 #ifndef XPULP_CTRL
 #define XPULP_CTRL 0
 #endif
+#ifndef DW_OUT_PTR
+#define DW_OUT_PTR(ch) (&output[ch][0][0])   /* block.c redirects this into the pointwise input */
+#endif
+#ifndef OSTRIDE
+#define OSTRIDE 1   /* byte stride between consecutive output pixels; CH writes channel-last directly */
+#endif
 #ifndef CH
 #define CH 8
 #endif
@@ -60,7 +66,7 @@ static void dwconv_simd_asm(void) {
         const unsigned int w0 = pack3(wp[0], wp[1], wp[2]);
         const unsigned int w1 = pack3(wp[3], wp[4], wp[5]);
         const unsigned int w2 = pack3(wp[6], wp[7], wp[8]);
-        out_t *op = &output[ch][0][0];
+        out_t *op = DW_OUT_PTR(ch);
         for (int oy = 0; oy < OH; oy++) {
             const act_t *p = &input[ch][oy][0];
             unsigned int a, b, c; int t, u;
@@ -72,7 +78,7 @@ static void dwconv_simd_asm(void) {
               LW_INC("%[a]", "%[p]", "1")
               "lw %[b]," XS(W-1) "(%[p])\n lw %[c]," XS(2*W-1) "(%[p])\n"
               MAC3
-              SB_INC("%[a]", "%[op]", "1")
+              SB_INC("%[a]", "%[op]", XS(OSTRIDE))
               XPULP_ASM_END
               : [p]"+r"(p), [op]"+r"(op), [a]"=&r"(a), [b]"=&r"(b), [c]"=&r"(c), [t]"=&r"(t), [u]"=&r"(u)
               : [cnt]"r"(cnt), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
@@ -83,7 +89,7 @@ static void dwconv_simd_asm(void) {
               "1:\n"
               "lw %[a],0(%[p])\n lw %[b]," XS(W) "(%[p])\n lw %[c]," XS(2*W) "(%[p])\n"
               MAC3
-              "sb %[a],0(%[op])\n addi %[p],%[p],1\n addi %[op],%[op],1\n bne %[p],%[pend],1b\n"
+              "sb %[a],0(%[op])\n addi %[p],%[p],1\n addi %[op],%[op]," XS(OSTRIDE) "\n bne %[p],%[pend],1b\n"
               : [p]"+r"(p), [op]"+r"(op), [a]"=&r"(a), [b]"=&r"(b), [c]"=&r"(c), [t]"=&r"(t), [u]"=&r"(u)
               : [pend]"r"(pend), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
               : "memory");
@@ -92,6 +98,7 @@ static void dwconv_simd_asm(void) {
     }
 }
 
+#ifndef NO_MAIN
 int main(void) {
     BENCH_PAD();
     init_data();
@@ -100,3 +107,4 @@ int main(void) {
     for (int c = 0; c < CH; c++) for (int y = 0; y < OH; y++) for (int x = 0; x < OW; x++) sum += output[c][y][x];
     return sum & 0xFFFF;
 }
+#endif

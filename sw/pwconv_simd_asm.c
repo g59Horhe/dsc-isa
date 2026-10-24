@@ -123,4 +123,6 @@ static void pwconv_simd_asm(void) {
 #endif
     }
 }
+#ifndef NO_MAIN
 int main(void) { BENCH_PAD(); init_data(); CYC_START(); pwconv_simd_asm(); CYC_STOP(); return checksum(); }
+#endif

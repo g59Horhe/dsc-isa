@@ -71,6 +71,28 @@ def write_header(path, name, arrays, defines, comment):
             for i in range(0, flat.size, 24): f.write("  " + ",".join(str(int(x)) for x in flat[i:i+24]) + ",\n")
             f.write("};\n")
 lcg_headers(out)
+# ---------------- one depthwise-separable block: op 1 (dw 3x3) -> op 2 (pw 1x1) ----------------
+# MobilenetV1 Conv2d_1_depthwise (112x112x32) feeding Conv2d_1_pointwise (32 -> 64).
+# Crop: channels 0..15, 16x16 input window -> 14x14 x 16 depthwise output -> pointwise
+# with CI = 16 (channels 0..15 of 32, partial sum) and CO = 16. Depthwise multiplier
+# M = 0.292 is 14% below 2^-2; shift 2 is used and the error noted. Pointwise shift 5.
+op1, op2 = ops[1], ops[2]; assert op1['op_name'] == 'DEPTHWISE_CONV_2D' and op2['op_name'] == 'CONV_2D'
+a1, ad1 = tensor(op1['inputs'][0]); w1, ws1, c1 = weights_int8(op1['inputs'][1]); o1q = T[op1['outputs'][0]]['quantization']
+w2, ws2, c2 = weights_int8(op2['inputs'][1]); o2q = T[op2['outputs'][0]]['quantization']
+M1 = ad1['quantization'][0] * ws1 / o1q[0]; M2 = o1q[0] * ws2 / o2q[0]
+print(f"block: dw M={M1:.4f} (2^-2 {(2**-2/M1-1)*100:+.0f}%) clipped={c1}; pw M={M2:.4f} (2^-5 {(2**-5/M2-1)*100:+.0f}%) clipped={c2}")
+CH, H, W, CO = 16, 16, 16, 16; OH, OW = H - 2, W - 2; P = OH * OW
+a = np.ascontiguousarray(a1[0][:H, :W, :CH].transpose(2, 0, 1)); wk = np.ascontiguousarray(w1[0][:, :, :CH].transpose(2, 0, 1)); wp = np.ascontiguousarray(w2[:CO, 0, 0, :CH])
+dwo = np.zeros((CH, OH, OW), np.int64)
+for c in range(CH):
+    for oy in range(OH):
+        for ox in range(OW): dwo[c, oy, ox] = (a[c, oy:oy+3, ox:ox+3].astype(np.int64) * wk[c].astype(np.int64)).sum() >> 2
+dwo = np.clip(dwo, 0, 255); s1 = int(dwo.sum()) & 0xFFFF
+x = dwo.transpose(1, 2, 0).reshape(P, CH)                      # channel-last
+accs = (x.astype(np.int64) @ wp.astype(np.int64).T) >> 5; pwo = np.clip(accs, 0, 255); s2 = int(pwo.sum()) & 0xFFFF
+print(f"  block 16x16x16 -> 14x14 -> 16: dw checksum={s1} (zeros {(dwo==0).mean():.0%}, sat {(dwo==255).mean():.1%}), pw checksum={s2} (zeros {(pwo==0).mean():.0%}, sat {(pwo==255).mean():.1%})")
+write_header(f"{out}/block_16x16x16_16.h", "block", [("real_input", "unsigned char", a), ("real_weight", "signed char", wk), ("pw_real_weight", "signed char", wp)],
+             {"REAL_SHIFT": 2, "PW_REAL_SHIFT": 5, "REAL_CHECKSUM": s1, "PW_REAL_CHECKSUM": s2}, f"MobilenetV1 Conv2d_1 depthwise+pointwise block, channels 0..15, 16x16 crop; dw checksum {s1}, pw checksum {s2}")
 # ---------------- depthwise 3x3, op 5 ----------------
 op = ops[5]; assert op['op_name'] == 'DEPTHWISE_CONV_2D'
 act, ad = tensor(op['inputs'][0]); w, ws, wclip = weights_int8(op['inputs'][1]); outq = T[op['outputs'][0]]['quantization']

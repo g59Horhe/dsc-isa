@@ -34,6 +34,12 @@
 #ifndef SHIFT
 #define SHIFT 7
 #endif
+#ifndef DW_OUT_PTR
+#define DW_OUT_PTR(ch) (&output[ch][0][0])   /* block.c redirects this into the pointwise input */
+#endif
+#ifndef OSTRIDE
+#define OSTRIDE 1
+#endif
 
 static act_t input[CH][H][W] __attribute__((aligned(4)));
 static signed char weight[CH][K][K];
@@ -72,7 +78,7 @@ static void dwconv_opt(void) {
         const int w10 = wp[3], w11 = wp[4], w12 = wp[5];
         const int w20 = wp[6], w21 = wp[7], w22 = wp[8];
 
-        signed char *op = &output[c][0][0];
+        out_t *op = DW_OUT_PTR(c);
 
         for (int oy = 0; oy < OH; oy++) {
             /* Three row pointers, advanced by one byte per output pixel. */
@@ -84,13 +90,18 @@ static void dwconv_opt(void) {
                 int acc = r0[0] * w00 + r0[1] * w01 + r0[2] * w02
                         + r1[0] * w10 + r1[1] * w11 + r1[2] * w12
                         + r2[0] * w20 + r2[1] * w21 + r2[2] * w22;
-                *op++ = requant(acc);
+#if OSTRIDE == 1
+                *op++ = requant(acc);            /* unchanged default: the measured baseline */
+#else
+                *op = requant(acc); op += OSTRIDE;
+#endif
                 r0++; r1++; r2++;
             }
         }
     }
 }
 
+#ifndef NO_MAIN
 int main(void) {
     BENCH_PAD();
     init_data();
@@ -106,3 +117,4 @@ int main(void) {
                 sum += output[c][y][x];
     return sum & 0xFFFF;
 }
+#endif

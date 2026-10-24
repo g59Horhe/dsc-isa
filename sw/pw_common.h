@@ -24,9 +24,11 @@
 #define W 8
 #endif
 #define P (H * W)
+#ifndef PW_EXTERNAL_DATA
 static act_t input[P][CI]  __attribute__((aligned(4)));
 static signed char weight[CO][CI] __attribute__((aligned(4)));
 static out_t output[P][CO];
+#endif
 static unsigned int rng_state;
 static int rnd(void) { rng_state = rng_state * 1103515245u + 12345u; return (int)((rng_state >> 16) & 0xFF) - 128; }
 #ifdef REAL_DATA

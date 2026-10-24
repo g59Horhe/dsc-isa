@@ -27,7 +27,7 @@ for shape in $SHAPES; do
    if [ $e = plain ]; then
      m=$(echo "$r" | grep MEASURED)
      for f in cycles:'MEASURED \K[0-9]+' dread:'dread=\K[0-9]+' dwrite:'dwrite=\K[0-9]+' ifetch:'ifetch=\K[0-9]+'; do IFS=: read -r k p <<< "$f"; echo "$SNAME,$name,$k,$(echo "$m" | grep -oP "$p"),$chk" >> $OUT; done
-   else echo "$SNAME,$name,ev$e,$(echo "$r" | grep -oP 'AUX \K[0-9]+'),$chk" >> $OUT; fi
+   else echo "$SNAME,$name,ev$e,$(echo "$r" | grep -oP 'AUX \K[0-9]+' | head -1),$chk" >> $OUT; fi
   done
  done
 done

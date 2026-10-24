@@ -77,7 +77,9 @@ s += '''#if !((CI == 8 || CI == 16))
 #endif
     }
 }
+#ifndef NO_MAIN
 int main(void) { BENCH_PAD(); init_data(); CYC_START(); pwconv_asm(); CYC_STOP(); return checksum(); }
+#endif
 '''
 open('sw/pwconv_asm.c', 'w').write(s)
 
@@ -103,7 +105,9 @@ s += '''#if !((CI == 8 || CI == 16))
 #endif
     }
 }
+#ifndef NO_MAIN
 int main(void) { BENCH_PAD(); init_data(); CYC_START(); pwconv_simd_asm(); CYC_STOP(); return checksum(); }
+#endif
 '''
 open('sw/pwconv_simd_asm.c', 'w').write(s)
 print("wrote sw/pwconv_asm.c and sw/pwconv_simd_asm.c")
