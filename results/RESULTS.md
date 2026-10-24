@@ -16,7 +16,11 @@ survive verification. The retired claims and why are listed at the end.
    `instructions + 2 x taken branches + load-use stalls + split-load bus
    accesses` with R^2 = 0.9998 over 48 runs (6 kernels x 4 shapes x 2 code
    alignments). The residual is under 0.5% at the headline shape and at
-   most 2.2% anywhere.
+   most 2.2% anywhere. The coefficients are fixed from microbenchmarks, not
+   fitted; the mean absolute error is 0.57% over those 48 runs and 0.73%
+   (maximum 6.4%, the alignment effect on one pointwise kernel) over the
+   256 hand-written-kernel runs of all three families
+   (`results/clip_model.py`).
 2. The cv.dotsp.b kernel's cycle speedup equals its instruction-count
    ratio to within 0 to 7% at every shape and against every baseline. The
    win is three MACs per instruction, i.e. instruction count, not operand
@@ -49,10 +53,14 @@ survive verification. The retired claims and why are listed at the end.
    instruction ratio. Four lanes, aligned loads and activation reuse take
    the datapath's own contribution from 1.3x to 2.7x. -O2 to -O3 is worth
    2.5x on that scalar kernel.
-10. On 5x5 depthwise the extension is worth 3.5x: the datapath alone 3.2x,
-   helped by a scalar baseline that cannot hold 25 weights in registers,
-   and split loads are 19 to 20% of the best kernel's cycles, the largest
-   operand-supply share measured. The hand scalar kernel matches -O3.
+10. On 5x5 depthwise the extension (without clip) is worth 3.5x against -O3
+   and 3.0x against the best hand scalar kernel; the datapath alone 2.6x.
+   Split loads are 19 to 20% of the best kernel's cycles, the largest
+   operand-supply share measured. The first hand scalar kernel (row-wise,
+   accumulator row in memory) matched -O3 within 1%; an output-stationary
+   kernel that keeps the accumulator in a register and reloads five weights
+   per kernel row is 17 to 32% faster than both, and is the 5x5 baseline
+   from here on. Matching the compiler did not make the first one strong.
 11. Real MobileNetV1 weights and activations (two layers, cropped to the
    measured shapes) give cycle counts identical to synthetic data through
    the same code path in 95 of 96 runs, and one cycle per output less than
@@ -60,9 +68,15 @@ survive verification. The retired claims and why are listed at the end.
    real outputs clamp to zero; nothing on the measured path depends on it.
 12. With cv.clip replacing the branch-free saturation, the complete Xpulp
    extension is worth 2.5x (3x3), 4.3x (5x5) and 5.4x (1x1) against -O3,
-   0.73 to 1.53 cycles per MAC. Clip alone is worth 1.2 to 1.6x on top of
-   SIMD and hardware loops, more than the loop hardware itself on two of
-   three kernels, for 2.7 kGE.
+   and 2.5x, 3.6x and 5.4x against the best hand scalar kernels, 0.73 to
+   1.53 cycles per MAC. Clip is worth 1.2 to 1.6x added last, on top of
+   SIMD and hardware loops, and 1.1 to 1.4x by Shapley value over the 2^3
+   feature grid against 1.1 to 1.2x for the loop hardware; it beats the loop
+   hardware on all three kernels in every view, for at most 2.7 kGE (the
+   SIMD ALU, an upper bound) against the loop hardware's 4.2 kGE. Against
+   the row-wise 5x5 baseline the loop hardware had been ahead by Shapley
+   value (1.21x vs 1.13x): its apparent value was that baseline's five
+   branches per output.
 13. Behind instruction memory with wait states the core is fetch-bound and
    cycles follow instruction words fetched. Hardware-loop bodies cannot be
    compressed, so hardware loops and post-increment then cost 14 to 16% on
@@ -73,7 +87,8 @@ survive verification. The retired claims and why are listed at the end.
    synthesis) and the extension lengthens the critical path by 12.7%,
    through the ALU result forwarding network into the dot-product operand
    register. Wall-clock speedups are the cycle speedups divided by 1.13:
-   2.2x / 3.8x / 4.8x.
+   2.2x / 3.8x / 4.8x against -O3, 2.2x / 3.2x / 4.8x against the hand
+   baselines.
 15. A whole depthwise-separable block on real data composes exactly from
    its stages (3 cycles off the sum). The layout change between them costs
    21% of the accelerated block and the extension does not touch it; a
@@ -153,6 +168,12 @@ chased.
 | instruction fetches alone | 0.977 |
 | loads alone | 0.929 |
 | data reads alone | 0.746 |
+
+The coefficients are fixed from the microbenchmarks below, not fitted, so
+the R^2 is that of a fixed-form prediction. Mean absolute error 0.57%,
+maximum 2.24%, over the 48 runs; 0.73% and 6.4% over the 256 hand-written
+kernel runs of all three families, with and without clip
+(`results/clip_model.py`).
 
 The 2 cycles per taken branch and 1 cycle per load-use hazard were
 confirmed with microbenchmarks (`sw/ubench_unaligned.c` and a load-use
@@ -374,13 +395,35 @@ because the decoder's constant zeros never cross the module boundary.
 | if_stage | 1,148 | 1,086 | -62 | -5% | -0% |
 | **total** | **47,969** | **72,187** | **24,218** | **50%** | |
 
+Grouped for the paper (`results/area_table.py`), with the rows that the
+named groups leave out collected under "other":
+
+Attribution of the extension's synthesis area, grouped (delta 24,218 GE in the attribution pass; 24,932 GE flat, +2.9% apart):
+
+| group (modules of origin) | delta GE | share of attribution delta |
+|---|---|---|
+| dot-product multiplier | +12,140 | 50% |
+| SIMD ALU (carries clip and all vector ops; upper bound for clip) | +2,688 | 11% |
+| register file, third read port | +2,221 | 9% |
+| hardware-loop registers | +2,088 | 9% |
+| controller + decoder | +2,130 | 9% |
+| ID stage | +1,912 | 8% |
+| other (18 modules: aligner, CSRs, untagged, prefetch, ...) | +1,039 | 4% |
+| **total, attribution pass** | **+24,218** | |
+
+hwloop_regs + controller + decoder = 4,218 GE; with id_stage 6,130 GE. SIMD ALU 2,688 GE = 64% of the first, 44% of the second.
+listed rows (six groups) sum to 23,179; the other 18 modules sum to 1,039 GE: aligner +578, cs_registers +253, untagged +195, prefetch_controller +89, if_stage -62, load_store_unit -14, alu_div -12, ex_stage +4, fifo +4, compressed_decoder +4, ff_one +1, popcnt +0, obi_interface +0, clock_gate +0, sleep_unit +0, prefetch_buffer +0, int_controller +0, core +0
+
 Totals in this pass are 10% above the flat pass because the partition
-blocks cross-origin optimisation in ABC; the delta agrees with the flat
-pass within 2%. Yosys reports undriven-wire warnings after partitioning
+blocks cross-origin optimisation in ABC; the delta, 24,218 GE, is within
+2.9% of the flat pass's 24,932 GE. Yosys reports undriven-wire warnings after partitioning
 (x0 write-enable bit and similar), not investigated further.
 
-Half of the extension is the dot-product multiplier (+12.1 kGE). Hardware
-loops, controller and decoder together are +4.3 kGE, 18%. The register
+Half of the extension is the dot-product multiplier (+12.1 kGE).
+Hardware-loop registers, controller and decoder together are +4.2 kGE,
+17% (+6.1 kGE, 25%, with the ID stage's growth); the SIMD ALU, which
+carries cv.clip and every other vector operation, is +2.7 kGE, 64% of
+that grouping and an upper bound for clip's own cost. The register
 file grows by 2.2 kGE because the third read port is dead logic without
 the extension. The cv.dotsp.b kernel in this study uses the multiplier and
 nothing else from the extension: it gains 1.28 to 1.41x in cycles against
@@ -402,11 +445,16 @@ site, pin placement, timing-driven global placement, DRV repair
 then `repair_timing` against a 10 ns clock. Pre-CTS, pre-route; the
 reset is a false path (it would be a synchronised tree in a real system).
 
-| configuration | placed area (um^2) | GE | utilisation | worst reg-to-reg slack at 10 ns | estimated minimum period | estimated Fmax | path stages |
-|---|---|---|---|---|---|---|---|
-| RV32IMC | 187,770 | 50,024 | 52% | -1.52 ns | 11.5 ns | 87 MHz | 50 |
-| Xpulp | 297,737 | 79,320 | 52% | -2.98 ns | 13.0 ns | 77 MHz | 62 |
-| delta | | +58.6% | | | +12.7% | -11% | |
+| configuration | synthesis GE (flat) | placed GE | worst reg-to-reg slack at 10 ns | estimated minimum period | estimated Fmax | path stages |
+|---|---|---|---|---|---|---|
+| RV32IMC | 43,771 | 50,024 | -1.52 ns | 11.52 ns | 86.8 MHz | 45 |
+| Xpulp | 68,703 | 79,320 | -2.98 ns | 12.98 ns | 77.0 MHz | 57 |
+| delta | +24,932 (+57.0%) | +29,296 (+58.6%) | | +12.7% | -11.3% | |
+
+Generated by `results/area_table.py` from the OpenROAD logs (period = 10 ns
+minus the post-repair worst slack; path stages count combinational cells
+between the launching and capturing flops). Placed area 187,770 and 297,737
+um^2, utilisation 52% in both configurations.
 
 Three things follow.
 
@@ -423,8 +471,9 @@ Three things follow.
   forwarding network has one more source and the operand mux is wider.
   This is a forwarding-path cost, not a multiplier cost.
 - **Wall-clock speedups are the cycle speedups divided by 1.13.** The full
-  extension's 2.5x / 4.3x / 5.4x in cycles become 2.2x / 3.8x / 4.8x in
-  time on this core if the two configurations are each clocked at their
+  extension's 2.5x / 4.3x / 5.4x in cycles against -O3 become 2.2x / 3.8x /
+  4.8x in time on this core (2.5x / 3.6x / 5.4x against the hand baselines
+  become 2.2x / 3.2x / 4.8x) if the two configurations are each clocked at their
   own limit. Every speedup elsewhere in this document is a cycle ratio;
   this is the correction.
 
@@ -592,8 +641,8 @@ unaligned kernel issues 8,136 reads to the aligned kernel's 3,096 at
 8x16x16, so each wait state costs it 5,040 more cycles.
 
 Paired with the area attribution: the dot-product multiplier (+12.1 kGE,
-28% of the base core) buys 1.26 to 1.37x; hardware loops, controller and
-decoder (+4.3 kGE, 10%) buy 1 to 5% on a well-unrolled scalar loop and
+28% of the base core) buys 1.26 to 1.37x; hardware-loop registers, controller and
+decoder (+4.2 kGE, 10%) buy 1 to 5% on a well-unrolled scalar loop and
 21 to 24% on a short SIMD loop; the SIMD ALU (+2.7 kGE) carries cv.clip,
 measured in the saturation section below at 1.2 to 1.6x on top of both.
 The bit-manipulation and other decode paths are unused by every kernel.
@@ -759,6 +808,75 @@ model; no output saturates.
   the scalar kernel it is 1.24 to 1.30x because the row-sweep body is 20.
 - Best case: 1.51 to 1.54 cycles per MAC.
 
+### Output-stationary scalar baseline
+
+The row-wise hand kernel above matched -O3 within 1%, which a reviewer
+rightly read as evidence against a gross deficiency only. The other loop
+order, `sw/dwconv5_os_asm.c`, keeps the accumulator in a register for the
+whole output pixel and reloads the five weights of each kernel row (five
+`lb`) beside the five input bytes: 50 loads, 25 mul, 24 add, requantise,
+store, one taken branch per output, no accumulator traffic and no
+load-use stall. It exists in the same four scalar cells as the other
+hand kernels (RV32IMC / Xpulp control, branch-free / clip) and matches
+every checksum. Generated by `results/dw5_os_model.py` from
+`results/wait0_dw5os_pad{0,1}.csv`:
+
+| shape | kernel | cycles (pad 0) | cycles (pad 1) | cycles/MAC | instructions per output | data reads | data writes | taken branches | load-use stalls | model residual | checksum |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | scalar C, -O3 | 156,762 | 156,570 | 5.44 | 121.3 | 41,904 | 4,376 | 1,343 | 14,088 | +0.0% | 64862 |
+|  | row-wise asm, RV32IMC ctrl | 162,501 | 157,421 | 5.47 | 119.7 | 15,840 | 6,912 | 6,719 | 5,760 | +0.2% | 64862 |
+|  | row-wise asm, Xpulp ctrl | 123,431 | 123,615 | 4.29 | 101.2 | 15,840 | 6,912 | 383 | 5,760 | +0.2% | 64862 |
+|  | output-stationary asm, RV32IMC ctrl | 131,675 | 132,819 | 4.57 | 112.3 | 57,600 | 1,152 | 1,151 | 0 | -0.0% | 64862 |
+|  | output-stationary asm, Xpulp ctrl | 127,454 | 127,358 | 4.42 | 110.4 | 57,600 | 1,152 | 95 | 0 | +0.1% | 64862 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 123,611 | 124,755 | 4.29 | 105.3 | 57,600 | 1,152 | 1,151 | 0 | -0.0% | 64862 |
+|  | output-stationary asm, Xpulp ctrl, clip | 119,390 | 119,294 | 4.14 | 103.4 | 57,600 | 1,152 | 95 | 0 | +0.1% | 64862 |
+|  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 36,499 | 36,396 | 1.26 | 24.0 | 20,480 | 1,184 | 95 | 0 | -0.0% | 64862 |
+| 16x16x16 | scalar C, -O3 | 313,160 | 313,544 | 5.44 | 121.4 | 83,808 | 8,752 | 2,687 | 28,192 | +0.0% | 64854 |
+|  | row-wise asm, RV32IMC ctrl | 314,838 | 324,998 | 5.47 | 119.7 | 31,680 | 13,824 | 13,439 | 11,520 | +0.2% | 64854 |
+|  | row-wise asm, Xpulp ctrl | 247,224 | 246,856 | 4.29 | 101.3 | 31,680 | 13,824 | 767 | 11,520 | +0.2% | 64854 |
+|  | output-stationary asm, RV32IMC ctrl | 265,618 | 263,330 | 4.57 | 112.3 | 115,200 | 2,304 | 2,303 | 0 | -0.0% | 64854 |
+|  | output-stationary asm, Xpulp ctrl | 254,691 | 254,883 | 4.42 | 110.5 | 115,200 | 2,304 | 191 | 0 | +0.1% | 64854 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 249,490 | 247,202 | 4.29 | 105.3 | 115,200 | 2,304 | 2,303 | 0 | -0.0% | 64854 |
+|  | output-stationary asm, Xpulp ctrl, clip | 238,563 | 238,755 | 4.14 | 103.5 | 115,200 | 2,304 | 191 | 0 | +0.1% | 64854 |
+|  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 72,756 | 72,933 | 1.26 | 23.9 | 40,944 | 2,352 | 191 | 0 | +0.0% | 64854 |
+| 8x32x32 | scalar C, -O3 | 831,750 | 831,558 | 5.30 | 118.5 | 219,056 | 20,376 | 6,463 | 75,656 | +0.0% | 62512 |
+|  | row-wise asm, RV32IMC ctrl | 835,159 | 853,759 | 5.33 | 115.3 | 72,816 | 37,641 | 37,183 | 31,360 | +0.8% | 62512 |
+|  | row-wise asm, Xpulp ctrl | 642,959 | 643,399 | 4.10 | 97.2 | 72,800 | 37,632 | 895 | 31,360 | +0.0% | 62512 |
+|  | output-stationary asm, RV32IMC ctrl | 715,741 | 722,005 | 4.56 | 112.1 | 313,600 | 6,272 | 6,271 | 0 | +0.0% | 62512 |
+|  | output-stationary asm, Xpulp ctrl | 691,551 | 691,327 | 4.41 | 110.2 | 313,600 | 6,272 | 223 | 0 | -0.0% | 62512 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 671,837 | 678,101 | 4.28 | 105.1 | 313,600 | 6,272 | 6,271 | 0 | +0.0% | 62512 |
+|  | output-stationary asm, Xpulp ctrl, clip | 647,647 | 647,423 | 4.13 | 103.2 | 313,600 | 6,272 | 223 | 0 | -0.0% | 62512 |
+|  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 193,688 | 193,471 | 1.23 | 23.3 | 110,217 | 6,305 | 223 | 0 | +0.0% | 62512 |
+| 32x8x8 | scalar C, -O3 | 77,289 | 77,961 | 6.04 | 136.5 | 21,440 | 3,808 | 1,279 | 4,768 | +0.1% | 65080 |
+|  | row-wise asm, RV32IMC ctrl | 79,557 | 77,925 | 6.09 | 135.5 | 10,880 | 3,072 | 2,815 | 2,560 | +0.5% | 65080 |
+|  | row-wise asm, Xpulp ctrl | 62,984 | 63,208 | 4.92 | 116.0 | 10,881 | 3,072 | 511 | 2,560 | +0.0% | 65080 |
+|  | output-stationary asm, RV32IMC ctrl | 59,206 | 59,494 | 4.63 | 113.5 | 25,600 | 512 | 511 | 0 | +0.2% | 65080 |
+|  | output-stationary asm, Xpulp ctrl | 57,447 | 57,319 | 4.48 | 111.5 | 25,600 | 512 | 127 | 0 | -0.2% | 65080 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 55,622 | 55,910 | 4.35 | 106.5 | 25,600 | 512 | 511 | 0 | +0.2% | 65080 |
+|  | output-stationary asm, Xpulp ctrl, clip | 53,863 | 53,735 | 4.20 | 104.5 | 25,600 | 512 | 127 | 0 | -0.2% | 65080 |
+|  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 19,013 | 18,854 | 1.47 | 29.1 | 9,985 | 640 | 127 | 0 | +0.0% | 65080 |
+
+| shape | output-stationary vs row-wise | vs -O3 | full Xpulp vs row-wise | vs output-stationary | vs -O3 | instr ratio vs output-stationary | control alone (output-stationary) | clip alone (output-stationary) | datapath alone vs output-stationary |
+|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | 1.20x | 1.19x | 4.33x | 3.62x | 4.30x | 4.69 | 1.03x | 1.07x | 2.64x |
+| 16x16x16 | 1.20x | 1.19x | 4.33x | 3.62x | 4.30x | 4.70 | 1.03x | 1.07x | 2.64x |
+| 8x32x32 | 1.17x | 1.16x | 4.32x | 3.70x | 4.30x | 4.82 | 1.04x | 1.07x | 2.67x |
+| 32x8x8 | 1.32x | 1.31x | 4.13x | 3.14x | 4.10x | 3.94 | 1.03x | 1.06x | 2.39x |
+
+8x16x16: row-wise 157,421 cycles = 137,935 instructions + 13,438 taken-branch cycles + 5,760 load-use stalls (6,912 stores); output-stationary 131,675 = 129,375 + 2,302 + 0 (1,152 stores, 57,600 loads = 50 per output). Instructions per output 119.7 vs 112.3; cycles per output 136.7 vs 114.3.
+checksum mismatches against the row-wise kernel: 0; max |model residual| over the output-stationary runs: 0.92%
+
+The output-stationary kernel is 17 to 32% faster than the row-wise one and
+16 to 31% faster than -O3, with fewer instructions per output (112 against
+120) and, more to the point, 2,302 taken-branch cycles and no load-use
+stalls where the row-wise kernel paid 13,438 and 5,760 for its accumulator
+traffic. Two loads per MAC is the price of not holding 25 weights, and it
+is cheaper than five branches per output on this core. It is the 5x5
+scalar baseline in the cross-kernel summary, the clip section and the
+paper; the extension's speedup over the best scalar code on 5x5 is 3.6x,
+not 4.3x (which stands against -O3). The row-wise kernel's rows stay in
+the tables above for the record.
+
 ## Cross-kernel summary
 
 Headline shapes, better alignment, zero wait states:
@@ -766,16 +884,21 @@ Headline shapes, better alignment, zero wait states:
 | kernel | MACs | lanes used | scalar -O3 c/MAC | hand scalar c/MAC | SIMD + hw loop c/MAC | full Xpulp (+ clip) c/MAC | full Xpulp vs -O3 | vs hand scalar | instr ratio vs hand | datapath only | control on top of SIMD | clip on top of that | SIMD loads/MAC | split-load share of full |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 3x3 depthwise, 8x16x16 | 14,112 | 3 of 4 | 3.86 | 3.80 | 2.30 | 1.53 | 2.53x | 2.49x | 2.91 | 1.33x | 1.24x | 1.51x | 0.34 | 15.6% |
-| 5x5 depthwise, 8x16x16 | 28,800 | 5 of 8 | 5.44 | 5.47 | 1.54 | 1.26 | 4.30x | 4.33x | 5.00 | 3.16x | 1.12x | 1.22x | 0.41 | 23.7% |
+| 5x5 depthwise, 8x16x16 | 28,800 | 5 of 8 | 5.44 | 4.57 | 1.54 | 1.26 | 4.30x | 3.62x | 4.69 | 2.64x | 1.12x | 1.22x | 0.41 | 23.7% |
 | 1x1 pointwise, 16x16x8x8 | 16,384 | 4 of 4 | 3.96 | 3.96 | 1.17 | 0.73 | 5.39x | 5.39x | 5.24 | 2.69x | 1.26x | 1.60x | 0.27 | 0.0% |
 
 Three kernels, one core, one 57% extension. The same silicon returns 2.5x
 on 3x3 depthwise, 4.3x on 5x5 depthwise and 5.4x on 1x1 pointwise against
 -O3 C once all of it is used (dot product, hardware loop, post-increment,
-clip), and in every case the cycle speedup is the instruction-count ratio
-minus the split-load cost. The variation comes from lane utilisation, from
+clip), and 2.5x, 3.6x and 5.4x against the best hand scalar kernels. In
+every case the cycle model applied to both kernels reproduces the speedup
+(2.47 / 3.62 / 5.36 predicted against 2.49 / 3.62 / 5.39 measured); the gap
+to the bare instruction ratio is the split-load cost on the accelerated
+side and the baseline's own taken branches, 2.2%, 1.7% and 3.2% of its
+cycles, on the other. The variation comes from lane utilisation, from
 the number of MACs each load feeds, and from whether the scalar baseline
-fits its working set in the register file. A single speedup number for an
+fits its working set in the register file (the 5x5 scalar kernel pays two
+loads per MAC against 0.5 for 3x3). A single speedup number for an
 ISA extension on "the depthwise-separable block" would be wrong by a factor
 of two depending on which half of the block it was measured on.
 
@@ -794,7 +917,8 @@ passes the loop check; all 240 clip runs match their checksums, synthetic
 and real.
 
 Clip is an Xpulp feature like the others, so it is a third component in the
-decomposition. Applied alone to the scalar kernel it measures saturation
+decomposition. The 5x5 scalar cells are the output-stationary kernel
+(above); the row-wise kernel's clip runs are in `wait0_clip_dw5_pad{0,1}.csv`. Applied alone to the scalar kernel it measures saturation
 cost; applied on top of SIMD and hardware loops it completes the extension.
 Better alignment per kernel, zero wait states, cycles:
 
@@ -807,6 +931,8 @@ Better alignment per kernel, zero wait states, cycles:
 | 8x32x32 | 249,063 | 230,366 | 179,966 | 220,055 | 169,655 | 182,423 | 132,023 | 147,144 | 96,744 | 2.57x | 2.38x | 2.80 | 7.00 | -0.2% |
 | 32x8x8 | 38,536 | 38,754 | 30,690 | 38,370 | 30,306 | 30,403 | 22,339 | 25,220 | 17,317 | 2.23x | 2.24x | 2.63 | 6.86 | +1.1% |
 
+3x3 depthwise, 8x16x16, speedup over scalar asm (RV32IMC control, branch-free saturation); order-dependent values:
+
 | component set | speedup over scalar asm |
 |---|---|
 | datapath (cv.dotsp.b) alone | 1.33x |
@@ -814,27 +940,53 @@ Better alignment per kernel, zero wait states, cycles:
 | clip alone (scalar) | 1.26x |
 | SIMD + control | 1.65x |
 | SIMD + clip | 1.83x |
-| SIMD + control + clip (full Xpulp) | 2.49x   = cycles/MAC 1.53 |
-| clip on top of SIMD + control | 1.51x |
+| control + clip (scalar) | 1.30x |
+| SIMD + control + clip (full Xpulp) | 2.49x |
+| cycles per MAC, full Xpulp | 1.53 |
+
+3x3 depthwise, 8x16x16, the three features added first (to scalar asm), added last (on top of the other two), and the Shapley value over all 3! orders (product = full speedup):
+
+| feature | added first | added last | Shapley |
+|---|---|---|---|
+| datapath | 1.33x | 1.92x | 1.58x |
+| control | 1.03x | 1.36x | 1.16x |
+| clip | 1.26x | 1.51x | 1.36x |
+| product | | | 2.49x (measured 2.49x) |
+
+3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.91; instruction ratio with the split-load cost on the accelerated side only 2.45; cycle model applied to both sides 2.47; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 240 residual); full-Xpulp split-load share 15.6%; activation words loaded 4,704 = 3.00 MACs per activation word (loads retired 4,776)
 
 ### 5x5 depthwise
 
 | shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 8x16x16 | 156,570 | 157,421 | 149,357 | 123,431 | 115,367 | 49,828 | 41,764 | 44,460 | 36,396 | 4.30x | 4.33x | 5.00 | 7.00 | -0.0% |
-| 16x16x16 | 313,160 | 314,838 | 298,710 | 246,856 | 230,728 | 99,604 | 83,476 | 88,884 | 72,756 | 4.30x | 4.33x | 5.01 | 7.00 | +0.0% |
-| 8x32x32 | 831,558 | 835,159 | 791,255 | 642,959 | 599,055 | 267,815 | 223,911 | 237,375 | 193,471 | 4.30x | 4.32x | 4.95 | 7.00 | +0.0% |
-| 32x8x8 | 77,289 | 77,925 | 74,341 | 62,984 | 59,400 | 24,772 | 21,188 | 22,438 | 18,854 | 4.10x | 4.13x | 4.70 | 7.00 | +0.0% |
+| 8x16x16 | 156,570 | 131,675 | 123,611 | 127,358 | 119,294 | 49,828 | 41,764 | 44,460 | 36,396 | 4.30x | 3.62x | 4.69 | 7.00 | -0.0% |
+| 16x16x16 | 313,160 | 263,330 | 247,202 | 254,691 | 238,563 | 99,604 | 83,476 | 88,884 | 72,756 | 4.30x | 3.62x | 4.70 | 7.00 | +0.0% |
+| 8x32x32 | 831,558 | 715,741 | 671,837 | 691,327 | 647,423 | 267,815 | 223,911 | 237,375 | 193,471 | 4.30x | 3.70x | 4.82 | 7.00 | +0.0% |
+| 32x8x8 | 77,289 | 59,206 | 55,622 | 57,319 | 53,735 | 24,772 | 21,188 | 22,438 | 18,854 | 4.10x | 3.14x | 3.94 | 7.00 | +0.0% |
+
+5x5 depthwise, 8x16x16, speedup over scalar asm (RV32IMC control, branch-free saturation); order-dependent values:
 
 | component set | speedup over scalar asm |
 |---|---|
-| datapath (cv.dotsp.b) alone | 3.16x |
-| control alone (scalar) | 1.28x |
-| clip alone (scalar) | 1.05x |
-| SIMD + control | 3.54x |
-| SIMD + clip | 3.77x |
-| SIMD + control + clip (full Xpulp) | 4.33x   = cycles/MAC 1.26 |
-| clip on top of SIMD + control | 1.22x |
+| datapath (cv.dotsp.b) alone | 2.64x |
+| control alone (scalar) | 1.03x |
+| clip alone (scalar) | 1.07x |
+| SIMD + control | 2.96x |
+| SIMD + clip | 3.15x |
+| control + clip (scalar) | 1.10x |
+| SIMD + control + clip (full Xpulp) | 3.62x |
+| cycles per MAC, full Xpulp | 1.26 |
+
+5x5 depthwise, 8x16x16, the three features added first (to scalar asm), added last (on top of the other two), and the Shapley value over all 3! orders (product = full speedup):
+
+| feature | added first | added last | Shapley |
+|---|---|---|---|
+| datapath | 2.64x | 3.28x | 2.93x |
+| control | 1.03x | 1.15x | 1.09x |
+| clip | 1.07x | 1.22x | 1.14x |
+| product | | | 3.62x (measured 3.62x) |
+
+5x5 depthwise, 8x16x16: measured speedup 3.62x; instruction ratio 4.69; instruction ratio with the split-load cost on the accelerated side only 3.57; cycle model applied to both sides 3.62; baseline non-instruction share 1.7% (2,302 taken-branch cycles, 0 load-use stalls, 0 split accesses, -2 residual); full-Xpulp split-load share 23.7%; activation words loaded 11,520 = 2.50 MACs per activation word (loads retired 11,840)
 
 ### 1x1 pointwise
 
@@ -845,6 +997,8 @@ Better alignment per kernel, zero wait states, cycles:
 | 16x32x8x8 | 128,323 | 128,323 | 113,987 | 118,275 | 103,939 | 47,685 | 33,349 | 37,636 | 23,300 | 5.51x | 5.51x | 5.36 | 7.00 | -0.0% |
 | 16x16x16x16 | 268,292 | 259,592 | 230,920 | 239,880 | 211,208 | 96,519 | 67,847 | 76,807 | 48,135 | 5.57x | 5.39x | 5.25 | 7.00 | -0.5% |
 
+1x1 pointwise, 16x16x8x8, speedup over scalar asm (RV32IMC control, branch-free saturation); order-dependent values:
+
 | component set | speedup over scalar asm |
 |---|---|
 | datapath (cv.dotsp.b) alone | 2.69x |
@@ -852,8 +1006,20 @@ Better alignment per kernel, zero wait states, cycles:
 | clip alone (scalar) | 1.12x |
 | SIMD + control | 3.38x |
 | SIMD + clip | 3.82x |
-| SIMD + control + clip (full Xpulp) | 5.39x   = cycles/MAC 0.73 |
-| clip on top of SIMD + control | 1.60x |
+| control + clip (scalar) | 1.23x |
+| SIMD + control + clip (full Xpulp) | 5.39x |
+| cycles per MAC, full Xpulp | 0.73 |
+
+1x1 pointwise, 16x16x8x8, the three features added first (to scalar asm), added last (on top of the other two), and the Shapley value over all 3! orders (product = full speedup):
+
+| feature | added first | added last | Shapley |
+|---|---|---|---|
+| datapath | 2.69x | 4.38x | 3.37x |
+| control | 1.08x | 1.41x | 1.21x |
+| clip | 1.12x | 1.60x | 1.32x |
+| product | | | 5.39x (measured 5.39x) |
+
+1x1 pointwise, 16x16x8x8: measured speedup 5.39x; instruction ratio 5.24; instruction ratio with the split-load cost on the accelerated side only 5.24; cycle model applied to both sides 5.36; baseline non-instruction share 3.2% (2,046 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 0.0%; activation words loaded 4,096 = 4.00 MACs per activation word (loads retired 4,352)
 
 Clip saves exactly 7.00 cycles per output in every cell (6.86 at one 3x3
 shape, where the removed instructions changed a branch target's alignment).
@@ -862,16 +1028,28 @@ The model residual on the full-Xpulp kernels is under 1.1%.
 What changes:
 
 - **The full extension is worth 2.5x, 4.3x and 5.4x** against -O3 on the
-  three kernels, against 1.7x, 3.5x and 3.4x without clip. The instruction
-  ratios are 2.9, 5.0 and 5.2; the gap to the cycle ratios is split loads,
-  now 16% and 24% of the depthwise kernels' cycles because everything else
-  got cheaper.
-- **Clip is worth more than hardware loops on two of three kernels.** On
-  top of SIMD and control it is 1.51x (3x3), 1.22x (5x5) and 1.60x (1x1);
-  hardware loops and post-increment on top of SIMD were 1.24x, 1.12x and
-  1.26x. The two are comparable in area: clip lives in the SIMD ALU
-  (+2.7 kGE), the loop hardware in hwloop_regs, controller and decoder
-  (+4.3 kGE).
+  three kernels, against 1.7x, 3.5x and 3.4x without clip, and 2.5x, 3.6x
+  and 5.4x against the best hand scalar kernels. The instruction ratios over
+  the hand kernels are 2.9, 4.7 and 5.2; the gap to the cycle ratios is split loads on the
+  accelerated side, now 16% and 24% of the depthwise kernels' cycles because
+  everything else got cheaper, and the baseline's own stalls on the other
+  (2.2%, 1.7% and 3.2% of its cycles); the cycle model applied to both
+  kernels gives 2.47, 3.62 and 5.36.
+- **Clip is worth more than hardware loops on every kernel, in every
+  view.** The value of a feature depends on when it is added. Added last,
+  on top of the other two, clip is 1.51x (3x3), 1.22x (5x5) and 1.60x (1x1)
+  against control's 1.36x, 1.15x and 1.41x; added first, to the scalar
+  kernel, clip is 1.26x, 1.07x and 1.12x against control's 1.03x, 1.03x and
+  1.08x. The Shapley value over all six orders (exact, since all eight cells
+  of the grid are measured) is clip 1.36x, 1.14x and 1.32x against control
+  1.16x, 1.09x and 1.21x. Against the row-wise 5x5 kernel, control had been
+  worth 1.28x added first and ahead of clip by Shapley value (1.21x vs
+  1.13x): that kernel took five taken branches per output, and the loop
+  hardware's apparent value was the baseline's branches. The area
+  comparison is a bound: clip lives in the SIMD ALU (+2.7 kGE, which
+  also carries every other vector operation, so an upper bound), the loop
+  hardware in hwloop_regs, controller and decoder (+4.2 kGE; +6.1 kGE with
+  the ID stage), so clip costs at most 64% of the loop hardware.
 - **The best kernel is now below one cycle per MAC**: 0.73 on pointwise,
   1.26 on 5x5, 1.53 on 3x3.
 - The earlier sections' "fastest kernel" and "split-load share" numbers
@@ -929,13 +1107,20 @@ intermediate tensors preserved, and exports:
   cropped to the first CI = 16 input channels (the hand kernels are
   generated for CI in 8, 16), so each output is a partial sum.
 
-The model is uint8 asymmetric. Activations are post-ReLU6 with zero point
-0 and are used as unsigned bytes; weights have a per-layer zero point and
-become int8 by subtracting it (one weight per layer falls outside int8 and
-is clipped). The real requantisation multiplier is within 3% of a power of
+The model is mobilenet_v1_1.0_224_quant: width multiplier 1.0, uint8
+asymmetric. The measured shapes are crops of the model's tensors (the first
+CH or CI channels, a top-left spatial window), not a smaller model.
+Activations are post-ReLU6 with zero point 0 and are used as unsigned
+bytes; weights have a per-layer zero point and become int8 by subtracting
+it exactly (one weight per layer falls outside int8 and is clipped), so
+the kernels' inputs are the model's own tensors. The real requantisation multiplier is within 3% of a power of
 two for both layers (0.0605 vs 2^-4, 0.0304 vs 2^-5), so the kernels keep a
 shift. Output = clamp(acc >> shift, 0, 255), which is ReLU6 in the
-quantised domain. Rounding is truncation.
+quantised domain. Rounding is truncation. Because the multiplier is a
+power of two and the rounding truncates, the outputs are not bit-exact
+model outputs; the checksums are verified against the generator's model of
+the same arithmetic, and cycle counts do not depend on it (next
+subsection).
 
 This needs a second arithmetic mode, `-DREAL_DATA=1`: unsigned activation
 loads, cv.dotusp.b / cv.sdotusp.b (unsigned x signed) in place of
@@ -1164,11 +1349,13 @@ instruction-side wait, loads, stores, branches, taken branches, compressed)
 and were validated the same way, loads retired against bus reads and stores
 against bus writes.
 
-One harness detail cost an afternoon and belongs here: ibex_top gates the
-core clock until fetch is enabled, so a reset held low from time zero is
-never sampled by the core's flops. The privilege level then keeps its
+One harness detail cost an afternoon and belongs here as a time-zero
+simulation artefact, not as core behaviour: ibex_top gates the core clock
+until fetch is enabled, so a reset held low from time zero produces neither
+a falling reset edge nor a clock edge under the gate, and the
+asynchronous-reset flops never evaluate. The privilege level then keeps its
 power-on value, user mode, and every machine-mode CSR read traps. The
-harness drives reset as a falling edge.
+harness drives reset as a falling edge, which is what silicon always sees.
 
 ### Cycles, same binaries
 
@@ -1323,6 +1510,15 @@ that remains the limit of the study.
   possible on this core.
 - Flat memory with no bus contention between ports. Instruction memory
   is zero-wait or a direct-mapped I-cache model; no data cache.
+- Energy and power are not measured. A Verilator activity trace on the
+  placed netlist with OpenROAD's power report would give an estimate.
+- The 5x5 scalar baseline is the better of two hand-written loop orders
+  (row-wise with the accumulator row in memory, and output-stationary with
+  weights reloaded); other orders, such as keeping two weight rows
+  resident, were not tried. The row-wise kernel matched -O3 within 1% and
+  still lost 17 to 32% to the other order, so "matches the compiler" is
+  not evidence of a strong baseline. The output-stationary kernel has not
+  been run on Ibex.
 - The compiler-generated SIMD kernels in Tables 1 and 2 carry load-use
   stalls a hand schedule avoids; the decomposition section has the
   hand-written counterparts.
@@ -1349,6 +1545,8 @@ that remains the limit of the study.
       ./collect_wait0.sh ../results/pw_pad0.csv "1 2 5 9" "-DCODE_PAD=0"       # pointwise
     SHAPES="8:16:16 16:16:16 8:32:32 32:8:8" KERNELS="dw5_C_O3|sw/dwconv5.c|-O3 ..." \
       ./collect_wait0.sh ../results/dw5_pad0.csv "1 2 5 9" "-DCODE_PAD=0"      # 5x5
+    KERNELS="dw5_os_asm_rv|sw/dwconv5_os_asm.c|-O2 dw5_os_asm_xp|sw/dwconv5_os_asm.c|-O2+-DXPULP_CTRL=1 ..." \
+      ./collect_wait0.sh results/wait0_dw5os_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # 5x5 output-stationary baseline
     REAL_HDR_PREFIX=real/dw3 KERNELS="scalar_asm_xp|sw/dwconv_asm.c|-O2+-DXPULP_CTRL=1 ..." \
       ./collect_wait0.sh ../results/real_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"  # real data
     KERNELS="simd_unal_asm_xp_clip|sw/dwconv_simd_asm.c|-O2+-DXPULP_CTRL=1+-DREQUANT_CLIP=1 ..." \
@@ -1361,8 +1559,10 @@ that remains the limit of the study.
       ./collect_wait0.sh ../results/ibex2_dw3_pad0.csv "1 2 4 5 6 8 9 10" "-DCODE_PAD=0 -DIBEX_COUNTERS"  # second core
     cd ../syn/ibex && make all                                                     # Ibex area
     cd ../results && python3 wait0_decomp_model.py && python3 wait0_pw_model.py \
-      && python3 wait0_dw5_model.py && python3 summary_kernels.py && python3 real_data_model.py \
-      && python3 clip_model.py && python3 block_model.py && ~/tools/venv/bin/python ibex_model.py
+      && python3 wait0_dw5_model.py && python3 dw5_os_model.py && python3 summary_kernels.py && python3 real_data_model.py \
+      && python3 clip_model.py --latex ../paper/tab_decomp.tex && python3 area_table.py --latex ../paper/tab_area.tex \
+      && python3 block_model.py && ~/tools/venv/bin/python ibex_model.py
+    cd ../paper && pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper   # tables are \input from the generated fragments
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
 (needs numpy, Pillow, ai-edge-litert; the headers are committed, so this is
