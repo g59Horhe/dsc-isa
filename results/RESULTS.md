@@ -506,8 +506,10 @@ addressing are measured separately in the decomposition section below.
 
 Static timing on the raw synthesised netlist is not meaningful: the
 netlist has no buffer trees, so a minimum-size gate driving a few hundred
-pins shows a 15 ns slew, and both configurations report 22 to 29 ns
-register-to-register paths dominated by such nets (`syn/sta.tcl`, kept as
+pins shows a 15 ns slew, and the four mapped netlists report 22 to 30 ns
+register-to-register paths dominated by such nets (22.0 and 29.1 ns for
+the area-mapped RV32IMC and Xpulp netlists, 26.7 and 29.9 ns for the
+delay-mapped ones) (`syn/sta.tcl`, kept as
 the negative example). The numbers below come from OpenROAD
 (`syn/place.tcl`): floorplan at 45% target utilisation on the sky130hd
 site, pin placement, timing-driven global placement, DRV repair

@@ -28,6 +28,7 @@ committed files; the `compare` stage diffs them. What should come out:
 | synthesis totals, flat (`syn/build/{base,pulp}/area.txt`) | identical: 43,771 and 68,703 GE |
 | per-module attribution (`syn/build/attrib_area.txt`) | delta within about 20 GE of 24,218 (ABC varies between checkouts; no derived figure moves) |
 | placement (`syn/build/place-*/openroad.txt`) | identical: slack $-1.521$ / $-2.984$ ns after repair, 187,770 / 297,737 um^2 |
+| unplaced-netlist STA (`syn/build/net-*/sta.txt`) | register-to-register arrival 22.0 / 29.1 ns (area-mapped) and 26.7 / 29.9 ns (delay-mapped): not meaningful, kept as the negative example |
 
 Two quick checks before anything else (`./reproduce.sh sims check`):
 

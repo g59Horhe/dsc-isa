@@ -85,7 +85,7 @@ stage_sweeps()  {
   { for iw in 0 1 2 3; do echo "### IWAIT=$iw"; WAITS=0 IWAIT=$iw SHAPES="8:16:16 32:8:8" KERNELS="$S_IF" harness/sweep.sh; WAITS=0 IWAIT=$iw SHAPES="16:16:8:8" KERNELS="$S_IF_PW" harness/sweep.sh; done; } > $OUT/ifetch_latency_sweep.txt
 }
 stage_align()   { log align; (cd results && python3 align_term.py > ../$OUT/align_term.txt) && cp results/wait0_align.csv $OUT/; }
-stage_syn()     { log syn; make -C syn all attrib && make -C syn/ibex all; }
+stage_syn()     { log syn; make -C syn all attrib timing && make -C syn/ibex all; }   # timing = unplaced-netlist OpenSTA, kept as the negative example
 stage_place()   { log place; make -C syn net-base-area net-pulp-area && make -C syn place-base place-pulp; }
 stage_models()  {
   log models
