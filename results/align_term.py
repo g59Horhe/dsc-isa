@@ -100,10 +100,13 @@ for base, shapes, kernels in SETS:
                         if flagged(t, ln, r): ba[r] += n
                 rows.append(dict(base=base, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
 def err(rs, col): return [abs(r['cycles'] - r['pred'] - r[col]) / r['cycles'] for r in rs]
-print("rule | mean |resid| | max | runs over 1% (all 304 runs)")
+# the equalised set's scalar_asm is the same source and flags as the decomposition set's scalar_asm_rv (identical binaries and
+# cycle counts), so the union has 8 fewer distinct runs than the sum
+distinct = [r for r in rows if not (r['base'] == 'wait0_eqrequant' and r['kernel'] == 'scalar_asm')]
+print(f"rule | mean |resid| | max | runs over 1% ({len(distinct)} distinct runs); sw/ubench_align.c confirms rule A: +1 cycle per iteration only with a 32-bit instruction at a 2 mod 4 target")
 for r in RULES:
-    e = err(rows, f'ba_{r.lower()}'); print(f"{r} | {sum(e)/len(e):.2%} | {max(e):.2%} | {sum(x > 0.01 for x in e)}")
-BEST = min(RULES, key=lambda r: sum(err(rows, f'ba_{r.lower()}')))
+    e = err(distinct, f'ba_{r.lower()}'); print(f"{r} | {sum(e)/len(e):.2%} | {max(e):.2%} | {sum(x > 0.01 for x in e)}")
+BEST = min(RULES, key=lambda r: sum(err(distinct, f'ba_{r.lower()}')))
 for r in rows: r['ba'] = r[f'ba_{BEST.lower()}']
 print(f"rule {BEST} written as ba")
 with open('wait0_align.csv', 'w') as f:
@@ -114,7 +117,7 @@ def stats(rs, label):
     print(f"{label}: {len(rs)} runs; four-term model mean |resid| {sum(old)/len(old):.2%} max {max(old):.2%}; with the alignment term mean {sum(new)/len(new):.2%} max {max(new):.2%}; "
           f"runs over 1%: {sum(x > 0.01 for x in old)} -> {sum(x > 0.01 for x in new)}; runs with Ba > 0: {sum(r['ba'] > 0 for r in rs)}")
 hw = [r for r in rows if r['base'] != 'wait0_eqrequant']; eq = [r for r in rows if r['base'] == 'wait0_eqrequant']
-stats(eq, 'equalised 3x3 set (6 kernels x 4 shapes x 2 alignments)'); stats(hw, 'hand-written runs (three families, with and without clip)'); stats(rows, 'all')
+stats(eq, 'equalised 3x3 set (6 kernels x 4 shapes x 2 alignments)'); stats(hw, 'hand-written runs (three families, with and without clip)'); stats(distinct, 'all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once)')
 print("\n| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | residual, four terms | residual, five terms |\n|---|---|---|---|---|---|---|---|---|---|")
 for r in sorted(rows, key=lambda r: -abs(r['cycles'] - r['pred']) / r['cycles'])[:12]:
     print(f"| {r['kernel']} {r['shape']} pad{r['pad']} | {r['cycles']:,} | {r['instr']:,} | {2*r['brtaken']:,} | {r['ldstall']:,} | {r['split']:,} | {r['redirects']:,} | {r['ba']:,} | {(r['cycles']-r['pred'])/r['cycles']:+.2%} | {(r['cycles']-r['pred']-r['ba'])/r['cycles']:+.2%} |")
