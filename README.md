@@ -160,3 +160,14 @@ and collected in `sw/xpulp.h`. Hardware loops need `.balign 4` before
   Sets for Edge Platforms*, IEEE TC 73(5), 2024 (RI5CY-Accel, evaluated on an FPGA).
 - Lu et al., *Design and FPGA Evaluation of a Multi-Operand Extension
   Mechanism for Tightly Coupled RISC-V Processors*, Electronics 15(19), 2026.
+
+## Licence
+
+The code in this repository (harness, kernels, flows, scripts) is licensed
+under the Apache License 2.0 (see `LICENSE`). The measured data and the
+results document (`results/*.csv`, `results/*.txt`, `syn/build`,
+`results/RESULTS.md`) are licensed under CC BY 4.0: reuse them with
+attribution to this repository. CV32E40P and Ibex in `third_party/` carry
+their own licences.
+
+Copyright 2026 George Jefferson Dessa.
