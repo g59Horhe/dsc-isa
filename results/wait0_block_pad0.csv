@@ -1,11 +1,11 @@
 shape,kernel,event,value,chk
-16x16x16,blk_C_O3,cycles,339691,596
-16x16x16,blk_C_O3,dread,70026,596
-16x16x16,blk_C_O3,dwrite,9938,596
-16x16x16,blk_C_O3,ifetch,279119,596
-16x16x16,blk_C_O3,ev1,310120,596
+16x16x16,blk_C_O3,cycles,337690,596
+16x16x16,blk_C_O3,dread,68233,596
+16x16x16,blk_C_O3,dwrite,9697,596
+16x16x16,blk_C_O3,ifetch,278686,596
+16x16x16,blk_C_O3,ev1,308120,596
 16x16x16,blk_C_O3,ev2,6272,596
-16x16x16,blk_C_O3,ev5,70027,596
+16x16x16,blk_C_O3,ev5,68234,596
 16x16x16,blk_C_O3,ev9,7837,596
 16x16x16,blk_C_O3_fused,cycles,311611,596
 16x16x16,blk_C_O3_fused,dread,66906,596
