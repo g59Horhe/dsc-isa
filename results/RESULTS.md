@@ -1603,40 +1603,17 @@ that remains the limit of the study.
 
 ## Reproducing
 
-    cd harness && make all
-    ./collect_wait0.sh ../results/pad0.csv "1 2 5 9" "-DCODE_PAD=0"
-    ./collect_wait0.sh ../results/pad1.csv "1 2 5 9" "-DCODE_PAD=1"
-    cd ../results && python3 wait0_eqrequant_model.py
-    cd ../harness && ./sweep.sh        # data-port latency, IWAIT=0
-    cd ../syn && make all attrib       # Sky130 area, flat and per-module
-    make timing                        # yosys netlists + OpenSTA (raw netlist; see caveat)
-    make place-base place-pulp         # OpenROAD placement, repair, timing
-    cd ../harness && KERNELS="scalar_asm_rv|sw/dwconv_asm.c|-O2 scalar_asm_xp|sw/dwconv_asm.c|-O2+-DXPULP_CTRL=1 ..." \
-      ./collect_wait0.sh ../results/decomp_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # decomposition grid
-    SHAPES="16:16:8:8 8:8:16:16 16:32:8:8 16:16:16:16" KERNELS="pw_C_O3|sw/pwconv.c|-O3 ..." \
-      ./collect_wait0.sh ../results/pw_pad0.csv "1 2 5 9" "-DCODE_PAD=0"       # pointwise
-    SHAPES="8:16:16 16:16:16 8:32:32 32:8:8" KERNELS="dw5_C_O3|sw/dwconv5.c|-O3 ..." \
-      ./collect_wait0.sh ../results/dw5_pad0.csv "1 2 5 9" "-DCODE_PAD=0"      # 5x5
-    KERNELS="dw5_os_asm_rv|sw/dwconv5_os_asm.c|-O2 dw5_os_asm_xp|sw/dwconv5_os_asm.c|-O2+-DXPULP_CTRL=1 ..." \
-      ./collect_wait0.sh results/wait0_dw5os_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # 5x5 output-stationary baseline
-    REAL_HDR_PREFIX=real/dw3 KERNELS="scalar_asm_xp|sw/dwconv_asm.c|-O2+-DXPULP_CTRL=1 ..." \
-      ./collect_wait0.sh ../results/real_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"  # real data
-    KERNELS="simd_unal_asm_xp_clip|sw/dwconv_simd_asm.c|-O2+-DXPULP_CTRL=1+-DREQUANT_CLIP=1 ..." \
-      ./collect_wait0.sh ../results/clip_dw3_pad0.csv "1 2 5 9" "-DCODE_PAD=0"   # clip
-    for iw in 0 1 2 3; do WAITS=0 IWAIT=$iw KERNELS="..." ./sweep.sh; done   # instruction-port latency
-    SHAPES=16:16:16 KERNELS="blk_full_fused|sw/block.c|-O2+-DBLOCK_SIMD=1+-DXPULP_CTRL=1+-DREQUANT_CLIP=1+-DBLOCK_FUSED=1 ..." \
-      ./collect_wait0.sh ../results/block_pad0.csv "1 2 5 9" "-DCODE_PAD=0 -DREAL_HDR=real/block_16x16x16_16.h"   # block
-    cd ../harness_ibex && make all && cd ../harness && \
-      SIM=harness_ibex/obj_ibex2/Vibex_top KERNELS="scalar_O2|sw/dwconv_opt.c|-O2 ..." \
-      ./collect_wait0.sh ../results/ibex2_dw3_pad0.csv "1 2 4 5 6 8 9 10" "-DCODE_PAD=0 -DIBEX_COUNTERS"  # second core
-    cd ../syn/ibex && make all                                                     # Ibex area
-    cd ../results && python3 wait0_decomp_model.py && python3 wait0_pw_model.py \
-      && python3 wait0_dw5_model.py && python3 dw5_os_model.py && python3 summary_kernels.py && python3 real_data_model.py \
-      && python3 clip_model.py --latex ../paper/tab_decomp.tex && python3 area_table.py --latex ../paper/tab_area.tex \
-      && python3 block_model.py && ~/tools/venv/bin/python ibex_model.py
-    cd ../results && python3 align_term.py      # Ba per run (rebuilds and reruns 304 binaries, ~5 min); run before the model scripts
-    # sw/ubench_align.c -DVARIANT=0..3, built like a kernel and run at --wait 0, is the aligner microbenchmark: 5,000 / 6,000 / 5,001 / 5,000 cycles
-    cd ../paper && pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper   # tables are \input from the generated fragments
+`./reproduce.sh` at the repository root runs every stage in order
+(simulators, all counter datasets on both cores, both latency sweeps, the
+alignment term, synthesis and attribution, placement, the model scripts,
+both papers) and a `compare` stage that diffs the regenerated datasets
+against the committed ones; `./reproduce.sh list` names the stages and
+any subset can be run. README.md lists the prerequisites, the override
+variables for tool locations, and what reproduces exactly (counters,
+sweeps, alignment term, flat synthesis totals, placement) and what varies
+(the attribution pass, by about 20 GE between checkouts). The kernel lists
+behind each dataset are the `K_*` variables in the script. Tested from a
+fresh clone on 2026-10-25.
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
 (needs numpy, Pillow, ai-edge-litert; the headers are committed, so this is
