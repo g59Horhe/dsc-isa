@@ -186,20 +186,40 @@ target is a 32-bit instruction at an address 2 mod 4 costs one cycle,
 because the fetched word holds only its lower half. `harness/sim_main.cpp
 --redir <file>` writes the histogram of non-sequential instruction fetches
 (word addresses) in the measured window; `results/align_term.py` rebuilds
-every hand-written and equalised run (304; the rebuilt binary must
+every hand-written and equalised run (304 builds, 296 distinct; the rebuilt binary must
 reproduce the committed cycle count, which it does in every case), resolves
 each redirect to its target PC from the ELF, and counts the penalised
-redirects, Ba. Three rules for which targets pay were tested against all
-304 runs; rule A is the one above and is used:
+redirects, Ba. The rule is the aligner's (`cv32e40p_aligner.sv`, state
+BRANCH_MISALIGNED): after a jump to an address with bit 1 set it holds the
+upper half-word of the fetched word; if that half-word carries the 32-bit
+opcode marker (bits 17:16 = 11) it deasserts instr_valid for one cycle
+until the next word arrives, and a 16-bit instruction there is issued at
+once. `sw/ubench_align.c` measures the cost directly: a three-instruction
+loop of 1,000 iterations (one 32-bit addi, one 16-bit nop, one 32-bit bne),
+same instruction and taken-branch count in every variant:
 
-rule | mean |resid| | max | runs over 1% (all 304 runs)
+| variant | target | cycles (RV32IMC build) | cycles (Xpulp build) |
+|---|---|---|---|
+| 0 | 0 mod 4, 32-bit instruction at the target | 5,000 | 5,000 |
+| 1 | 2 mod 4, 32-bit instruction at the target | 6,000 | 6,000 |
+| 2 | 2 mod 4, 16-bit at the target, 32-bit at 0 mod 4 | 5,001 | 5,001 |
+| 3 | 0 mod 4, 16-bit at the target, 32-bit at 2 mod 4 | 5,000 | 5,000 |
+
+One cycle per iteration in variant 1 only. Rule B below would charge
+variant 3 and rule C variant 2; neither pays. The three rules were also
+tested against the 296 distinct runs (the equalised set's scalar_asm is the
+decomposition set's scalar_asm_rv, same binary, counted once); rule A is
+the one above and is used:
+
+rule | mean |resid| | max | runs over 1% (296 distinct runs); sw/ubench_align.c confirms rule A: +1 cycle per iteration only with a 32-bit instruction at a 2 mod 4 target
 A | 0.13% | 1.81% | 5
-B | 0.24% | 3.17% | 15
+B | 0.25% | 3.17% | 15
 C | 0.26% | 3.17% | 17
 rule A written as ba
 equalised 3x3 set (6 kernels x 4 shapes x 2 alignments): 48 runs; four-term model mean |resid| 0.57% max 2.24%; with the alignment term mean 0.09% max 0.74%; runs over 1%: 9 -> 0; runs with Ba > 0: 42
 hand-written runs (three families, with and without clip): 256 runs; four-term model mean |resid| 0.73% max 6.36%; with the alignment term mean 0.14% max 1.81%; runs over 1%: 52 -> 5; runs with Ba > 0: 144
-all: 304 runs; four-term model mean |resid| 0.71% max 6.36%; with the alignment term mean 0.13% max 1.81%; runs over 1%: 61 -> 5; runs with Ba > 0: 186
+all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once): 296 runs; four-term model mean |resid| 0.71% max 6.36%; with the alignment term mean 0.13% max 1.81%; runs over 1%: 60 -> 5; runs with Ba > 0: 179
+
 
 With Ba the model is `cycles = I + 2 x taken branches + load-use stalls +
 split-load accesses + Ba`: R^2 1.0000 (four decimals), mean 0.09%, maximum
@@ -1615,6 +1635,7 @@ that remains the limit of the study.
       && python3 clip_model.py --latex ../paper/tab_decomp.tex && python3 area_table.py --latex ../paper/tab_area.tex \
       && python3 block_model.py && ~/tools/venv/bin/python ibex_model.py
     cd ../results && python3 align_term.py      # Ba per run (rebuilds and reruns 304 binaries, ~5 min); run before the model scripts
+    # sw/ubench_align.c -DVARIANT=0..3, built like a kernel and run at --wait 0, is the aligner microbenchmark: 5,000 / 6,000 / 5,001 / 5,000 cycles
     cd ../paper && pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper   # tables are \input from the generated fragments
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
