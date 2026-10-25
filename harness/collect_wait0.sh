@@ -4,10 +4,9 @@
 # write "+" for a space inside cflags, e.g. "-O2+-DXPULP_CTRL=1".
 export PATH=/opt/riscv/bin:$PATH
 cd "$(dirname "$0")/.."
-S=/tmp/claude-1000/-home-georgedessa-research-dsc-isa/a6b0f359-2847-43be-add4-44977818d1d6/scratchpad
 # REAL_HDR_PREFIX=real/dw3 (relative to sw/) adds -DREAL_DATA=1 -DREAL_HDR=<prefix>_<shape>.h
 OUT=$1; EVENTS=$2; EXTRA=$3
-D=$(mktemp -d $S/cXXXX)
+D=$(mktemp -d)
 SIM=${SIM:-harness/obj_pulp/Vcv32e40p_core}   # e.g. SIM=harness_ibex/obj_ibex2/Vibex_top
 echo "shape,kernel,event,value,chk" > $OUT
 SHAPES=${SHAPES:-"8:16:16 16:16:16 8:32:32 32:8:8"}   # CH:H:W for depthwise, CI:CO:H:W for pointwise
