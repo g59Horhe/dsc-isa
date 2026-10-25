@@ -8,7 +8,6 @@ generated from the committed data by the scripts in this repository.
 
 - `results/RESULTS.md`: every result, with the tables and the commands behind them.
 - `paper/paper.pdf`: six-page conference version. `paper/tc/paper_tc.pdf`: journal version.
-- `HANDOFF.md`: the reasoning that is not in the code, including what was retired and why.
 
 ## Reproducing
 
