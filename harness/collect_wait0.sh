@@ -2,7 +2,7 @@
 # usage: collect_wait0.sh <outcsv> <events: "" for plain only> [extra cflags]
 # KERNELS env var overrides the kernel list: entries "name|source|cflags" separated by spaces;
 # write "+" for a space inside cflags, e.g. "-O2+-DXPULP_CTRL=1".
-export PATH=/opt/riscv/bin:$PATH
+export PATH=${RISCV_BIN:-/opt/riscv/bin}:$PATH   # riscv32-unknown-elf toolchain
 cd "$(dirname "$0")/.."
 # REAL_HDR_PREFIX=real/dw3 (relative to sw/) adds -DREAL_DATA=1 -DREAL_HDR=<prefix>_<shape>.h
 OUT=$1; EVENTS=$2; EXTRA=$3

@@ -18,7 +18,8 @@ term. Run from results/.
 cycles = I + 2 Bt + Slu + Asplit + Ba."""
 import csv, collections, os, re, subprocess, sys, tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-GCC = '/opt/riscv/bin/riscv32-unknown-elf-gcc'; OBJCOPY = '/opt/riscv/bin/riscv32-unknown-elf-objcopy'; OBJDUMP = '/opt/riscv/bin/riscv32-unknown-elf-objdump'
+RISCV_BIN = os.environ.get('RISCV_BIN', '/opt/riscv/bin')   # directory of the riscv32-unknown-elf tools
+GCC = f'{RISCV_BIN}/riscv32-unknown-elf-gcc'; OBJCOPY = f'{RISCV_BIN}/riscv32-unknown-elf-objcopy'; OBJDUMP = f'{RISCV_BIN}/riscv32-unknown-elf-objdump'
 SIM = f'{ROOT}/harness/obj_pulp/Vcv32e40p_core'
 DW = ['8x16x16', '16x16x16', '8x32x32', '32x8x8']; PW = ['16x16x8x8', '8x8x16x16', '16x32x8x8', '16x16x16x16']
 XP = '-DXPULP_CTRL=1'; CL = '-DREQUANT_CLIP=1'

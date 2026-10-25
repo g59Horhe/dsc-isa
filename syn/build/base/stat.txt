@@ -1,0 +1,98 @@
+
+16. Printing statistics.
+
+=== cv32e40p_core ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+    17802        - wires
+    23454        - wire bits
+      145        - public wires
+     5797        - public wire bits
+       40        - ports
+      537        - port bits
+    19989 1.64E+05 cells
+        2   22.522   sky130_fd_sc_hd__a2111o_1
+       27  236.477   sky130_fd_sc_hd__a2111oi_0
+       17  148.893   sky130_fd_sc_hd__a211o_1
+      172 1.29E+03   sky130_fd_sc_hd__a211oi_1
+        2   20.019   sky130_fd_sc_hd__a21bo_1
+       53  397.882   sky130_fd_sc_hd__a21boi_0
+      107   803.27   sky130_fd_sc_hd__a21o_1
+     1567 7.84E+03   sky130_fd_sc_hd__a21oi_1
+      571 5.72E+03   sky130_fd_sc_hd__a221o_1
+      249 2.18E+03   sky130_fd_sc_hd__a221oi_1
+      156 1.56E+03   sky130_fd_sc_hd__a222oi_1
+      177 1.55E+03   sky130_fd_sc_hd__a22o_1
+      754 5.66E+03   sky130_fd_sc_hd__a22oi_1
+       27  236.477   sky130_fd_sc_hd__a2bb2oi_1
+        4   40.038   sky130_fd_sc_hd__a311o_1
+       23  201.443   sky130_fd_sc_hd__a311oi_1
+       17  148.893   sky130_fd_sc_hd__a31o_1
+      184 1.15E+03   sky130_fd_sc_hd__a31oi_1
+       10  100.096   sky130_fd_sc_hd__a32o_1
+       17  148.893   sky130_fd_sc_hd__a32oi_1
+       11  110.106   sky130_fd_sc_hd__a41o_1
+       18  157.651   sky130_fd_sc_hd__a41oi_1
+      132  825.792   sky130_fd_sc_hd__and2_0
+      169 1.06E+03   sky130_fd_sc_hd__and3_1
+        5   43.792   sky130_fd_sc_hd__and3b_1
+       27  236.477   sky130_fd_sc_hd__and4_1
+      261   979.69   sky130_fd_sc_hd__clkinv_1
+     2128 5.33E+04   sky130_fd_sc_hd__dfrtp_1
+        9  236.477   sky130_fd_sc_hd__dfstp_1
+        1   15.014   sky130_fd_sc_hd__dlxtn_1
+      149  932.144   sky130_fd_sc_hd__lpflow_inputiso1p_1
+      291 1.82E+03   sky130_fd_sc_hd__lpflow_isobufsrc_1
+      377 3.77E+03   sky130_fd_sc_hd__maj3_1
+      181 2.04E+03   sky130_fd_sc_hd__mux2_1
+      242 2.42E+03   sky130_fd_sc_hd__mux2i_1
+       23  517.997   sky130_fd_sc_hd__mux4_2
+     2818 1.06E+04   sky130_fd_sc_hd__nand2_1
+      203 1.27E+03   sky130_fd_sc_hd__nand2b_1
+      344 1.72E+03   sky130_fd_sc_hd__nand3_1
+       10   75.072   sky130_fd_sc_hd__nand3b_1
+      126  788.256   sky130_fd_sc_hd__nand4_1
+        6    52.55   sky130_fd_sc_hd__nand4b_1
+        2   22.522   sky130_fd_sc_hd__nand4bb_1
+     2378 8.93E+03   sky130_fd_sc_hd__nor2_1
+       36  225.216   sky130_fd_sc_hd__nor2b_1
+      457 2.29E+03   sky130_fd_sc_hd__nor3_1
+       17  127.622   sky130_fd_sc_hd__nor3b_1
+      179 1.12E+03   sky130_fd_sc_hd__nor4_1
+        5   43.792   sky130_fd_sc_hd__nor4b_1
+        2   22.522   sky130_fd_sc_hd__o2111a_1
+       33  289.027   sky130_fd_sc_hd__o2111ai_1
+        3   30.029   sky130_fd_sc_hd__o211a_1
+      160  1.2E+03   sky130_fd_sc_hd__o211ai_1
+      107   803.27   sky130_fd_sc_hd__o21a_1
+     1804 9.03E+03   sky130_fd_sc_hd__o21ai_0
+        1    10.01   sky130_fd_sc_hd__o21ba_1
+       51  382.867   sky130_fd_sc_hd__o21bai_1
+        6   67.565   sky130_fd_sc_hd__o221a_1
+      464 4.06E+03   sky130_fd_sc_hd__o221ai_1
+       29  253.994   sky130_fd_sc_hd__o22a_1
+      289 1.81E+03   sky130_fd_sc_hd__o22ai_1
+        4   40.038   sky130_fd_sc_hd__o2bb2a_1
+       28  245.235   sky130_fd_sc_hd__o2bb2ai_1
+        2   20.019   sky130_fd_sc_hd__o311a_1
+       28  245.235   sky130_fd_sc_hd__o311ai_0
+       30  262.752   sky130_fd_sc_hd__o31a_1
+      117  878.342   sky130_fd_sc_hd__o31ai_1
+        4   40.038   sky130_fd_sc_hd__o32a_1
+        9   78.826   sky130_fd_sc_hd__o32ai_1
+        2   22.522   sky130_fd_sc_hd__o41a_1
+       32  280.269   sky130_fd_sc_hd__o41ai_1
+       90   563.04   sky130_fd_sc_hd__or3_1
+        6    52.55   sky130_fd_sc_hd__or3b_1
+       18   135.13   sky130_fd_sc_hd__or4_1
+        3   30.029   sky130_fd_sc_hd__or4b_1
+     1140 9.98E+03   sky130_fd_sc_hd__xnor2_1
+       69  1553.99   sky130_fd_sc_hd__xnor3_1
+      683 5.98E+03   sky130_fd_sc_hd__xor2_1
+       34  808.275   sky130_fd_sc_hd__xor3_1
+
+   Chip area for module '\cv32e40p_core': 164297.574400
+     of which used for sequential elements: 53487.548800 (32.56%)
+

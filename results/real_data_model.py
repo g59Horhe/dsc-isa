@@ -11,7 +11,9 @@ def load(fn):
     return d
 expected = {}
 for h in glob.glob('../sw/real/*.h'):
-    m = re.search(r'/(syn_)?(dw3|pw)_([0-9x]+)\.h$', h); c = re.search(r'#define REAL_CHECKSUM (\d+)', open(h).read())
+    m = re.search(r'/(syn_)?(dw3|pw)_([0-9x]+)\.h$', h)
+    if m is None: continue   # block_*.h is not a single-layer source
+    c = re.search(r'#define REAL_CHECKSUM (\d+)', open(h).read())
     expected[(('syn_' if m[1] else 'real_') + m[2], m[3])] = int(c[1])
 names = {'scalar_O3': 'scalar C -O3', 'scalar_asm_rv': 'scalar asm, RV32IMC ctrl', 'scalar_asm_xp': 'scalar asm, Xpulp ctrl', 'simd_unal_asm_rv': 'SIMD unaligned asm, RV32IMC ctrl',
          'simd_unal_asm_xp': 'SIMD unaligned asm, Xpulp ctrl', 'simd_al_asm_rv': 'SIMD aligned asm, RV32IMC ctrl', 'simd_al_asm_xp': 'SIMD aligned asm, Xpulp ctrl',

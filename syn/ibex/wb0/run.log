@@ -1,0 +1,8 @@
+Warning: Replacing memory \fill_data_q with list of registers. See syn/ibex/ibex.v:2334
+Warning: Replacing memory \fill_way_q with list of registers. See syn/ibex/ibex.v:2310
+Warning: Replacing memory \fill_addr_q with list of registers. See syn/ibex/ibex.v:2306
+Warning: Replacing memory \pmp_addr_rdata with list of registers. See syn/ibex/ibex.v:8369
+Warning: Replacing memory \mhpmevent with list of registers. See syn/ibex/ibex.v:8422
+Warning: Replacing memory \shadow_data_rdata_q with list of registers. See syn/ibex/ibex.v:15297
+Warning: Replacing memory \shadow_tag_rdata_q with list of registers. See syn/ibex/ibex.v:15296
+Warning: Latch inferred for signal `$paramod\prim_generic_clock_gating\NoFpgaGate=1'0\FpgaBufGlobal=1'1.\en_latch' from process `$paramod\prim_generic_clock_gating\NoFpgaGate=1'0\FpgaBufGlobal=1'1.$syn/ibex/ibex.v:37$proc$17018': $auto$proc_dlatch.cc:559:proc_dlatch$25257

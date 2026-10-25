@@ -1,0 +1,27 @@
+module (own cells)               base GE   pulp GE  delta GE  delta % share of delta
+N_REGS=s32'00000000000000000000000000000010         0     2,057     2,057     nan%            42%
+cv32e40p_controller                  537     2,053     1,516     282%            31%
+cv32e40p_decoder                     419     1,055       636     152%            13%
+cv32e40p_id_stage                  6,170     6,663       493       8%            10%
+cv32e40p_cs_registers              6,525     6,700       175       3%             4%
+cv32e40p_prefetch_controller         667       724        57       9%             1%
+cv32e40p_ex_stage                    218       222         4       2%             0%
+COREV_CLUSTER=s32'00000000000000000000000000000000        21        21         0       0%             0%
+cv32e40p_alu_div                   1,993     1,993         0       0%             0%
+TRANS_STABLE=s32'00000000000000000000000000000000       963       963         0       0%             0%
+cv32e40p_ff_one                       83        83         0       0%             0%
+cv32e40p_mult                     21,079    21,079         0       0%             0%
+cv32e40p_prefetch_buffer              96        96         0       0%             0%
+cv32e40p_register_file            16,512    16,512         0       0%             0%
+cv32e40p_aligner                   1,385     1,385         0       0%             0%
+cv32e40p_fifo                        779       779         0       0%             0%
+PULP_OBI=s32'00000000000000000000000000000000     1,423     1,423         0       0%             0%
+PULP_SECURE=s32'00000000000000000000000000000000       239       239         0       0%             0%
+cv32e40p_clock_gate                    7         7         0       0%             0%
+cv32e40p_popcnt                      260       260         0       0%             0%
+cv32e40p_if_stage                  1,276     1,276        -0      -0%            -0%
+cv32e40p_core                         40        40        -0      -0%            -0%
+cv32e40p_compressed_decoder          321       319        -2      -1%            -0%
+cv32e40p_alu                       5,655     5,642       -13      -0%            -0%
+design total                      66,669    71,592     4,924       7%
+check: sum of own areas base=66,669 pulp=71,592 GE (should equal design totals)

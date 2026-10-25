@@ -1,0 +1,28 @@
+module (own cells)               base GE   pulp GE  delta GE  delta % share of delta
+cv32e40p_core_o_mult               8,637    20,777    12,140     141%            50%
+cv32e40p_core_o_alu                2,866     5,554     2,688      94%            11%
+cv32e40p_core_o_register_file     15,319    17,540     2,221      14%             9%
+cv32e40p_core_o_hwloop_regs            0     2,088     2,088     nan%             9%
+cv32e40p_core_o_id_stage           4,147     6,060     1,912      46%             8%
+cv32e40p_core_o_controller           514     2,031     1,518     295%             6%
+cv32e40p_core_o_decoder              697     1,309       612      88%             3%
+cv32e40p_core_o_aligner              826     1,404       578      70%             2%
+cv32e40p_core_o_cs_registers       6,958     7,211       253       4%             1%
+cv32e40p_core                        373       568       195      52%             1%
+cv32e40p_core_o_prefetch_controller       580       669        89      15%             0%
+cv32e40p_core_o_ex_stage             270       274         4       1%             0%
+cv32e40p_core_o_fifo                 770       774         4       1%             0%
+cv32e40p_core_o_compressed_decoder       315       319         4       1%             0%
+cv32e40p_core_o_ff_one               105       106         1       1%             0%
+cv32e40p_core_o_popcnt               260       260         0       0%             0%
+cv32e40p_core_o_obi_interface        413       413         0       0%             0%
+cv32e40p_core_o_clock_gate             7         7         0       0%             0%
+cv32e40p_core_o_sleep_unit            21        21         0       0%             0%
+cv32e40p_core_o_prefetch_buffer        96        96         0       0%             0%
+cv32e40p_core_o_int_controller       237       237         0       0%             0%
+cv32e40p_core_o_core                  28        28         0       0%             0%
+cv32e40p_core_o_alu_div            2,006     1,995       -12      -1%            -0%
+cv32e40p_core_o_load_store_unit     1,375     1,360       -14      -1%            -0%
+cv32e40p_core_o_if_stage           1,148     1,086       -62      -5%            -0%
+design total                      47,969    72,187    24,218      50%
+check: sum of own areas base=47,969 pulp=72,187 GE (should equal design totals)
