@@ -96,7 +96,7 @@ survive verification. The retired claims and why are listed at the end.
    its stages (3 cycles off the sum). The layout change between them costs
    21% of the accelerated block and the extension does not touch it; a
    strided store in the depthwise kernel removes it for free. Block
-   speedup: 3.3x to 4.1x over -O3 C depending on who fuses.
+   speedup: 3.2x to 4.1x over -O3 C depending on who fuses.
 16. On a second core, lowRISC Ibex, the same binaries run with identical
    instruction counts; cycles are 1.05 to 1.27x (2-stage) and 0.90 to 1.00x
    (3-stage) of CV32E40P's. The baseline-flag and code-alignment effects
@@ -1367,7 +1367,7 @@ on either ISA because the store already advances a pointer.
 
 | block variant | cycles (pad 0 / pad 1) | cycles/MAC | instructions | data reads | data writes | taken branches | split loads | model residual | checksum (pw) |
 |---|---|---|---|---|---|---|---|---|---|
-| C -O3, transform | 339,691 / 332,079 | 4.24 | 310,120 | 70,026 | 9,938 | 7,837 | -1 | +0.0% | 596 |
+| C -O3, transform | 337,690 / 330,078 | 4.21 | 308,120 | 68,233 | 9,697 | 7,837 | -1 | +0.0% | 596 |
 | C -O3, fused store | 311,611 / 313,014 | 3.97 | 294,388 | 66,906 | 6,818 | 4,702 | -1 | +0.5% | 596 |
 | SIMD asm, RV32IMC ctrl, transform | 172,864 / 176,190 | 2.20 | 144,394 | 32,736 | 9,408 | 9,405 | 6,720 | +1.7% | 596 |
 | SIMD asm, RV32IMC ctrl, fused | 153,738 / 148,079 | 1.89 | 128,614 | 29,600 | 6,272 | 6,270 | 6,720 | +0.1% | 596 |
@@ -1378,11 +1378,11 @@ on either ISA because the store already advances a pointer.
 
 | quantity | value |
 |---|---|
-| layout transform, scalar C, cost in cycles (C -O3 block) | 20,468 = 6.2% of that block |
+| layout transform, scalar C, cost in cycles (C -O3 block) | 18,467 = 5.6% of that block |
 | layout transform cost in the full-Xpulp block | 21,870 = 21.4% of that block |
-| full Xpulp fused vs C -O3 with transform | 4.14x |
+| full Xpulp fused vs C -O3 with transform | 4.12x |
 | full Xpulp fused vs C -O3 fused | 3.89x |
-| full Xpulp with transform vs C -O3 with transform | 3.26x |
+| full Xpulp with transform vs C -O3 with transform | 3.24x |
 | datapath only (SIMD asm, RV32IMC ctrl, fused) vs C -O3 fused | 2.10x |
 | + hardware loops | 1.26x |
 | + clip | 1.47x |
@@ -1397,9 +1397,9 @@ on either ISA because the store already advances a pointer.
   accounting for it would overstate by 27%. Fusing it away is free when the
   depthwise kernel has a store stride, a software decision, not a hardware
   one.
-- **Block-level numbers:** the full extension is 4.14x over -O3 C if the
+- **Block-level numbers:** the full extension is 4.12x over -O3 C if the
   accelerated code fuses the layout and the baseline does not, 3.89x if
-  both fuse, 3.26x if neither does. The kernel-level 2.5x (depthwise) and
+  both fuse, 3.24x if neither does. The kernel-level 2.5x (depthwise) and
   5.4x (pointwise) bracket all three, weighted by where the block spends
   its MACs (36% depthwise, 64% pointwise).
 - Cycles per MAC for the whole block: 3.97 scalar, 1.02 full Xpulp fused.
@@ -1613,7 +1613,11 @@ variables for tool locations, and what reproduces exactly (counters,
 sweeps, alignment term, flat synthesis totals, placement) and what varies
 (the attribution pass, by about 20 GE between checkouts). The kernel lists
 behind each dataset are the `K_*` variables in the script. Tested from a
-fresh clone on 2026-10-25.
+fresh clone on 2026-10-25: every dataset reproduced row for row except the
+block set, whose C -O3 transform variant had moved by 0.6% when sw/bench.h
+gained the Ibex counter mapping after the block data was collected; the
+block CSVs were regenerated from the current source and the block numbers
+above and in the papers follow them.
 
 Real-data headers: `~/tools/venv/bin/python sw/real/gen_real_data.py <model.tflite> <image> sw/real`
 (needs numpy, Pillow, ai-edge-litert; the headers are committed, so this is

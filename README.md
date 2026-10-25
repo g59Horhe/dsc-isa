@@ -14,7 +14,7 @@ generated from the committed data by the scripts in this repository.
 
     git clone --recursive https://github.com/g59Horhe/dsc-isa.git
     cd dsc-isa
-    ./reproduce.sh            # all stages, about two to three hours
+    ./reproduce.sh            # all stages, about 30 minutes
     ./reproduce.sh list       # stage names; run any subset, e.g. ./reproduce.sh sims check collect compare
 
 Regenerated datasets go to `results/repro/` and are not copied over the
@@ -63,12 +63,13 @@ the environment.
 
 ### Stage times
 
-Measured on one laptop core, Verilator with `-j4`: simulators about 5 minutes;
-all CV32E40P counter datasets about 45 minutes; the Ibex datasets about 30
-minutes; sweeps about 10 minutes; the alignment term 5 minutes (it rebuilds 304
-binaries and asserts each reproduces its committed cycle count); synthesis with
-attribution about 5 minutes; placement 75 seconds per configuration; models and
-papers about a minute.
+Measured on a fresh clone on one laptop, Verilator with `-j4`: the four
+simulator builds about 5 minutes; all CV32E40P counter datasets 10 minutes;
+the Ibex datasets 5 minutes; the two sweeps 30 seconds; the alignment term 1
+minute (it rebuilds 304 binaries and asserts each reproduces its committed
+cycle count); synthesis with attribution 1.5 minutes; placement 75 seconds per
+configuration; models and papers seconds. The whole sequence after the
+simulators is about 25 minutes.
 
 ## Layout
 
