@@ -1,21 +1,21 @@
 #!/bin/bash
 # Reproduce every dataset, flow output, table and paper in this repository.
 #
-#   ./reproduce.sh                 run every stage in order
+#   ./reproduce.sh                 run every stage in order (about 25 minutes after the simulators are built)
 #   ./reproduce.sh sims collect    run the named stages only
 #   ./reproduce.sh list            print the stages
 #
-# Stages (approximate times on one 2024-class laptop core, Verilator builds -j4):
+# Stages, with the times measured on a fresh clone (one laptop, Verilator -j4):
 #   sims      build the CV32E40P (RV32IMC, Xpulp) and Ibex (2-, 3-stage) simulators   ~5 min
 #   check     README regression values (hello, dotp)                                 seconds
-#   collect   every wait-0 counter dataset in results/ (CV32E40P)                    ~45 min
-#   ibex      the scalar datasets on Ibex 2- and 3-stage                             ~30 min
-#   sweeps    data-port and instruction-port latency sweeps                          ~10 min
-#   align     the branch-target alignment term (rebuilds 304 binaries)               ~5 min
-#   syn       Sky130 synthesis: flat totals, per-module attribution, Ibex            ~10 min
-#   place     OpenROAD placement and timing repair, both configurations              see README
-#   models    the result scripts (markdown tables), paper table fragments            ~1 min
-#   papers    both manuscripts (pdflatex + bibtex)                                   ~1 min
+#   collect   every wait-0 counter dataset in results/ (CV32E40P)                    10 min
+#   ibex      the scalar datasets on Ibex 2- and 3-stage                             5 min
+#   sweeps    data-port and instruction-port latency sweeps                          30 s
+#   align     the branch-target alignment term (rebuilds 304 binaries)               1 min
+#   syn       Sky130 synthesis: flat totals, per-module attribution, Ibex            1.5 min
+#   place     OpenROAD placement and timing repair, both configurations              3.5 min
+#   models    the result scripts (markdown tables), paper table fragments            seconds
+#   papers    both manuscripts (pdflatex + bibtex)                                   seconds
 #   compare   diff every regenerated CSV and flow output against the committed one   seconds
 #
 # Regenerated data goes to results/repro/ and syn/build/; the committed files are
@@ -38,7 +38,8 @@ log() { printf '\n== %s  (%s)\n' "$*" "$(date +%H:%M:%S)"; }
 collect() {   # collect <name> <shapes> <kernels> [extra cflags] : both code alignments
   local name=$1 shapes=$2 kernels=$3 extra=${4:-}
   for p in 0 1; do SHAPES="$shapes" KERNELS="$kernels" harness/collect_wait0.sh $OUT/wait0_${name}_pad$p.csv "$EV" "-DCODE_PAD=$p $extra"; done
-  grep -l 'FAIL' $OUT/wait0_${name}_pad*.csv && echo "!! FAIL rows in $name"
+  if grep -q 'FAIL' $OUT/wait0_${name}_pad*.csv; then echo "!! FAIL rows in $name"; return 1; fi
+  return 0
 }
 collect_ibex() {
   local core=$1 name=$2 shapes=$3 kernels=$4
