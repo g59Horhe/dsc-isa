@@ -3,11 +3,12 @@
 A counter-validated measurement of the Xpulp extension on CV32E40P for the
 three kernels of a MobileNet depthwise-separable block, with area and timing
 at Sky130, real MobileNetV1 data, and a second core (lowRISC Ibex). Open tools
-throughout; every table in `results/RESULTS.md` and in both papers is
-generated from the committed data by the scripts in this repository.
+throughout; every table in `results/RESULTS.md` and in the papers written from it is
+generated from the committed data by the scripts in this repository
+(`results/paper_tables.py` writes the manuscript tables and figure data to
+`results/paper_gen/`).
 
 - `results/RESULTS.md`: every result, with the tables and the commands behind them.
-- `paper/paper.pdf`: six-page conference version. `paper/tc/paper_tc.pdf`: journal version.
 
 ## Reproducing
 
@@ -56,7 +57,7 @@ build failure becomes a `BUILDFAIL` row, not an error.
 
 The counter datasets need only Verilator and the RISC-V toolchain. The real-data
 headers are committed, so the model and image are needed only to regenerate them
-(the journal table generator does, and checks the result against the committed
+(`results/paper_tables.py` does, and checks the result against the committed
 headers). The `syn/Makefile` variables are overridden on the command line or in
 the environment.
 
@@ -77,7 +78,6 @@ simulators is about 25 minutes.
     sw/             bare-metal kernels, requant.h (shared saturation), xpulp.h (.insn encodings), real/ (MobileNetV1 headers and generator)
     results/        counter CSVs, sweep outputs, the model scripts, RESULTS.md
     syn/            sv2v + Yosys synthesis and attribution, OpenROAD placement (place.tcl), Ibex synthesis; build/ holds the committed flow outputs
-    paper/          conference manuscript; paper/tc/ journal manuscript with its table generator
     third_party/    CV32E40P and Ibex submodules
 
 Simulator flags: `--hex`, `--cycles`, `--wait N` (data port), `--iwait N`

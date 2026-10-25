@@ -12,9 +12,7 @@ syn/ibex/wb1/
 harness_ibex/obj_*/
 harness_ibex/*.log
 harness_ibex/sim_trace.cpp
-paper/*.aux
-paper/*.bbl
-paper/*.blg
-paper/*.log
-paper/*.out
+paper/
+results/paper_gen/
+results/repro/
 HANDOFF.md

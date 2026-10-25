@@ -14,8 +14,8 @@
 #   align     the branch-target alignment term (rebuilds 304 binaries)               1 min
 #   syn       Sky130 synthesis: flat totals, per-module attribution, Ibex            1.5 min
 #   place     OpenROAD placement and timing repair, both configurations              3.5 min
-#   models    the result scripts (markdown tables), paper table fragments            seconds
-#   papers    both manuscripts (pdflatex + bibtex)                                   seconds
+#   models    the result scripts (markdown tables), manuscript table fragments       seconds
+#   papers    both manuscripts, if paper/ is present (it is not in the public repository)
 #   compare   diff every regenerated CSV and flow output against the committed one   seconds
 #
 # Regenerated data goes to results/repro/ and syn/build/; the committed files are
@@ -90,11 +90,12 @@ stage_place()   { log place; make -C syn net-base-area net-pulp-area && make -C 
 stage_models()  {
   log models
   (cd results && for s in wait0_eqrequant_model.py wait0_decomp_model.py wait0_pw_model.py wait0_dw5_model.py dw5_os_model.py summary_kernels.py clip_model.py real_data_model.py block_model.py area_table.py; do python3 $s > ../$OUT/${s%.py}.md || echo "!! $s failed"; done; $VENV_PYTHON ibex_model.py > ../$OUT/ibex_model.md || echo "!! ibex_model.py failed (needs numpy)")
-  (cd results && python3 clip_model.py --latex ../paper/tab_decomp.tex > /dev/null && python3 area_table.py --latex ../paper/tab_area.tex > /dev/null)
-  VENV_PYTHON=$VENV_PYTHON python3 paper/tc/mktables.py
+  [ -d paper ] && (cd results && python3 clip_model.py --latex ../paper/tab_decomp.tex > /dev/null && python3 area_table.py --latex ../paper/tab_area.tex > /dev/null)
+  VENV_PYTHON=$VENV_PYTHON python3 results/paper_tables.py
 }
 stage_papers()  {
   log papers
+  [ -d paper ] || { echo "paper/ is not part of the public repository; manuscript tables are in results/paper_gen"; return 0; }
   (cd paper && pdflatex -interaction=nonstopmode paper.tex > /dev/null && bibtex paper > /dev/null && pdflatex -interaction=nonstopmode paper.tex > /dev/null && pdflatex -interaction=nonstopmode paper.tex | grep 'Output written')
   (cd paper/tc && pdflatex -interaction=nonstopmode paper_tc.tex > /dev/null && bibtex paper_tc > /dev/null && pdflatex -interaction=nonstopmode paper_tc.tex > /dev/null && pdflatex -interaction=nonstopmode paper_tc.tex | grep 'Output written')
 }
