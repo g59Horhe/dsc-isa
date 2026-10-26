@@ -14,7 +14,7 @@ generated from the committed data by the scripts in this repository
 
     git clone --recursive https://github.com/g59Horhe/dsc-isa.git
     cd dsc-isa
-    ./reproduce.sh            # all stages, about 30 minutes
+    ./reproduce.sh            # all stages, about 20 minutes
     ./reproduce.sh list       # stage names; run any subset, e.g. ./reproduce.sh sims check collect compare
 
 Regenerated datasets go to `results/repro/` and are not copied over the
@@ -65,12 +65,12 @@ the environment.
 ### Stage times
 
 Measured on a fresh clone on one laptop, Verilator with `-j4`: the four
-simulator builds about 5 minutes; all CV32E40P counter datasets 10 minutes;
-the Ibex datasets 5 minutes; the two sweeps 30 seconds; the alignment term 1
+simulator builds about 5 minutes; all CV32E40P counter datasets 2 minutes and
+the Ibex datasets 1 minute (one build per run); the two sweeps 30 seconds; the alignment term 1
 minute (it rebuilds 304 binaries and asserts each reproduces its committed
 cycle count); synthesis with attribution 1.5 minutes; placement 75 seconds per
 configuration; models and papers seconds. The whole sequence after the
-simulators is about 25 minutes.
+simulators is about 15 minutes.
 
 ## Layout
 
@@ -85,9 +85,13 @@ Simulator flags: `--hex`, `--cycles`, `--wait N` (data port), `--iwait N`
 (instruction port), `--icache SIZE LINE`, `--redir FILE` (histogram of
 non-sequential instruction fetches, for the alignment term). The MEASURED line
 carries data reads, data writes and instruction fetches for the bracketed
-region. `-DPERF_EVENT=<bit>` with `-march=rv32imc_zicsr` reports one hardware
-counter; `-DCODE_PAD=<n>` shifts code alignment by n compressed nops; both
-alignments are measured for every number. See `sw/bench.h`.
+region; the EVENTS line carries the core's performance-counter events (ev1 to
+ev10, numbered as in `sw/bench.h`), integrated by the harness over the same
+window, so every counter comes from the binary whose cycles are reported.
+`-DPERF_EVENT=<bit>` with `-march=rv32imc_zicsr` still programs the CSR counter
+and reports it as an AUX word; `results/counter_validation.py` uses it to check
+the EVENTS counts. `-DCODE_PAD=<n>` shifts code alignment by n compressed nops;
+both alignments are measured for every number.
 
 ## Why CV32E40P
 
@@ -140,8 +144,11 @@ and collected in `sw/xpulp.h`. Hardware loops need `.balign 4` before
 - Measure both code alignments. A taken branch to a 32-bit instruction at an
   address 2 mod 4 costs one aligner cycle; it is the fifth term of the cycle
   model and is counted per run.
-- Validate counters against the bus before using them, and checksum every
-  variant against an independent model of the arithmetic.
+- Validate counters against the bus before using them, and take them from
+  the binary whose cycles you report. An instrumented build that reads the
+  CSR counter is a different binary: GCC may compile it differently and its
+  layout shifts. Checksum every variant against an independent model of the
+  arithmetic.
 
 ## References
 

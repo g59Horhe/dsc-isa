@@ -14,15 +14,18 @@ survive verification. The retired claims and why are listed at the end.
 
 1. At zero wait states, cycles are predicted by
    `instructions + 2 x taken branches + load-use stalls + split-load bus
-   accesses` with R^2 = 0.9998 over 48 runs (6 kernels x 4 shapes x 2 code
-   alignments). The residual is under 0.5% at the headline shape and at
-   most 2.2% anywhere. The coefficients are fixed from microbenchmarks, not
-   fitted; the mean absolute error is 0.57% over those 48 runs and 0.73%
-   (maximum 6.4%) over the 256 hand-written-kernel runs of all three
-   families. A fifth term, Ba = redirects whose target is a 32-bit
+   accesses + Ba`, where Ba counts the redirects whose target is a 32-bit
    instruction at an address 2 mod 4 (the aligner penalty, counted from
-   the harness's fetch stream by `results/align_term.py`), brings those
-   to 0.09% / 0.74% (R^2 1.0000) and 0.14% / 1.81%.
+   the harness's fetch stream by `results/align_term.py`). The
+   coefficients are fixed from microbenchmarks, not fitted. Over 48 runs
+   (6 kernels x 4 shapes x 2 code alignments) R^2 = 1.0000 to four
+   decimals, with a mean absolute error of 0.08% and a maximum of 0.74%;
+   over the 256 hand-written-kernel runs of all three families the mean is
+   0.08% and the maximum 1.34%; the compiler-generated 5x5 and pointwise
+   kernels and the block fit exactly. Without Ba the figures are 0.59% /
+   2.24% and 0.67% / 6.4%. Every event count comes from the measured
+   binary itself: the harness integrates the core's counter event signals
+   over the measured window (see Table 1).
 2. The cv.dotsp.b kernel's cycle speedup equals its instruction-count
    ratio to within 0 to 7% at every shape and against every baseline. The
    win is three MACs per instruction, i.e. instruction count, not operand
@@ -98,10 +101,14 @@ survive verification. The retired claims and why are listed at the end.
    strided store in the depthwise kernel removes it for free. Block
    speedup: 3.2x to 4.1x over -O3 C depending on who fuses.
 16. On a second core, lowRISC Ibex, the same binaries run with identical
-   instruction counts; cycles are 1.05 to 1.27x (2-stage) and 0.90 to 1.00x
+   instruction counts; cycles are 1.05 to 1.44x (2-stage) and 0.90 to 1.00x
    (3-stage) of CV32E40P's. The baseline-flag and code-alignment effects
-   reproduce at the same magnitude, and the cycle model keeps its structure
-   with core-specific stall terms. Two RV32IMC cores synthesise to within
+   reproduce at the same magnitude. Ibex's counters close exactly: cycles =
+   instructions + data-side wait + instruction-side wait in all 80 runs on
+   both pipelines. The output-stationary 5x5 kernel is 16 to 29% faster
+   than -O3 on the 3-stage Ibex, but on the 2-stage one, where each of its
+   50 loads per output stalls a cycle, it is 1 to 4% slower at three shapes
+   and 14% faster at 32x8x8. Two RV32IMC cores synthesise to within
    0.5% of each other; the Xpulp extension is more than half of either.
 
 ## Kernels
@@ -123,41 +130,57 @@ never fires and its cost is paid but its correctness is not exercised.
 ## Table 1. Wait 0, all kernels and shapes
 
 Cycles at both code alignments (`-DCODE_PAD=0` and `1`). Counters are from
-the pad-0 build: instructions retired and taken branches from the core's
-hardware counter, fetches / reads / writes from the harness bus counters.
+the pad-0 run, and every value in a row comes from the same binary: cycles
+and fetches / reads / writes from the harness's bus counters; instructions
+retired, taken branches and load-use stalls from the core's own
+performance-counter event signals, which the harness integrates over the
+same measured window (the EVENTS line, `harness/collect_wait0.sh`).
 Split-load accesses are bus reads minus loads retired, i.e. the extra
-access the LSU issues for each misaligned word. The counters were
-validated first: loads retired equal bus reads on every kernel with no
-misaligned loads, and stores retired equal bus writes plus the one AUX
-store. The three small negative values (-112, -224, -8) are one extra
-load retired per output row in the -O3 aligned build, a counter quirk not
-chased.
+access the LSU issues for each misaligned word. The event counts were
+validated against the CSR counters (`results/counter_validation.py`,
+output in `results/counter_validation.txt`): in instrumented builds that
+program the counter, the harness count of the same run equals the CSR
+reading on every kernel, event and core, up to a fixed window offset of
+0 to 4 counts. Loads retired equal bus reads on every kernel with no
+misaligned loads.
+
+Until 2026-10-27 the event counts were read from the CSR counter in
+separately compiled instrumented builds (`-DPERF_EVENT`), and those are not
+the measured binary. At -O3 GCC compiled the aligned SIMD kernel with one
+more load per output row when instrumented, and the instrumentation
+shifted the code by two bytes, which changes the alignment padding before
+hardware loops and GCC's layout of some tails. That produced the negative
+split-load values an earlier version of this table showed (-112, -224, -1,
+-8), instruction counts off by up to 1.5% of cycles in 177 of 640 runs, and
+the apparent misfit of the Ibex cycle model. Cycles and bus counts were
+never affected; every cycle count and checksum reproduced unchanged when
+the datasets were recollected.
 
 | shape | kernel | cycles (pad 0) | cycles (pad 1) | instructions | fetches | data reads | data writes | taken branches | load-use stalls | split-load accesses | checksum |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 8x16x16 | scalar C, -O2 | 69,275 | 70,828 | 66,134 | 51,770 | 5,576 | 1,696 | 1,567 | 0 | 0 | 64747 |
-|  | scalar C, -O3 | 55,296 | 54,527 | 52,952 | 45,517 | 5,696 | 1,712 | 783 | 0 | 0 | 64747 |
+|  | scalar C, -O3 | 55,296 | 54,527 | 52,954 | 45,517 | 5,696 | 1,712 | 783 | 0 | 0 | 64747 |
 |  | scalar asm | 53,889 | 53,673 | 52,507 | 44,894 | 6,824 | 1,586 | 463 | 0 | 0 | 64747 |
 |  | SIMD unaligned | 48,406 | 48,309 | 37,104 | 30,668 | 8,136 | 1,568 | 1,567 | 4,704 | 3,360 | 64747 |
-|  | SIMD aligned | 40,287 | 40,286 | 38,280 | 32,172 | 3,216 | 1,688 | 447 | 672 | 224 | 64747 |
-|  | SIMD aligned, -O3 | 40,141 | 40,358 | 39,247 | 33,484 | 3,768 | 1,568 | 335 | 448 | -112 | 64747 |
-| 16x16x16 | scalar C, -O2 | 138,564 | 141,669 | 132,278 | 103,554 | 11,152 | 3,392 | 3,135 | 0 | 0 | 64114 |
+|  | SIMD aligned | 40,287 | 40,286 | 38,049 | 32,172 | 3,216 | 1,688 | 447 | 672 | 336 | 64747 |
+|  | SIMD aligned, -O3 | 40,141 | 40,358 | 39,128 | 33,484 | 3,768 | 1,568 | 335 | 336 | 0 | 64747 |
+| 16x16x16 | scalar C, -O2 | 138,564 | 141,669 | 132,279 | 103,554 | 11,152 | 3,392 | 3,135 | 0 | 0 | 64114 |
 |  | scalar C, -O3 | 110,585 | 109,048 | 105,899 | 91,029 | 11,393 | 3,424 | 1,567 | 0 | 0 | 64114 |
-|  | scalar asm | 107,335 | 107,767 | 105,000 | 89,141 | 13,632 | 3,169 | 927 | 0 | 0 | 64114 |
-|  | SIMD unaligned | 96,630 | 96,823 | 74,216 | 61,364 | 16,272 | 3,136 | 3,135 | 9,408 | 6,720 | 64114 |
-|  | SIMD aligned | 80,503 | 80,534 | 76,071 | 64,741 | 6,416 | 3,360 | 895 | 1,344 | 656 | 64114 |
-|  | SIMD aligned, -O3 | 80,710 | 80,277 | 78,488 | 67,172 | 7,536 | 3,136 | 671 | 896 | -224 | 64114 |
+|  | scalar asm | 107,335 | 107,767 | 105,001 | 89,141 | 13,632 | 3,169 | 927 | 0 | 0 | 64114 |
+|  | SIMD unaligned | 96,630 | 96,823 | 74,217 | 61,364 | 16,272 | 3,136 | 3,135 | 9,408 | 6,720 | 64114 |
+|  | SIMD aligned | 80,503 | 80,534 | 76,041 | 64,741 | 6,416 | 3,360 | 895 | 1,344 | 672 | 64114 |
+|  | SIMD aligned, -O3 | 80,710 | 80,277 | 78,248 | 67,172 | 7,536 | 3,136 | 671 | 672 | 0 | 64114 |
 | 8x32x32 | scalar C, -O2 | 313,403 | 320,588 | 298,998 | 233,673 | 23,376 | 7,464 | 7,199 | 0 | 0 | 62900 |
-|  | scalar C, -O3 | 249,063 | 252,184 | 241,625 | 197,908 | 23,377 | 7,465 | 3,599 | 0 | 0 | 62900 |
-|  | scalar asm | 230,366 | 232,751 | 225,545 | 196,716 | 23,136 | 7,224 | 2,399 | 0 | -1 | 62900 |
-|  | SIMD unaligned | 219,614 | 219,375 | 167,536 | 138,452 | 37,512 | 7,200 | 7,199 | 21,600 | 15,840 | 62900 |
-|  | SIMD aligned | 176,480 | 177,905 | 170,488 | 145,468 | 12,800 | 7,688 | 1,919 | 1,440 | 480 | 62900 |
-|  | SIMD aligned, -O3 | 177,657 | 176,456 | 172,154 | 147,606 | 13,760 | 7,208 | 1,679 | 720 | -8 | 62900 |
-| 32x8x8 | scalar C, -O2 | 53,413 | 54,564 | 51,112 | 39,971 | 5,376 | 1,472 | 1,151 | 0 | 0 | 65171 |
-|  | scalar C, -O3 | 38,696 | 38,536 | 37,960 | 31,491 | 5,569 | 1,633 | 191 | 192 | 0 | 65171 |
-|  | scalar asm | 38,754 | 39,137 | 37,990 | 32,545 | 4,928 | 1,184 | 383 | 0 | 0 | 65171 |
-|  | SIMD unaligned | 36,934 | 37,125 | 28,873 | 23,875 | 6,048 | 1,152 | 1,151 | 3,456 | 2,304 | 65171 |
-|  | SIMD aligned | 30,341 | 30,180 | 27,688 | 24,866 | 3,168 | 1,152 | 255 | 1,152 | 576 | 65171 |
+|  | scalar C, -O3 | 249,063 | 252,184 | 241,626 | 197,908 | 23,377 | 7,465 | 3,599 | 0 | 0 | 62900 |
+|  | scalar asm | 230,366 | 232,751 | 225,561 | 196,716 | 23,136 | 7,224 | 2,399 | 0 | 0 | 62900 |
+|  | SIMD unaligned | 219,614 | 219,375 | 167,537 | 138,452 | 37,512 | 7,200 | 7,199 | 21,600 | 15,840 | 62900 |
+|  | SIMD aligned | 176,480 | 177,905 | 169,995 | 145,468 | 12,800 | 7,688 | 1,919 | 1,440 | 720 | 62900 |
+|  | SIMD aligned, -O3 | 177,657 | 176,456 | 172,139 | 147,606 | 13,760 | 7,208 | 1,679 | 720 | 0 | 62900 |
+| 32x8x8 | scalar C, -O2 | 53,413 | 54,564 | 51,111 | 39,971 | 5,376 | 1,472 | 1,151 | 0 | 0 | 65171 |
+|  | scalar C, -O3 | 38,696 | 38,536 | 37,962 | 31,491 | 5,569 | 1,633 | 191 | 192 | 0 | 65171 |
+|  | scalar asm | 38,754 | 39,137 | 37,988 | 32,545 | 4,928 | 1,184 | 383 | 0 | 0 | 65171 |
+|  | SIMD unaligned | 36,934 | 37,125 | 28,872 | 23,875 | 6,048 | 1,152 | 1,151 | 3,456 | 2,304 | 65171 |
+|  | SIMD aligned | 30,341 | 30,180 | 27,687 | 24,866 | 3,168 | 1,152 | 255 | 1,152 | 576 | 65171 |
 |  | SIMD aligned, -O3 | 30,211 | 30,180 | 29,798 | 26,210 | 3,744 | 1,152 | 191 | 0 | 0 | 65171 |
 
 ## Cycle model
@@ -166,17 +189,19 @@ chased.
 
 | predictor | R^2 over 48 runs |
 |---|---|
-| the model above | 0.9998 |
-| instructions retired alone | 0.985 |
-| instruction fetches alone | 0.977 |
-| loads alone | 0.929 |
-| data reads alone | 0.746 |
+| five-term model (with the alignment term) | 1.0000 |
+| four-term model (without it) | 0.9998 |
+| instructions retired alone | 0.9848 |
+| instruction fetches alone | 0.9774 |
+| loads alone | 0.9267 |
+| data reads alone | 0.7458 |
 
 The coefficients are fixed from the microbenchmarks below, not fitted, so
-the R^2 is that of a fixed-form prediction. Mean absolute error 0.57%,
-maximum 2.24%, over the 48 runs; 0.73% and 6.4% over the 256 hand-written
-kernel runs of all three families, with and without clip
-(`results/clip_model.py`).
+the R^2 is that of a fixed-form prediction. Without the alignment term the
+mean absolute error is 0.59% and the maximum 2.24% over the 48 runs, and
+0.67% and 6.4% over the 256 hand-written kernel runs of all three
+families, with and without clip; with it, 0.08% / 0.74% and 0.08% / 1.34%
+(`results/clip_model.py`, `results/align_term.py`).
 
 ### Fifth term: branch-target alignment
 
@@ -212,37 +237,49 @@ decomposition set's scalar_asm_rv, same binary, counted once); rule A is
 the one above and is used:
 
 rule | mean |resid| | max | runs over 1% (296 distinct runs); sw/ubench_align.c confirms rule A: +1 cycle per iteration only with a 32-bit instruction at a 2 mod 4 target
-A | 0.13% | 1.81% | 5
-B | 0.25% | 3.17% | 15
-C | 0.26% | 3.17% | 17
+A | 0.08% | 1.34% | 2
+B | 0.18% | 3.17% | 12
+C | 0.23% | 3.17% | 14
 rule A written as ba
-equalised 3x3 set (6 kernels x 4 shapes x 2 alignments): 48 runs; four-term model mean |resid| 0.57% max 2.24%; with the alignment term mean 0.09% max 0.74%; runs over 1%: 9 -> 0; runs with Ba > 0: 42
-hand-written runs (three families, with and without clip): 256 runs; four-term model mean |resid| 0.73% max 6.36%; with the alignment term mean 0.14% max 1.81%; runs over 1%: 52 -> 5; runs with Ba > 0: 144
-all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once): 296 runs; four-term model mean |resid| 0.71% max 6.36%; with the alignment term mean 0.13% max 1.81%; runs over 1%: 60 -> 5; runs with Ba > 0: 179
+equalised 3x3 set (6 kernels x 4 shapes x 2 alignments): 48 runs; four-term model mean |resid| 0.59% max 2.24%; with the alignment term mean 0.08% max 0.74%; runs over 1%: 10 -> 0; runs with Ba > 0: 42
+hand-written runs (three families, with and without clip): 256 runs; four-term model mean |resid| 0.67% max 6.36%; with the alignment term mean 0.08% max 1.34%; runs over 1%: 50 -> 2; runs with Ba > 0: 144
+all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once): 296 runs; four-term model mean |resid| 0.66% max 6.36%; with the alignment term mean 0.08% max 1.34%; runs over 1%: 59 -> 2; runs with Ba > 0: 179
 
 
 With Ba the model is `cycles = I + 2 x taken branches + load-use stalls +
-split-load accesses + Ba`: R^2 1.0000 (four decimals), mean 0.09%, maximum
-0.74% over the 48 runs; mean 0.14%, maximum 1.81% over the 256 hand-written
-runs, where the five runs still above 1% are 3x3 SIMD kernels, four of
-them at 32x8x8. `results/wait0_align.csv` holds Ba per run and the model
+split-load accesses + Ba`: R^2 1.0000 (four decimals), mean 0.08%, maximum
+0.74% over the 48 runs; mean 0.08%, maximum 1.34% over the 256 hand-written
+runs, where the two runs still above 1% are the aligned 3x3 SIMD kernel
+with RV32IMC control and clip, at 32x8x8 and 8x32x32. The compiler-generated
+5x5 and pointwise kernels and the eight block variants (64 runs, not part
+of the 296) fit exactly. `results/wait0_align.csv` holds Ba per run and the model
 scripts add it when the file is present; every residual quoted below is
-five-term. Worst four-term runs:
+five-term. The 256 hand-written runs by family (`results/clip_model.py`;
+full Xpulp means the SIMD datapath, hardware loops and clip together):
+
+| family | kernels | runs | of which full Xpulp |
+|---|---|---|---|
+| 3x3 depthwise | scalar_asm_rv, scalar_asm_rv_clip, scalar_asm_xp, scalar_asm_xp_clip, simd_al_asm_rv, simd_al_asm_rv_clip, simd_al_asm_xp, simd_al_asm_xp_clip, simd_unal_asm_rv, simd_unal_asm_rv_clip, simd_unal_asm_xp, simd_unal_asm_xp_clip | 96 | 16 |
+| 5x5 depthwise | dw5_asm_rv, dw5_asm_rv_clip, dw5_asm_xp, dw5_asm_xp_clip, dw5_os_asm_rv, dw5_os_asm_rv_clip, dw5_os_asm_xp, dw5_os_asm_xp_clip, dw5_simd_rv, dw5_simd_rv_clip, dw5_simd_xp, dw5_simd_xp_clip | 96 | 8 |
+| 1x1 pointwise | pw_asm_rv, pw_asm_rv_clip, pw_asm_xp, pw_asm_xp_clip, pw_simd_asm_rv, pw_simd_asm_rv_clip, pw_simd_asm_xp, pw_simd_asm_xp_clip | 64 | 8 |
+| total | | 256 | 32 |
+
+Worst four-term runs:
 
 | run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | residual, four terms | residual, five terms |
 |---|---|---|---|---|---|---|---|---|---|
-| pw_simd_asm_rv_clip 8x8x16x16 pad0 | 28,165 | 22,280 | 4,094 | 0 | 0 | 2,047 | 1,792 | +6.36% | -0.00% |
-| pw_simd_asm_rv_clip 16x32x8x8 pad1 | 35,333 | 29,256 | 4,094 | 0 | 0 | 2,047 | 1,984 | +5.61% | -0.00% |
-| pw_simd_asm_rv_clip 16x16x16x16 pad0 | 71,687 | 59,656 | 8,190 | 0 | 0 | 4,095 | 3,840 | +5.36% | +0.00% |
+| pw_C_O2 16x16x8x8 pad1 | 179,650 | 131,461 | 32,766 | 0 | 0 | 16,383 | 15,423 | +8.59% | +0.00% |
+| pw_C_O2 16x32x8x8 pad1 | 358,851 | 262,534 | 65,534 | 0 | 0 | 32,767 | 30,783 | +8.58% | +0.00% |
+| pw_C_O2 16x16x16x16 pad1 | 718,341 | 525,831 | 131,070 | 0 | 0 | 65,535 | 61,440 | +8.55% | +0.00% |
+| pw_C_O2 8x8x16x16 pad0 | 196,100 | 148,998 | 32,766 | 0 | 0 | 16,383 | 14,336 | +7.31% | +0.00% |
+| dw5_C_O2 8x32x32 pad1 | 1,834,422 | 1,395,000 | 313,982 | 0 | 0 | 156,991 | 125,440 | +6.84% | +0.00% |
+| dw5_C_O2 16x16x16 pad0 | 677,203 | 515,157 | 115,966 | 0 | 0 | 57,983 | 46,080 | +6.80% | +0.00% |
+| dw5_C_O2 8x16x16 pad0 | 338,613 | 257,591 | 57,982 | 0 | 0 | 28,991 | 23,040 | +6.80% | +0.00% |
+| dw5_C_O2 32x8x8 pad1 | 156,837 | 119,463 | 27,134 | 0 | 0 | 13,567 | 10,240 | +6.53% | +0.00% |
+| pw_simd_asm_rv_clip 8x8x16x16 pad0 | 28,165 | 22,279 | 4,094 | 0 | 0 | 2,047 | 1,792 | +6.36% | +0.00% |
+| pw_simd_asm_rv_clip 16x32x8x8 pad1 | 35,333 | 29,255 | 4,094 | 0 | 0 | 2,047 | 1,984 | +5.62% | +0.00% |
+| pw_simd_asm_rv_clip 16x16x16x16 pad0 | 71,687 | 59,657 | 8,190 | 0 | 0 | 4,095 | 3,840 | +5.36% | +0.00% |
 | pw_simd_asm_rv_clip 16x16x8x8 pad1 | 17,924 | 14,918 | 2,046 | 0 | 0 | 1,023 | 960 | +5.36% | +0.00% |
-| simd_unal_asm_rv_clip 8x32x32 pad0 | 139,222 | 101,784 | 14,398 | 0 | 15,840 | 7,199 | 7,199 | +5.17% | +0.00% |
-| simd_unal_asm_rv_clip 16x16x16 pad1 | 61,221 | 45,303 | 6,270 | 0 | 6,720 | 3,135 | 2,927 | +4.78% | +0.00% |
-| simd_unal_asm_rv_clip 32x8x8 pad0 | 23,428 | 17,703 | 2,302 | 0 | 2,304 | 1,151 | 1,120 | +4.78% | -0.00% |
-| simd_unal_asm_rv_clip 8x16x16 pad1 | 30,614 | 22,664 | 3,134 | 0 | 3,360 | 1,567 | 1,456 | +4.76% | +0.00% |
-| pw_simd_asm_rv 8x8x16x16 pad0 | 42,501 | 36,616 | 4,094 | 0 | 0 | 2,047 | 1,792 | +4.21% | -0.00% |
-| pw_simd_asm_rv 16x32x8x8 pad0 | 49,669 | 43,592 | 4,094 | 0 | 0 | 2,047 | 1,984 | +3.99% | -0.00% |
-| pw_simd_asm_rv 16x16x16x16 pad0 | 100,359 | 88,328 | 8,190 | 0 | 0 | 4,095 | 3,840 | +3.83% | +0.00% |
-| pw_simd_asm_rv 16x16x8x8 pad1 | 25,092 | 22,086 | 2,046 | 0 | 0 | 1,023 | 960 | +3.83% | +0.00% |
 
 
 The 2 cycles per taken branch and 1 cycle per load-use hazard were
@@ -254,32 +291,32 @@ never stalls the core.
 
 Per-kernel decomposition (share of cycles, better alignment):
 
-| shape | kernel | instructions | taken-branch penalty | load-use stalls | split loads | residual |
-|---|---|---|---|---|---|---|
-| 8x16x16 | scalar C, -O2 | 95.5% | 4.5% | 0.0% | 0.0% | +0.0% |
-| 8x16x16 | scalar C, -O3 | 97.1% | 2.9% | 0.0% | 0.0% | +0.0% |
-| 8x16x16 | scalar asm | 97.8% | 1.7% | 0.0% | 0.0% | +0.4% |
-| 8x16x16 | SIMD unaligned | 76.8% | 6.5% | 9.7% | 7.0% | +0.0% |
-| 8x16x16 | SIMD aligned | 95.0% | 2.2% | 1.7% | 0.6% | +0.5% |
-| 8x16x16 | SIMD aligned, -O3 | 97.2% | 1.7% | 1.1% | -0.3% | +0.3% |
-| 16x16x16 | scalar C, -O2 | 95.5% | 4.5% | 0.0% | 0.0% | +0.0% |
-| 16x16x16 | scalar C, -O3 | 97.1% | 2.9% | 0.0% | 0.0% | +0.0% |
-| 16x16x16 | scalar asm | 97.8% | 1.7% | 0.0% | 0.0% | +0.4% |
-| 16x16x16 | SIMD unaligned | 76.8% | 6.5% | 9.7% | 7.0% | +0.0% |
-| 16x16x16 | SIMD aligned | 94.5% | 2.2% | 1.7% | 0.8% | +0.8% |
-| 16x16x16 | SIMD aligned, -O3 | 97.2% | 1.7% | 1.1% | -0.3% | +0.3% |
-| 8x32x32 | scalar C, -O2 | 95.4% | 4.6% | 0.0% | 0.0% | +0.0% |
-| 8x32x32 | scalar C, -O3 | 97.0% | 2.9% | 0.0% | 0.0% | +0.1% |
-| 8x32x32 | scalar asm | 97.9% | 2.1% | 0.0% | -0.0% | +0.0% |
-| 8x32x32 | SIMD unaligned | 76.4% | 6.6% | 9.8% | 7.2% | +0.0% |
-| 8x32x32 | SIMD aligned | 96.6% | 2.2% | 0.8% | 0.3% | +0.1% |
-| 8x32x32 | SIMD aligned, -O3 | 97.6% | 1.9% | 0.4% | -0.0% | +0.1% |
-| 32x8x8 | scalar C, -O2 | 95.7% | 4.3% | 0.0% | 0.0% | -0.0% |
-| 32x8x8 | scalar C, -O3 | 98.5% | 1.0% | 0.5% | 0.0% | +0.0% |
-| 32x8x8 | scalar asm | 98.0% | 2.0% | 0.0% | 0.0% | -0.0% |
-| 32x8x8 | SIMD unaligned | 78.2% | 6.2% | 9.4% | 6.2% | -0.0% |
-| 32x8x8 | SIMD aligned | 91.7% | 1.7% | 3.8% | 1.9% | +0.8% |
-| 32x8x8 | SIMD aligned, -O3 | 98.7% | 1.3% | 0.0% | 0.0% | +0.0% |
+| shape | kernel | instructions | taken-branch penalty | load-use stalls | split loads | alignment term | residual |
+|---|---|---|---|---|---|---|---|
+| 8x16x16 | scalar C, -O2 | 95.5% | 4.5% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 8x16x16 | scalar C, -O3 | 97.1% | 2.9% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 8x16x16 | scalar asm | 97.8% | 1.7% | 0.0% | 0.0% | 0.2% | +0.2% |
+| 8x16x16 | SIMD unaligned | 76.8% | 6.5% | 9.7% | 7.0% | 0.0% | +0.0% |
+| 8x16x16 | SIMD aligned | 94.4% | 2.2% | 1.7% | 0.8% | 0.6% | +0.3% |
+| 8x16x16 | SIMD aligned, -O3 | 97.5% | 1.7% | 0.8% | 0.0% | 0.0% | +0.0% |
+| 16x16x16 | scalar C, -O2 | 95.5% | 4.5% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 16x16x16 | scalar C, -O3 | 97.1% | 2.9% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 16x16x16 | scalar asm | 97.8% | 1.7% | 0.0% | 0.0% | 0.2% | +0.2% |
+| 16x16x16 | SIMD unaligned | 76.8% | 6.5% | 9.7% | 7.0% | 0.0% | +0.0% |
+| 16x16x16 | SIMD aligned | 94.5% | 2.2% | 1.7% | 0.8% | 0.5% | +0.3% |
+| 16x16x16 | SIMD aligned, -O3 | 97.5% | 1.7% | 0.8% | 0.0% | 0.0% | +0.0% |
+| 8x32x32 | scalar C, -O2 | 95.4% | 4.6% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 8x32x32 | scalar C, -O3 | 97.0% | 2.9% | 0.0% | 0.0% | 0.1% | +0.0% |
+| 8x32x32 | scalar asm | 97.9% | 2.1% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 8x32x32 | SIMD unaligned | 76.4% | 6.6% | 9.8% | 7.2% | 0.0% | +0.0% |
+| 8x32x32 | SIMD aligned | 96.3% | 2.2% | 0.8% | 0.4% | 0.1% | +0.1% |
+| 8x32x32 | SIMD aligned, -O3 | 97.6% | 1.9% | 0.4% | 0.0% | 0.1% | +0.0% |
+| 32x8x8 | scalar C, -O2 | 95.7% | 4.3% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 32x8x8 | scalar C, -O3 | 98.5% | 1.0% | 0.5% | 0.0% | 0.0% | +0.0% |
+| 32x8x8 | scalar asm | 98.0% | 2.0% | 0.0% | 0.0% | 0.0% | +0.0% |
+| 32x8x8 | SIMD unaligned | 78.2% | 6.2% | 9.4% | 6.2% | 0.0% | +0.0% |
+| 32x8x8 | SIMD aligned | 91.7% | 1.7% | 3.8% | 1.9% | 0.1% | +0.7% |
+| 32x8x8 | SIMD aligned, -O3 | 98.7% | 1.3% | 0.0% | 0.0% | 0.0% | +0.0% |
 
 ## Table 2. Speedups
 
@@ -581,30 +618,30 @@ the build.
 
 | shape | kernel | cycles (pad 0) | cycles (pad 1) | instructions | fetches | data reads | taken branches | load-use stalls | split-load accesses | model residual | checksum |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 8x16x16 | scalar asm, RV32IMC control | 53,889 | 53,673 | 52,507 | 44,894 | 6,824 | 463 | 0 | 0 | +0.4% | 64747 |
-|  | scalar asm, Xpulp control | 52,562 | 52,330 | 51,956 | 50,727 | 7,048 | 127 | 0 | 0 | +0.4% | 64747 |
-|  | SIMD unaligned asm, RV32IMC control | 40,245 | 41,590 | 33,640 | 33,476 | 8,136 | 1,567 | 0 | 3,360 | +0.3% | 64747 |
-|  | SIMD unaligned asm, Xpulp control | 32,519 | 32,638 | 29,049 | 29,109 | 8,136 | 111 | 0 | 3,360 | -0.3% | 64747 |
-|  | SIMD aligned asm, RV32IMC control | 39,078 | 39,407 | 37,235 | 34,557 | 3,096 | 351 | 672 | 336 | +0.3% | 64747 |
-|  | SIMD aligned asm, Xpulp control | 37,840 | 37,735 | 36,228 | 35,990 | 3,096 | 127 | 672 | 336 | +0.4% | 64747 |
-| 16x16x16 | scalar asm, RV32IMC control | 107,335 | 107,767 | 105,000 | 89,141 | 13,632 | 927 | 0 | 0 | +0.4% | 64114 |
-|  | scalar asm, Xpulp control | 104,648 | 105,112 | 103,673 | 101,236 | 14,080 | 255 | 0 | 0 | +0.4% | 64114 |
-|  | SIMD unaligned asm, RV32IMC control | 80,454 | 83,173 | 67,255 | 66,916 | 16,272 | 3,135 | 0 | 6,720 | +0.3% | 64114 |
-|  | SIMD unaligned asm, Xpulp control | 65,030 | 65,239 | 57,848 | 58,181 | 16,272 | 223 | 0 | 6,720 | +0.0% | 64114 |
+| 8x16x16 | scalar asm, RV32IMC control | 53,889 | 53,673 | 52,507 | 44,894 | 6,824 | 463 | 0 | 0 | +0.2% | 64747 |
+|  | scalar asm, Xpulp control | 52,562 | 52,330 | 51,956 | 50,727 | 7,048 | 127 | 0 | 0 | +0.2% | 64747 |
+|  | SIMD unaligned asm, RV32IMC control | 40,245 | 41,590 | 33,640 | 33,476 | 8,136 | 1,567 | 0 | 3,360 | +0.0% | 64747 |
+|  | SIMD unaligned asm, Xpulp control | 32,519 | 32,638 | 28,937 | 29,109 | 8,136 | 111 | 0 | 3,360 | +0.0% | 64747 |
+|  | SIMD aligned asm, RV32IMC control | 39,078 | 39,407 | 37,233 | 34,557 | 3,096 | 351 | 672 | 336 | +0.3% | 64747 |
+|  | SIMD aligned asm, Xpulp control | 37,840 | 37,735 | 36,338 | 35,990 | 3,096 | 127 | 672 | 336 | +0.3% | 64747 |
+| 16x16x16 | scalar asm, RV32IMC control | 107,335 | 107,767 | 105,001 | 89,141 | 13,632 | 927 | 0 | 0 | +0.2% | 64114 |
+|  | scalar asm, Xpulp control | 104,648 | 105,112 | 103,674 | 101,236 | 14,080 | 255 | 0 | 0 | +0.2% | 64114 |
+|  | SIMD unaligned asm, RV32IMC control | 80,454 | 83,173 | 67,256 | 66,916 | 16,272 | 3,135 | 0 | 6,720 | +0.0% | 64114 |
+|  | SIMD unaligned asm, Xpulp control | 65,030 | 65,239 | 57,849 | 58,181 | 16,272 | 223 | 0 | 6,720 | +0.0% | 64114 |
 |  | SIMD aligned asm, RV32IMC control | 78,151 | 78,792 | 74,458 | 69,109 | 6,192 | 703 | 1,344 | 672 | +0.3% | 64114 |
-|  | SIMD aligned asm, Xpulp control | 75,657 | 75,448 | 72,443 | 71,975 | 6,192 | 255 | 1,344 | 672 | +0.3% | 64114 |
-| 8x32x32 | scalar asm, RV32IMC control | 230,366 | 232,751 | 225,545 | 196,716 | 23,136 | 2,399 | 0 | -1 | +0.0% | 62900 |
-|  | scalar asm, Xpulp control | 220,055 | 220,288 | 219,329 | 219,524 | 23,385 | 239 | 240 | 0 | +0.0% | 62900 |
-|  | SIMD unaligned asm, RV32IMC control | 189,622 | 182,423 | 152,184 | 152,140 | 37,512 | 7,199 | 0 | 15,840 | +0.0% | 62900 |
-|  | SIMD unaligned asm, Xpulp control | 147,391 | 147,144 | 130,825 | 131,268 | 37,512 | 239 | 0 | 15,840 | -0.2% | 62900 |
-|  | SIMD aligned asm, RV32IMC control | 174,320 | 176,255 | 168,521 | 157,237 | 12,312 | 1,695 | 1,440 | 720 | +0.1% | 62900 |
-|  | SIMD aligned asm, Xpulp control | 166,648 | 167,121 | 163,714 | 162,997 | 12,312 | 255 | 1,440 | 720 | +0.2% | 62900 |
-| 32x8x8 | scalar asm, RV32IMC control | 38,754 | 39,137 | 37,990 | 32,545 | 4,928 | 383 | 0 | 0 | -0.0% | 65171 |
-|  | scalar asm, Xpulp control | 38,370 | 38,593 | 37,991 | 37,793 | 5,216 | 191 | 192 | 0 | -0.5% | 65171 |
-|  | SIMD unaligned asm, RV32IMC control | 30,403 | 31,492 | 25,767 | 25,441 | 6,048 | 1,151 | 0 | 2,304 | +0.1% | 65171 |
-|  | SIMD unaligned asm, Xpulp control | 25,220 | 25,381 | 22,504 | 22,658 | 6,048 | 191 | 0 | 2,304 | -0.0% | 65171 |
-|  | SIMD aligned asm, RV32IMC control | 31,237 | 31,366 | 28,714 | 26,468 | 3,168 | 255 | 1,152 | 576 | +0.9% | 65171 |
-|  | SIMD aligned asm, Xpulp control | 30,821 | 30,982 | 28,330 | 27,588 | 3,168 | 255 | 1,152 | 576 | +0.8% | 65171 |
+|  | SIMD aligned asm, Xpulp control | 75,657 | 75,448 | 72,667 | 71,975 | 6,192 | 255 | 1,344 | 672 | +0.3% | 64114 |
+| 8x32x32 | scalar asm, RV32IMC control | 230,366 | 232,751 | 225,561 | 196,716 | 23,136 | 2,399 | 0 | 0 | +0.0% | 62900 |
+|  | scalar asm, Xpulp control | 220,055 | 220,288 | 219,330 | 219,524 | 23,385 | 239 | 240 | 0 | +0.0% | 62900 |
+|  | SIMD unaligned asm, RV32IMC control | 189,622 | 182,423 | 152,185 | 152,140 | 37,512 | 7,199 | 0 | 15,840 | +0.0% | 62900 |
+|  | SIMD unaligned asm, Xpulp control | 147,391 | 147,144 | 131,066 | 131,268 | 37,512 | 239 | 0 | 15,840 | +0.0% | 62900 |
+|  | SIMD aligned asm, RV32IMC control | 174,320 | 176,255 | 168,522 | 157,237 | 12,312 | 1,695 | 1,440 | 720 | +0.1% | 62900 |
+|  | SIMD aligned asm, Xpulp control | 166,648 | 167,121 | 163,475 | 162,997 | 12,312 | 255 | 1,440 | 720 | +0.1% | 62900 |
+| 32x8x8 | scalar asm, RV32IMC control | 38,754 | 39,137 | 37,988 | 32,545 | 4,928 | 383 | 0 | 0 | +0.0% | 65171 |
+|  | scalar asm, Xpulp control | 38,370 | 38,593 | 37,796 | 37,793 | 5,216 | 191 | 192 | 0 | +0.0% | 65171 |
+|  | SIMD unaligned asm, RV32IMC control | 30,403 | 31,492 | 25,766 | 25,441 | 6,048 | 1,151 | 0 | 2,304 | +0.0% | 65171 |
+|  | SIMD unaligned asm, Xpulp control | 25,220 | 25,381 | 22,503 | 22,658 | 6,048 | 191 | 0 | 2,304 | +0.0% | 65171 |
+|  | SIMD aligned asm, RV32IMC control | 31,237 | 31,366 | 28,712 | 26,468 | 3,168 | 255 | 1,152 | 576 | +0.7% | 65171 |
+|  | SIMD aligned asm, Xpulp control | 30,821 | 30,982 | 28,136 | 27,588 | 3,168 | 255 | 1,152 | 576 | +0.7% | 65171 |
 
 Speedups, better alignment per kernel, all relative to the hand-written
 scalar kernel with RV32IMC control:
@@ -616,9 +653,9 @@ scalar kernel with RV32IMC control:
 | 8x32x32 | 1.05x | 1.26x | 1.32x | 1.57x | 1.38x | 1.24x | 1.05x |
 | 32x8x8 | 1.01x | 1.27x | 1.24x | 1.54x | 1.26x | 1.21x | 1.01x |
 
-Instruction-count ratios for the same cells: control alone 1.00 to 1.03;
+Instruction-count ratios for the same cells: control alone 1.01 to 1.03;
 datapath alone 1.47 to 1.56 (unaligned) and 1.32 to 1.41 (aligned); both
-1.69 to 1.82 (unaligned) and 1.34 to 1.44 (aligned).
+1.69 to 1.82 (unaligned) and 1.35 to 1.45 (aligned).
 
 What the grid says:
 
@@ -738,49 +775,49 @@ both controls.
 | shape (CIxCOxHxW) | kernel | cycles (pad 0) | cycles (pad 1) | cycles/MAC | instructions | data reads | taken branches | load-use stalls | model residual | checksum |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 16x16x8x8 | scalar C, -O2 | 164,227 | 179,650 | 10.02 | 131,461 | 32,768 | 16,383 | 0 | +0.0% | 64922 |
-|  | scalar C, -O3 | 65,857 | 64,834 | 3.96 | 62,918 | 17,408 | 1,023 | 2,048 | -1.7% | 64922 |
-|  | SIMD C, -O2 | 60,740 | 63,812 | 3.71 | 48,454 | 8,192 | 4,095 | 4,096 | +0.0% | 64922 |
-|  | SIMD C, -O3 | 31,298 | 31,361 | 1.91 | 25,157 | 4,352 | 1,023 | 4,096 | -0.0% | 64922 |
+|  | scalar C, -O3 | 65,857 | 64,834 | 3.96 | 62,788 | 17,408 | 1,023 | 0 | +0.0% | 64922 |
 |  | scalar asm, RV32IMC ctrl | 64,836 | 65,796 | 3.96 | 62,790 | 17,408 | 1,023 | 0 | +0.0% | 64922 |
 |  | scalar asm, Xpulp ctrl | 59,973 | 59,909 | 3.66 | 59,847 | 17,408 | 63 | 0 | +0.0% | 64922 |
+|  | SIMD C, -O2 | 60,740 | 63,812 | 3.71 | 48,454 | 8,192 | 4,095 | 4,096 | +0.0% | 64922 |
+|  | SIMD C, -O3 | 31,298 | 31,361 | 1.91 | 25,156 | 4,352 | 1,023 | 4,096 | +0.0% | 64922 |
 |  | SIMD asm, RV32IMC ctrl | 24,132 | 25,092 | 1.47 | 22,086 | 4,352 | 1,023 | 0 | +0.0% | 64922 |
-|  | SIMD asm, Xpulp ctrl | 19,206 | 19,270 | 1.17 | 19,143 | 4,352 | 63 | 0 | -0.3% | 64922 |
+|  | SIMD asm, Xpulp ctrl | 19,206 | 19,270 | 1.17 | 19,080 | 4,352 | 63 | 0 | +0.0% | 64922 |
 | 8x8x16x16 | scalar C, -O2 | 196,100 | 181,764 | 11.09 | 148,998 | 32,768 | 16,383 | 0 | +0.0% | 64321 |
 |  | scalar C, -O3 | 79,001 | 79,256 | 4.82 | 67,709 | 15,681 | 255 | 10,782 | +0.0% | 64321 |
-|  | SIMD C, -O2 | 46,853 | 47,108 | 2.86 | 38,664 | 4,608 | 2,047 | 4,096 | -0.0% | 64321 |
+|  | scalar asm, RV32IMC ctrl | 81,157 | 82,949 | 4.95 | 77,063 | 18,432 | 2,047 | 0 | +0.0% | 64321 |
+|  | scalar asm, Xpulp ctrl | 71,941 | 71,685 | 4.38 | 71,431 | 18,432 | 255 | 0 | +0.0% | 64321 |
+|  | SIMD C, -O2 | 46,853 | 47,108 | 2.86 | 38,663 | 4,608 | 2,047 | 4,096 | +0.0% | 64321 |
 |  | SIMD C, -O3 | 28,949 | 28,949 | 1.77 | 27,927 | 528 | 255 | 512 | +0.0% | 64321 |
-|  | scalar asm, RV32IMC ctrl | 81,157 | 82,949 | 4.95 | 77,064 | 18,432 | 2,047 | 0 | -0.0% | 64321 |
-|  | scalar asm, Xpulp ctrl | 71,941 | 71,685 | 4.38 | 71,176 | 18,432 | 255 | 0 | +0.4% | 64321 |
-|  | SIMD asm, RV32IMC ctrl | 42,501 | 40,709 | 2.48 | 36,616 | 4,608 | 2,047 | 0 | -0.0% | 64321 |
-|  | SIMD asm, Xpulp ctrl | 31,237 | 31,493 | 1.91 | 30,728 | 4,608 | 255 | 0 | -0.0% | 64321 |
-| 16x32x8x8 | scalar C, -O2 | 328,068 | 358,851 | 10.01 | 262,536 | 65,536 | 32,767 | 0 | -0.0% | 64783 |
-|  | scalar C, -O3 | 128,323 | 130,370 | 3.92 | 124,230 | 33,792 | 2,047 | 8,192 | -4.7% | 64783 |
-|  | SIMD C, -O2 | 121,157 | 127,301 | 3.70 | 96,585 | 16,384 | 8,191 | 8,192 | -0.0% | 64783 |
-|  | SIMD C, -O3 | 62,082 | 62,019 | 1.89 | 49,734 | 8,448 | 2,047 | 8,192 | -0.0% | 64783 |
-|  | scalar asm, RV32IMC ctrl | 130,307 | 128,323 | 3.92 | 124,233 | 33,793 | 2,047 | 0 | -0.0% | 64783 |
-|  | scalar asm, Xpulp ctrl | 118,339 | 118,275 | 3.61 | 118,217 | 33,793 | 63 | 0 | -0.0% | 64783 |
-|  | SIMD asm, RV32IMC ctrl | 49,669 | 47,685 | 1.46 | 43,592 | 8,448 | 2,047 | 0 | -0.0% | 64783 |
-|  | SIMD asm, Xpulp ctrl | 37,700 | 37,636 | 1.15 | 37,512 | 8,448 | 63 | 0 | +0.2% | 64783 |
-| 16x16x16x16 | scalar C, -O2 | 656,901 | 718,341 | 10.02 | 525,830 | 131,072 | 65,535 | 0 | +0.0% | 63819 |
-|  | scalar C, -O3 | 268,292 | 271,877 | 4.09 | 251,654 | 69,888 | 4,095 | 8,192 | +0.1% | 63819 |
-|  | SIMD C, -O2 | 255,239 | 242,951 | 3.71 | 193,801 | 32,768 | 16,383 | 16,384 | +0.0% | 63819 |
-|  | SIMD C, -O3 | 125,442 | 125,187 | 1.91 | 100,613 | 17,408 | 4,095 | 16,384 | +0.0% | 63819 |
+|  | SIMD asm, RV32IMC ctrl | 42,501 | 40,709 | 2.48 | 36,615 | 4,608 | 2,047 | 0 | +0.0% | 64321 |
+|  | SIMD asm, Xpulp ctrl | 31,237 | 31,493 | 1.91 | 30,727 | 4,608 | 255 | 0 | +0.0% | 64321 |
+| 16x32x8x8 | scalar C, -O2 | 328,068 | 358,851 | 10.01 | 262,534 | 65,536 | 32,767 | 0 | +0.0% | 64783 |
+|  | scalar C, -O3 | 128,323 | 130,370 | 3.92 | 124,229 | 33,792 | 2,047 | 0 | +0.0% | 64783 |
+|  | scalar asm, RV32IMC ctrl | 130,307 | 128,323 | 3.92 | 124,229 | 33,793 | 2,047 | 0 | +0.0% | 64783 |
+|  | scalar asm, Xpulp ctrl | 118,339 | 118,275 | 3.61 | 118,213 | 33,793 | 63 | 0 | +0.0% | 64783 |
+|  | SIMD C, -O2 | 121,157 | 127,301 | 3.70 | 96,583 | 16,384 | 8,191 | 8,192 | +0.0% | 64783 |
+|  | SIMD C, -O3 | 62,082 | 62,019 | 1.89 | 49,733 | 8,448 | 2,047 | 8,192 | +0.0% | 64783 |
+|  | SIMD asm, RV32IMC ctrl | 49,669 | 47,685 | 1.46 | 43,591 | 8,448 | 2,047 | 0 | +0.0% | 64783 |
+|  | SIMD asm, Xpulp ctrl | 37,700 | 37,636 | 1.15 | 37,574 | 8,448 | 63 | 0 | +0.0% | 64783 |
+| 16x16x16x16 | scalar C, -O2 | 656,901 | 718,341 | 10.02 | 525,831 | 131,072 | 65,535 | 0 | +0.0% | 63819 |
+|  | scalar C, -O3 | 268,292 | 271,877 | 4.09 | 251,655 | 69,888 | 4,095 | 8,192 | +0.0% | 63819 |
 |  | scalar asm, RV32IMC ctrl | 259,592 | 263,432 | 3.96 | 251,402 | 69,889 | 4,095 | 0 | +0.0% | 63819 |
 |  | scalar asm, Xpulp ctrl | 240,136 | 239,880 | 3.66 | 239,626 | 69,888 | 255 | 0 | +0.0% | 63819 |
-|  | SIMD asm, RV32IMC ctrl | 100,359 | 96,519 | 1.47 | 88,328 | 17,408 | 4,095 | 0 | +0.0% | 63819 |
-|  | SIMD asm, Xpulp ctrl | 76,807 | 77,063 | 1.17 | 76,552 | 17,408 | 255 | 0 | -0.3% | 63819 |
+|  | SIMD C, -O2 | 255,239 | 242,951 | 3.71 | 193,801 | 32,768 | 16,383 | 16,384 | +0.0% | 63819 |
+|  | SIMD C, -O3 | 125,442 | 125,187 | 1.91 | 100,613 | 17,408 | 4,095 | 16,384 | +0.0% | 63819 |
+|  | SIMD asm, RV32IMC ctrl | 100,359 | 96,519 | 1.47 | 88,329 | 17,408 | 4,095 | 0 | +0.0% | 63819 |
+|  | SIMD asm, Xpulp ctrl | 76,807 | 77,063 | 1.17 | 76,297 | 17,408 | 255 | 0 | +0.0% | 63819 |
 
 | shape | -O2 / -O3 | -O3 / asm | SIMD asm (Xpulp ctrl) vs scalar -O3 | vs scalar asm | instr ratio vs asm | datapath only | control only (scalar) | control on top of SIMD |
 |---|---|---|---|---|---|---|---|---|
-| 16x16x8x8 | 2.53x | 1.00x | 3.38x | 3.38x | 3.28 | 2.69x | 1.08x | 1.26x |
+| 16x16x8x8 | 2.53x | 1.00x | 3.38x | 3.38x | 3.29 | 2.69x | 1.08x | 1.26x |
 | 8x8x16x16 | 2.30x | 0.97x | 2.53x | 2.60x | 2.51 | 1.99x | 1.13x | 1.30x |
 | 16x32x8x8 | 2.56x | 1.00x | 3.41x | 3.41x | 3.31 | 2.69x | 1.08x | 1.27x |
-| 16x16x16x16 | 2.45x | 1.03x | 3.49x | 3.38x | 3.28 | 2.69x | 1.08x | 1.26x |
+| 16x16x16x16 | 2.45x | 1.03x | 3.49x | 3.38x | 3.30 | 2.69x | 1.08x | 1.26x |
 
 - **The extension is worth 3.4x here against 1.4x on depthwise**, and the
-  cycle speedup again equals the instruction ratio (3.28 to 3.31 against
-  3.38 to 3.49 in cycles, the small excess being the scalar kernel's own
-  taken branches). Same core, same multiplier, same area. Four lanes
+  cycle speedup again equals the instruction ratio (3.29 to 3.31 against
+  3.38 to 3.49 in cycles at the three shapes with 16 input channels, the
+  small excess being the scalar kernel's own taken branches). Same core, same multiplier, same area. Four lanes
   instead of three, aligned loads instead of split ones, and one weight
   load per four MACs instead of one activation load per three, together
   change the datapath's own contribution from 1.3x to 2.7x at CI = 16.
@@ -822,29 +859,29 @@ model; no output saturates.
 
 | shape | kernel | cycles (pad 0) | cycles (pad 1) | cycles/MAC | instructions | data reads | data writes | taken branches | load-use stalls | split-load accesses | model residual | checksum |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 8x16x16 | scalar C, -O2 | 338,613 | 320,373 | 11.12 | 257,591 | 57,800 | 1,352 | 28,991 | 0 | 0 | +1.5% | 64862 |
-|  | scalar C, -O3 | 156,762 | 156,570 | 5.44 | 139,793 | 41,904 | 4,376 | 1,343 | 14,088 | 0 | +0.0% | 64862 |
-|  | scalar asm, RV32IMC ctrl | 162,501 | 157,421 | 5.47 | 137,935 | 15,840 | 6,912 | 6,719 | 5,760 | 0 | +0.2% | 64862 |
-|  | scalar asm, Xpulp ctrl | 123,431 | 123,615 | 4.29 | 116,617 | 15,840 | 6,912 | 383 | 5,760 | 0 | +0.2% | 64862 |
+| 8x16x16 | scalar C, -O2 | 338,613 | 320,373 | 11.12 | 257,591 | 57,800 | 1,352 | 28,991 | 0 | 0 | +0.0% | 64862 |
+|  | scalar C, -O3 | 156,762 | 156,570 | 5.44 | 139,796 | 41,904 | 4,376 | 1,343 | 14,088 | 0 | +0.0% | 64862 |
+|  | scalar asm, RV32IMC ctrl | 162,501 | 157,421 | 5.47 | 137,935 | 15,840 | 6,912 | 6,719 | 5,760 | 0 | +0.0% | 64862 |
+|  | scalar asm, Xpulp ctrl | 123,431 | 123,615 | 4.29 | 116,905 | 15,840 | 6,912 | 383 | 5,760 | 0 | +0.0% | 64862 |
 |  | SIMD unaligned asm, RV32IMC ctrl | 49,828 | 49,923 | 1.73 | 38,886 | 20,384 | 1,176 | 1,151 | 0 | 8,640 | +0.0% | 64862 |
-|  | SIMD unaligned asm, Xpulp ctrl | 44,563 | 44,460 | 1.54 | 35,727 | 20,480 | 1,184 | 95 | 0 | 8,640 | -0.0% | 64862 |
-| 16x16x16 | scalar C, -O2 | 677,203 | 640,723 | 11.12 | 515,159 | 115,600 | 2,704 | 57,983 | 0 | 0 | +1.5% | 64854 |
+|  | SIMD unaligned asm, Xpulp ctrl | 44,563 | 44,460 | 1.54 | 35,726 | 20,480 | 1,184 | 95 | 0 | 8,640 | +0.0% | 64862 |
+| 16x16x16 | scalar C, -O2 | 677,203 | 640,723 | 11.12 | 515,157 | 115,600 | 2,704 | 57,983 | 0 | 0 | +0.0% | 64854 |
 |  | scalar C, -O3 | 313,160 | 313,544 | 5.44 | 279,594 | 83,808 | 8,752 | 2,687 | 28,192 | 0 | +0.0% | 64854 |
-|  | scalar asm, RV32IMC ctrl | 314,838 | 324,998 | 5.47 | 275,863 | 31,680 | 13,824 | 13,439 | 11,520 | 0 | +0.2% | 64854 |
-|  | scalar asm, Xpulp ctrl | 247,224 | 246,856 | 4.29 | 233,417 | 31,680 | 13,824 | 767 | 11,520 | 0 | +0.2% | 64854 |
-|  | SIMD unaligned asm, RV32IMC ctrl | 99,604 | 99,795 | 1.73 | 77,717 | 40,752 | 2,336 | 2,303 | 0 | 17,280 | +0.0% | 64854 |
-|  | SIMD unaligned asm, Xpulp ctrl | 88,884 | 89,061 | 1.54 | 71,206 | 40,944 | 2,352 | 191 | 0 | 17,280 | +0.0% | 64854 |
-| 8x32x32 | scalar C, -O2 | 1,734,262 | 1,834,422 | 11.06 | 1,394,999 | 313,800 | 6,472 | 156,991 | 0 | 0 | +1.5% | 62512 |
-|  | scalar C, -O3 | 831,750 | 831,558 | 5.30 | 742,973 | 219,056 | 20,376 | 6,463 | 75,656 | 0 | +0.0% | 62512 |
-|  | scalar asm, RV32IMC ctrl | 835,159 | 853,759 | 5.33 | 723,167 | 72,816 | 37,641 | 37,183 | 31,360 | 0 | +0.8% | 62512 |
-|  | scalar asm, Xpulp ctrl | 642,959 | 643,399 | 4.10 | 609,808 | 72,800 | 37,632 | 895 | 31,360 | 0 | +0.0% | 62512 |
-|  | SIMD unaligned asm, RV32IMC ctrl | 267,815 | 268,038 | 1.71 | 208,232 | 109,985 | 6,297 | 6,271 | 0 | 47,040 | +0.0% | 62512 |
-|  | SIMD unaligned asm, Xpulp ctrl | 237,592 | 237,375 | 1.51 | 190,105 | 110,217 | 6,305 | 223 | 0 | 47,040 | +0.0% | 62512 |
-| 32x8x8 | scalar C, -O2 | 149,413 | 156,837 | 11.67 | 119,462 | 26,400 | 1,312 | 13,567 | 0 | 0 | +1.9% | 65080 |
-|  | scalar C, -O3 | 77,289 | 77,961 | 6.04 | 69,864 | 21,440 | 3,808 | 1,279 | 4,768 | 0 | +0.1% | 65080 |
-|  | scalar asm, RV32IMC ctrl | 79,557 | 77,925 | 6.09 | 69,351 | 10,880 | 3,072 | 2,815 | 2,560 | 0 | +0.5% | 65080 |
+|  | scalar asm, RV32IMC ctrl | 314,838 | 324,998 | 5.47 | 275,864 | 31,680 | 13,824 | 13,439 | 11,520 | 0 | +0.0% | 64854 |
+|  | scalar asm, Xpulp ctrl | 247,224 | 246,856 | 4.29 | 233,994 | 31,680 | 13,824 | 767 | 11,520 | 0 | +0.0% | 64854 |
+|  | SIMD unaligned asm, RV32IMC ctrl | 99,604 | 99,795 | 1.73 | 77,718 | 40,752 | 2,336 | 2,303 | 0 | 17,280 | +0.0% | 64854 |
+|  | SIMD unaligned asm, Xpulp ctrl | 88,884 | 89,061 | 1.54 | 71,207 | 40,944 | 2,352 | 191 | 0 | 17,280 | +0.0% | 64854 |
+| 8x32x32 | scalar C, -O2 | 1,734,262 | 1,834,422 | 11.06 | 1,395,000 | 313,800 | 6,472 | 156,991 | 0 | 0 | +0.0% | 62512 |
+|  | scalar C, -O3 | 831,750 | 831,558 | 5.30 | 742,976 | 219,056 | 20,376 | 6,463 | 75,656 | 0 | +0.0% | 62512 |
+|  | scalar asm, RV32IMC ctrl | 835,159 | 853,759 | 5.33 | 723,169 | 72,816 | 37,641 | 37,183 | 31,360 | 0 | +0.0% | 62512 |
+|  | scalar asm, Xpulp ctrl | 642,959 | 643,399 | 4.10 | 609,809 | 72,800 | 37,632 | 895 | 31,360 | 0 | +0.0% | 62512 |
+|  | SIMD unaligned asm, RV32IMC ctrl | 267,815 | 268,038 | 1.71 | 208,233 | 109,985 | 6,297 | 6,271 | 0 | 47,040 | +0.0% | 62512 |
+|  | SIMD unaligned asm, Xpulp ctrl | 237,592 | 237,375 | 1.51 | 190,106 | 110,217 | 6,305 | 223 | 0 | 47,040 | +0.0% | 62512 |
+| 32x8x8 | scalar C, -O2 | 149,413 | 156,837 | 11.67 | 119,463 | 26,400 | 1,312 | 13,567 | 0 | 0 | +0.0% | 65080 |
+|  | scalar C, -O3 | 77,289 | 77,961 | 6.04 | 69,867 | 21,440 | 3,808 | 1,279 | 4,768 | 0 | +0.0% | 65080 |
+|  | scalar asm, RV32IMC ctrl | 79,557 | 77,925 | 6.09 | 69,351 | 10,880 | 3,072 | 2,815 | 2,560 | 0 | +0.0% | 65080 |
 |  | scalar asm, Xpulp ctrl | 62,984 | 63,208 | 4.92 | 59,402 | 10,881 | 3,072 | 511 | 2,560 | 0 | +0.0% | 65080 |
-|  | SIMD unaligned asm, RV32IMC ctrl | 24,837 | 24,772 | 1.94 | 19,879 | 9,985 | 640 | 511 | 0 | 3,840 | +0.1% | 65080 |
+|  | SIMD unaligned asm, RV32IMC ctrl | 24,837 | 24,772 | 1.94 | 19,879 | 9,985 | 640 | 511 | 0 | 3,840 | +0.0% | 65080 |
 |  | SIMD unaligned asm, Xpulp ctrl | 22,597 | 22,438 | 1.75 | 18,472 | 9,985 | 640 | 127 | 0 | 3,840 | +0.0% | 65080 |
 
 | shape | -O2 / -O3 | -O3 / asm | SIMD (Xpulp ctrl) vs scalar -O3 | vs scalar asm | instr ratio vs asm | datapath only | control only (scalar) | control on top of SIMD | split-load share of best |
@@ -895,37 +932,37 @@ every checksum. Generated by `results/dw5_os_model.py` from
 
 | shape | kernel | cycles (pad 0) | cycles (pad 1) | cycles/MAC | instructions per output | data reads | data writes | taken branches | load-use stalls | model residual | checksum |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 8x16x16 | scalar C, -O3 | 156,762 | 156,570 | 5.44 | 121.3 | 41,904 | 4,376 | 1,343 | 14,088 | +0.0% | 64862 |
+| 8x16x16 | scalar C, -O3 | 156,762 | 156,570 | 5.44 | 121.4 | 41,904 | 4,376 | 1,343 | 14,088 | +0.0% | 64862 |
 |  | row-wise asm, RV32IMC ctrl | 162,501 | 157,421 | 5.47 | 119.7 | 15,840 | 6,912 | 6,719 | 5,760 | +0.0% | 64862 |
-|  | row-wise asm, Xpulp ctrl | 123,431 | 123,615 | 4.29 | 101.2 | 15,840 | 6,912 | 383 | 5,760 | +0.2% | 64862 |
-|  | output-stationary asm, RV32IMC ctrl | 131,675 | 132,819 | 4.57 | 112.3 | 57,600 | 1,152 | 1,151 | 0 | -0.0% | 64862 |
-|  | output-stationary asm, Xpulp ctrl | 127,454 | 127,358 | 4.42 | 110.4 | 57,600 | 1,152 | 95 | 0 | +0.1% | 64862 |
-|  | output-stationary asm, RV32IMC ctrl, clip | 123,611 | 124,755 | 4.29 | 105.3 | 57,600 | 1,152 | 1,151 | 0 | -0.0% | 64862 |
-|  | output-stationary asm, Xpulp ctrl, clip | 119,390 | 119,294 | 4.14 | 103.4 | 57,600 | 1,152 | 95 | 0 | +0.1% | 64862 |
-|  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 36,499 | 36,396 | 1.26 | 24.0 | 20,480 | 1,184 | 95 | 0 | -0.0% | 64862 |
+|  | row-wise asm, Xpulp ctrl | 123,431 | 123,615 | 4.29 | 101.5 | 15,840 | 6,912 | 383 | 5,760 | +0.0% | 64862 |
+|  | output-stationary asm, RV32IMC ctrl | 131,675 | 132,819 | 4.57 | 112.3 | 57,600 | 1,152 | 1,151 | 0 | +0.0% | 64862 |
+|  | output-stationary asm, Xpulp ctrl | 127,454 | 127,358 | 4.42 | 110.5 | 57,600 | 1,152 | 95 | 0 | +0.0% | 64862 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 123,611 | 124,755 | 4.29 | 105.3 | 57,600 | 1,152 | 1,151 | 0 | +0.0% | 64862 |
+|  | output-stationary asm, Xpulp ctrl, clip | 119,390 | 119,294 | 4.14 | 103.5 | 57,600 | 1,152 | 95 | 0 | +0.0% | 64862 |
+|  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 36,499 | 36,396 | 1.26 | 24.0 | 20,480 | 1,184 | 95 | 0 | +0.0% | 64862 |
 | 16x16x16 | scalar C, -O3 | 313,160 | 313,544 | 5.44 | 121.4 | 83,808 | 8,752 | 2,687 | 28,192 | +0.0% | 64854 |
 |  | row-wise asm, RV32IMC ctrl | 314,838 | 324,998 | 5.47 | 119.7 | 31,680 | 13,824 | 13,439 | 11,520 | +0.0% | 64854 |
-|  | row-wise asm, Xpulp ctrl | 247,224 | 246,856 | 4.29 | 101.3 | 31,680 | 13,824 | 767 | 11,520 | +0.2% | 64854 |
-|  | output-stationary asm, RV32IMC ctrl | 265,618 | 263,330 | 4.57 | 112.3 | 115,200 | 2,304 | 2,303 | 0 | -0.0% | 64854 |
-|  | output-stationary asm, Xpulp ctrl | 254,691 | 254,883 | 4.42 | 110.5 | 115,200 | 2,304 | 191 | 0 | +0.1% | 64854 |
-|  | output-stationary asm, RV32IMC ctrl, clip | 249,490 | 247,202 | 4.29 | 105.3 | 115,200 | 2,304 | 2,303 | 0 | -0.0% | 64854 |
-|  | output-stationary asm, Xpulp ctrl, clip | 238,563 | 238,755 | 4.14 | 103.5 | 115,200 | 2,304 | 191 | 0 | +0.1% | 64854 |
+|  | row-wise asm, Xpulp ctrl | 247,224 | 246,856 | 4.29 | 101.6 | 31,680 | 13,824 | 767 | 11,520 | +0.0% | 64854 |
+|  | output-stationary asm, RV32IMC ctrl | 265,618 | 263,330 | 4.57 | 112.3 | 115,200 | 2,304 | 2,303 | 0 | +0.0% | 64854 |
+|  | output-stationary asm, Xpulp ctrl | 254,691 | 254,883 | 4.42 | 110.4 | 115,200 | 2,304 | 191 | 0 | +0.0% | 64854 |
+|  | output-stationary asm, RV32IMC ctrl, clip | 249,490 | 247,202 | 4.29 | 105.3 | 115,200 | 2,304 | 2,303 | 0 | +0.0% | 64854 |
+|  | output-stationary asm, Xpulp ctrl, clip | 238,563 | 238,755 | 4.14 | 103.4 | 115,200 | 2,304 | 191 | 0 | +0.0% | 64854 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 72,756 | 72,933 | 1.26 | 23.9 | 40,944 | 2,352 | 191 | 0 | +0.0% | 64854 |
 | 8x32x32 | scalar C, -O3 | 831,750 | 831,558 | 5.30 | 118.5 | 219,056 | 20,376 | 6,463 | 75,656 | +0.0% | 62512 |
 |  | row-wise asm, RV32IMC ctrl | 835,159 | 853,759 | 5.33 | 115.3 | 72,816 | 37,641 | 37,183 | 31,360 | +0.0% | 62512 |
 |  | row-wise asm, Xpulp ctrl | 642,959 | 643,399 | 4.10 | 97.2 | 72,800 | 37,632 | 895 | 31,360 | +0.0% | 62512 |
 |  | output-stationary asm, RV32IMC ctrl | 715,741 | 722,005 | 4.56 | 112.1 | 313,600 | 6,272 | 6,271 | 0 | +0.0% | 62512 |
-|  | output-stationary asm, Xpulp ctrl | 691,551 | 691,327 | 4.41 | 110.2 | 313,600 | 6,272 | 223 | 0 | -0.0% | 62512 |
+|  | output-stationary asm, Xpulp ctrl | 691,551 | 691,327 | 4.41 | 110.2 | 313,600 | 6,272 | 223 | 0 | +0.0% | 62512 |
 |  | output-stationary asm, RV32IMC ctrl, clip | 671,837 | 678,101 | 4.28 | 105.1 | 313,600 | 6,272 | 6,271 | 0 | +0.0% | 62512 |
-|  | output-stationary asm, Xpulp ctrl, clip | 647,647 | 647,423 | 4.13 | 103.2 | 313,600 | 6,272 | 223 | 0 | -0.0% | 62512 |
+|  | output-stationary asm, Xpulp ctrl, clip | 647,647 | 647,423 | 4.13 | 103.2 | 313,600 | 6,272 | 223 | 0 | +0.0% | 62512 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 193,688 | 193,471 | 1.23 | 23.3 | 110,217 | 6,305 | 223 | 0 | +0.0% | 62512 |
-| 32x8x8 | scalar C, -O3 | 77,289 | 77,961 | 6.04 | 136.5 | 21,440 | 3,808 | 1,279 | 4,768 | +0.1% | 65080 |
+| 32x8x8 | scalar C, -O3 | 77,289 | 77,961 | 6.04 | 136.5 | 21,440 | 3,808 | 1,279 | 4,768 | +0.0% | 65080 |
 |  | row-wise asm, RV32IMC ctrl | 79,557 | 77,925 | 6.09 | 135.5 | 10,880 | 3,072 | 2,815 | 2,560 | +0.0% | 65080 |
 |  | row-wise asm, Xpulp ctrl | 62,984 | 63,208 | 4.92 | 116.0 | 10,881 | 3,072 | 511 | 2,560 | +0.0% | 65080 |
 |  | output-stationary asm, RV32IMC ctrl | 59,206 | 59,494 | 4.63 | 113.5 | 25,600 | 512 | 511 | 0 | +0.0% | 65080 |
-|  | output-stationary asm, Xpulp ctrl | 57,447 | 57,319 | 4.48 | 111.5 | 25,600 | 512 | 127 | 0 | -0.2% | 65080 |
+|  | output-stationary asm, Xpulp ctrl | 57,447 | 57,319 | 4.48 | 111.7 | 25,600 | 512 | 127 | 0 | +0.0% | 65080 |
 |  | output-stationary asm, RV32IMC ctrl, clip | 55,622 | 55,910 | 4.35 | 106.5 | 25,600 | 512 | 511 | 0 | +0.0% | 65080 |
-|  | output-stationary asm, Xpulp ctrl, clip | 53,863 | 53,735 | 4.20 | 104.5 | 25,600 | 512 | 127 | 0 | -0.2% | 65080 |
+|  | output-stationary asm, Xpulp ctrl, clip | 53,863 | 53,735 | 4.20 | 104.7 | 25,600 | 512 | 127 | 0 | +0.0% | 65080 |
 |  | SIMD unaligned asm, Xpulp ctrl, clip (full Xpulp) | 19,013 | 18,854 | 1.47 | 29.1 | 9,985 | 640 | 127 | 0 | +0.0% | 65080 |
 
 | shape | output-stationary vs row-wise | vs -O3 | full Xpulp vs row-wise | vs output-stationary | vs -O3 | instr ratio vs output-stationary | control alone (output-stationary) | clip alone (output-stationary) | datapath alone vs output-stationary |
@@ -935,8 +972,8 @@ every checksum. Generated by `results/dw5_os_model.py` from
 | 8x32x32 | 1.17x | 1.16x | 4.32x | 3.70x | 4.30x | 4.82 | 1.04x | 1.07x | 2.67x |
 | 32x8x8 | 1.32x | 1.31x | 4.13x | 3.14x | 4.10x | 3.94 | 1.03x | 1.06x | 2.39x |
 
-8x16x16: row-wise 157,421 cycles = 137,935 instructions + 13,438 taken-branch cycles + 5,760 load-use stalls (6,912 stores); output-stationary 131,675 = 129,375 + 2,302 + 0 (1,152 stores, 57,600 loads = 50 per output). Instructions per output 119.7 vs 112.3; cycles per output 136.7 vs 114.3.
-checksum mismatches against the row-wise kernel: 0; max |model residual| over the output-stationary runs: 0.24%
+8x16x16: row-wise 157,421 cycles = 137,935 instructions + 13,438 taken-branch cycles + 5,760 load-use stalls (6,912 stores); output-stationary 131,675 = 129,373 + 2,302 + 0 (1,152 stores, 57,600 loads = 50 per output). Instructions per output 119.7 vs 112.3; cycles per output 136.7 vs 114.3.
+checksum mismatches against the row-wise kernel: 0; max |model residual| over the output-stationary runs: 0.00%
 
 The output-stationary kernel is 17 to 32% faster than the row-wise one and
 16 to 31% faster than -O3, with fewer instructions per output (112 against
@@ -955,16 +992,16 @@ Headline shapes, better alignment, zero wait states:
 
 | kernel | MACs | lanes used | scalar -O3 c/MAC | hand scalar c/MAC | SIMD + hw loop c/MAC | full Xpulp (+ clip) c/MAC | full Xpulp vs -O3 | vs hand scalar | instr ratio vs hand | datapath only | control on top of SIMD | clip on top of that | SIMD loads/MAC | split-load share of full |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 3x3 depthwise, 8x16x16 | 14,112 | 3 of 4 | 3.86 | 3.80 | 2.30 | 1.53 | 2.53x | 2.49x | 2.91 | 1.33x | 1.24x | 1.51x | 0.34 | 15.6% |
+| 3x3 depthwise, 8x16x16 | 14,112 | 3 of 4 | 3.86 | 3.80 | 2.30 | 1.53 | 2.53x | 2.49x | 2.92 | 1.33x | 1.24x | 1.51x | 0.34 | 15.6% |
 | 5x5 depthwise, 8x16x16 | 28,800 | 5 of 8 | 5.44 | 4.57 | 1.54 | 1.26 | 4.30x | 3.62x | 4.69 | 2.64x | 1.12x | 1.22x | 0.41 | 23.7% |
-| 1x1 pointwise, 16x16x8x8 | 16,384 | 4 of 4 | 3.96 | 3.96 | 1.17 | 0.73 | 5.39x | 5.39x | 5.24 | 2.69x | 1.26x | 1.60x | 0.27 | 0.0% |
+| 1x1 pointwise, 16x16x8x8 | 16,384 | 4 of 4 | 3.96 | 3.96 | 1.17 | 0.73 | 5.39x | 5.39x | 5.27 | 2.69x | 1.26x | 1.60x | 0.27 | 0.0% |
 
 Three kernels, one core, one 57% extension. The same silicon returns 2.5x
 on 3x3 depthwise, 4.3x on 5x5 depthwise and 5.4x on 1x1 pointwise against
 -O3 C once all of it is used (dot product, hardware loop, post-increment,
 clip), and 2.5x, 3.6x and 5.4x against the best hand scalar kernels. In
 every case the cycle model applied to both kernels reproduces the speedup
-(2.47 / 3.62 / 5.36 predicted against 2.49 / 3.62 / 5.39 measured); the gap
+(2.49 / 3.62 / 5.39 predicted and measured, to two decimals); the gap
 to the bare instruction ratio is the split-load cost on the accelerated
 side and the baseline's own taken branches, 2.2%, 1.7% and 3.2% of its
 cycles, on the other. The variation comes from lane utilisation, from
@@ -996,12 +1033,12 @@ Better alignment per kernel, zero wait states, cycles:
 
 ### 3x3 depthwise
 
-| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 8x16x16 | 54,527 | 53,673 | 42,585 | 52,330 | 41,354 | 40,245 | 29,269 | 32,519 | 21,543 | 2.53x | 2.49x | 2.91 | 7.00 | -0.5% |
-| 16x16x16 | 109,048 | 107,335 | 85,159 | 104,648 | 82,696 | 80,454 | 58,502 | 65,030 | 43,078 | 2.53x | 2.49x | 2.93 | 7.00 | +0.0% |
-| 8x32x32 | 249,063 | 230,366 | 179,966 | 220,055 | 169,655 | 182,423 | 132,023 | 147,144 | 96,744 | 2.57x | 2.38x | 2.80 | 7.00 | -0.2% |
-| 32x8x8 | 38,536 | 38,754 | 30,690 | 38,370 | 30,306 | 30,403 | 22,339 | 25,220 | 17,317 | 2.23x | 2.24x | 2.63 | 6.86 | +1.1% |
+| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output: cycles | instructions | model residual, full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | 54,527 | 53,673 | 42,585 | 52,330 | 41,354 | 40,245 | 29,269 | 32,519 | 21,543 | 2.53x | 2.49x | 2.92 | 7.00 | 7.00 | +0.0% |
+| 16x16x16 | 109,048 | 107,335 | 85,159 | 104,648 | 82,696 | 80,454 | 58,502 | 65,030 | 43,078 | 2.53x | 2.49x | 2.93 | 7.00 | 7.00 | +0.0% |
+| 8x32x32 | 249,063 | 230,366 | 179,966 | 220,055 | 169,655 | 182,423 | 132,023 | 147,144 | 96,744 | 2.57x | 2.38x | 2.80 | 7.00 | 7.00 | +0.0% |
+| 32x8x8 | 38,536 | 38,754 | 30,690 | 38,370 | 30,306 | 30,403 | 22,339 | 25,220 | 17,317 | 2.23x | 2.24x | 2.60 | 6.86 | 6.83 | +0.0% |
 
 3x3 depthwise, 8x16x16, speedup over scalar asm (RV32IMC control, branch-free saturation); order-dependent values:
 
@@ -1025,16 +1062,16 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.26x | 1.51x | 1.36x |
 | product | | | 2.49x (measured 2.49x) |
 
-3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.91; instruction ratio with the split-load cost on the accelerated side only 2.45; cycle model applied to both sides 2.47; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 128 residual); full-Xpulp split-load share 15.6%; activation words loaded 4,704 = 3.00 MACs per activation word (loads retired 4,776)
+3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.92; instruction ratio with the split-load cost on the accelerated side only 2.46; cycle model applied to both sides 2.49; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 128 residual); full-Xpulp split-load share 15.6%; activation words loaded 4,704 = 3.00 MACs per activation word (loads retired 4,776)
 
 ### 5x5 depthwise
 
-| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 8x16x16 | 156,570 | 131,675 | 123,611 | 127,358 | 119,294 | 49,828 | 41,764 | 44,460 | 36,396 | 4.30x | 3.62x | 4.69 | 7.00 | -0.0% |
-| 16x16x16 | 313,160 | 263,330 | 247,202 | 254,691 | 238,563 | 99,604 | 83,476 | 88,884 | 72,756 | 4.30x | 3.62x | 4.70 | 7.00 | +0.0% |
-| 8x32x32 | 831,558 | 715,741 | 671,837 | 691,327 | 647,423 | 267,815 | 223,911 | 237,375 | 193,471 | 4.30x | 3.70x | 4.82 | 7.00 | +0.0% |
-| 32x8x8 | 77,289 | 59,206 | 55,622 | 57,319 | 53,735 | 24,772 | 21,188 | 22,438 | 18,854 | 4.10x | 3.14x | 3.94 | 7.00 | +0.0% |
+| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output: cycles | instructions | model residual, full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | 156,570 | 131,675 | 123,611 | 127,358 | 119,294 | 49,828 | 41,764 | 44,460 | 36,396 | 4.30x | 3.62x | 4.69 | 7.00 | 7.00 | +0.0% |
+| 16x16x16 | 313,160 | 263,330 | 247,202 | 254,691 | 238,563 | 99,604 | 83,476 | 88,884 | 72,756 | 4.30x | 3.62x | 4.70 | 7.00 | 7.00 | +0.0% |
+| 8x32x32 | 831,558 | 715,741 | 671,837 | 691,327 | 647,423 | 267,815 | 223,911 | 237,375 | 193,471 | 4.30x | 3.70x | 4.82 | 7.00 | 7.00 | +0.0% |
+| 32x8x8 | 77,289 | 59,206 | 55,622 | 57,319 | 53,735 | 24,772 | 21,188 | 22,438 | 18,854 | 4.10x | 3.14x | 3.94 | 7.00 | 7.00 | +0.0% |
 
 5x5 depthwise, 8x16x16, speedup over scalar asm (RV32IMC control, branch-free saturation); order-dependent values:
 
@@ -1058,16 +1095,16 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.07x | 1.22x | 1.14x |
 | product | | | 3.62x (measured 3.62x) |
 
-5x5 depthwise, 8x16x16: measured speedup 3.62x; instruction ratio 4.69; instruction ratio with the split-load cost on the accelerated side only 3.57; cycle model applied to both sides 3.62; baseline non-instruction share 1.7% (2,302 taken-branch cycles, 0 load-use stalls, 0 split accesses, -2 residual); full-Xpulp split-load share 23.7%; activation words loaded 11,520 = 2.50 MACs per activation word (loads retired 11,840)
+5x5 depthwise, 8x16x16: measured speedup 3.62x; instruction ratio 4.69; instruction ratio with the split-load cost on the accelerated side only 3.57; cycle model applied to both sides 3.62; baseline non-instruction share 1.7% (2,302 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 23.7%; activation words loaded 11,520 = 2.50 MACs per activation word (loads retired 11,840)
 
 ### 1x1 pointwise
 
-| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 16x16x8x8 | 64,834 | 64,836 | 57,668 | 59,909 | 52,740 | 24,132 | 16,964 | 19,206 | 12,038 | 5.39x | 5.39x | 5.24 | 7.00 | -0.5% |
-| 8x8x16x16 | 79,001 | 81,157 | 66,821 | 71,685 | 57,349 | 40,709 | 26,373 | 31,237 | 16,901 | 4.67x | 4.80x | 4.70 | 7.00 | -0.0% |
-| 16x32x8x8 | 128,323 | 128,323 | 113,987 | 118,275 | 103,939 | 47,685 | 33,349 | 37,636 | 23,300 | 5.51x | 5.51x | 5.36 | 7.00 | -0.0% |
-| 16x16x16x16 | 268,292 | 259,592 | 230,920 | 239,880 | 211,208 | 96,519 | 67,847 | 76,807 | 48,135 | 5.57x | 5.39x | 5.25 | 7.00 | -0.5% |
+| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output: cycles | instructions | model residual, full |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 16x16x8x8 | 64,834 | 64,836 | 57,668 | 59,909 | 52,740 | 24,132 | 16,964 | 19,206 | 12,038 | 5.39x | 5.39x | 5.27 | 7.00 | 7.00 | +0.0% |
+| 8x8x16x16 | 79,001 | 81,157 | 66,821 | 71,685 | 57,349 | 40,709 | 26,373 | 31,237 | 16,901 | 4.67x | 4.80x | 4.70 | 7.00 | 7.00 | +0.0% |
+| 16x32x8x8 | 128,323 | 128,323 | 113,987 | 118,275 | 103,939 | 47,685 | 33,349 | 37,636 | 23,300 | 5.51x | 5.51x | 5.36 | 7.00 | 7.03 | +0.0% |
+| 16x16x16x16 | 268,292 | 259,592 | 230,920 | 239,880 | 211,208 | 96,519 | 67,847 | 76,807 | 48,135 | 5.57x | 5.39x | 5.28 | 7.00 | 7.00 | +0.0% |
 
 1x1 pointwise, 16x16x8x8, speedup over scalar asm (RV32IMC control, branch-free saturation); order-dependent values:
 
@@ -1091,22 +1128,27 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.12x | 1.60x | 1.32x |
 | product | | | 5.39x (measured 5.39x) |
 
-1x1 pointwise, 16x16x8x8: measured speedup 5.39x; instruction ratio 5.24; instruction ratio with the split-load cost on the accelerated side only 5.24; cycle model applied to both sides 5.36; baseline non-instruction share 3.2% (2,046 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 0.0%; activation words loaded 4,096 = 4.00 MACs per activation word (loads retired 4,352)
+1x1 pointwise, 16x16x8x8: measured speedup 5.39x; instruction ratio 5.27; instruction ratio with the split-load cost on the accelerated side only 5.27; cycle model applied to both sides 5.39; baseline non-instruction share 3.2% (2,046 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 0.0%; activation words loaded 4,096 = 4.00 MACs per activation word (loads retired 4,352)
 
-Clip saves exactly 7.00 cycles per output in every cell (6.86 at one 3x3
-shape, where the removed instructions changed a branch target's alignment).
-The five-term model residual on the full-Xpulp kernels is under 1.9%.
+Clip removes seven instructions per output from the requantisation. Executed,
+the saving is exactly seven instructions in 123 of the 128 cell pairs (every
+scalar and SIMD cell, all shapes, both alignments) and 6.83 to 7.06 in the
+other five, where the alignment padding before a hardware loop changes; in
+cycles it is 6.03 to 7.97 per output, the spread being the aligner term,
+which moves when the loop body shrinks. The tables quote cycles at each
+kernel's better alignment and instructions at pad 0. The five-term model
+residual on the full-Xpulp kernels is under 1%.
 
 What changes:
 
 - **The full extension is worth 2.5x, 4.3x and 5.4x** against -O3 on the
   three kernels, against 1.7x, 3.5x and 3.4x without clip, and 2.5x, 3.6x
   and 5.4x against the best hand scalar kernels. The instruction ratios over
-  the hand kernels are 2.9, 4.7 and 5.2; the gap to the cycle ratios is split loads on the
+  the hand kernels are 2.9, 4.7 and 5.3; the gap to the cycle ratios is split loads on the
   accelerated side, now 16% and 24% of the depthwise kernels' cycles because
   everything else got cheaper, and the baseline's own stalls on the other
   (2.2%, 1.7% and 3.2% of its cycles); the cycle model applied to both
-  kernels gives 2.47, 3.62 and 5.36.
+  kernels gives 2.49, 3.62 and 5.39, the measured values.
 - **Clip is worth more than hardware loops on every kernel, in every
   view.** The value of a feature depends on when it is added. Added last,
   on top of the other two, clip is 1.51x (3x3), 1.22x (5x5) and 1.60x (1x1)
@@ -1369,14 +1411,14 @@ on either ISA because the store already advances a pointer.
 
 | block variant | cycles (pad 0 / pad 1) | cycles/MAC | instructions | data reads | data writes | taken branches | split loads | model residual | checksum (pw) |
 |---|---|---|---|---|---|---|---|---|---|
-| C -O3, transform | 337,690 / 330,078 | 4.21 | 308,120 | 68,233 | 9,697 | 7,837 | -1 | +0.0% | 596 |
-| C -O3, fused store | 311,611 / 313,014 | 3.97 | 294,388 | 66,906 | 6,818 | 4,702 | -1 | +0.5% | 596 |
-| SIMD asm, RV32IMC ctrl, transform | 172,864 / 176,190 | 2.20 | 144,394 | 32,736 | 9,408 | 9,405 | 6,720 | +1.7% | 596 |
-| SIMD asm, RV32IMC ctrl, fused | 153,738 / 148,079 | 1.89 | 128,614 | 29,600 | 6,272 | 6,270 | 6,720 | +0.1% | 596 |
-| SIMD + hw loops, transform | 139,837 / 139,628 | 1.78 | 125,774 | 32,736 | 9,408 | 3,553 | 6,720 | -0.1% | 596 |
-| SIMD + hw loops, fused | 117,967 / 117,758 | 1.50 | 110,190 | 29,600 | 6,272 | 418 | 6,720 | -0.2% | 596 |
-| full Xpulp (+ clip), transform | 102,205 / 101,996 | 1.30 | 88,142 | 32,736 | 9,408 | 3,553 | 6,720 | -0.2% | 596 |
-| full Xpulp (+ clip), fused | 80,335 / 80,126 | 1.02 | 72,558 | 29,600 | 6,272 | 418 | 6,720 | -0.3% | 596 |
+| C -O3, transform | 337,690 / 330,078 | 4.21 | 308,117 | 68,233 | 9,697 | 7,837 | 0 | +0.0% | 596 |
+| C -O3, fused store | 311,611 / 313,014 | 3.97 | 294,383 | 66,906 | 6,818 | 4,702 | 0 | +0.0% | 596 |
+| SIMD asm, RV32IMC ctrl, transform | 172,864 / 176,190 | 2.20 | 144,392 | 32,736 | 9,408 | 9,405 | 6,720 | +0.0% | 596 |
+| SIMD asm, RV32IMC ctrl, fused | 153,738 / 148,079 | 1.89 | 128,611 | 29,600 | 6,272 | 6,270 | 6,720 | +0.0% | 596 |
+| SIMD + hw loops, transform | 139,837 / 139,628 | 1.78 | 125,996 | 32,736 | 9,408 | 3,553 | 6,720 | +0.0% | 596 |
+| SIMD + hw loops, fused | 117,967 / 117,758 | 1.50 | 110,411 | 29,600 | 6,272 | 418 | 6,720 | +0.0% | 596 |
+| full Xpulp (+ clip), transform | 102,205 / 101,996 | 1.30 | 88,364 | 32,736 | 9,408 | 3,553 | 6,720 | +0.0% | 596 |
+| full Xpulp (+ clip), fused | 80,335 / 80,126 | 1.02 | 72,779 | 29,600 | 6,272 | 418 | 6,720 | +0.0% | 596 |
 
 | quantity | value |
 |---|---|
@@ -1390,9 +1432,11 @@ on either ISA because the store already advances a pointer.
 | + clip | 1.47x |
 | fused full-Xpulp block vs sum of standalone stages (43,080 + 37,049) | -3 cycles |
 
-- **Composition is exact.** The fused full-Xpulp block takes 80,335 cycles;
-  the two stages measured alone take 43,080 + 37,049 = 80,129. The cycle
-  model and the per-kernel numbers add. Three cycles of difference.
+- **Composition is exact.** At its better code alignment the fused
+  full-Xpulp block takes 80,126 cycles (80,335 at the other); the two stages
+  measured alone, each at its better alignment, take 43,080 + 37,049 =
+  80,129. The cycle model and the per-kernel numbers add. Three cycles of
+  difference.
 - **The layout transform is worth 21% of the accelerated block and 6% of
   the scalar one**, and the extension does nothing for it: about 21,000
   cycles either way. Quoting the kernel speedups for the block without
@@ -1420,8 +1464,12 @@ asm kernels, three families, four shapes, both code alignments. Same
 Verilator harness (`harness_ibex/`), same memory model, same binaries,
 same magic addresses; Ibex's counters are fixed-event (data-side wait,
 instruction-side wait, loads, stores, branches, taken branches, compressed)
-and were validated the same way, loads retired against bus reads and stores
-against bus writes.
+and are read the same way as on CV32E40P: the harness integrates Ibex's
+counter event vector (`mhpmcounter_incr` in ibex_cs_registers) over the
+measured window of the measured binary. They match the CSR counters in
+instrumented builds up to a fixed window offset (`results/counter_validation.txt`),
+loads retired equal bus reads exactly, and stores retired equal bus writes
+plus the stop-marker store.
 
 One harness detail cost an afternoon and belongs here as a time-zero
 simulation artefact, not as core behaviour: ibex_top gates the core clock
@@ -1436,47 +1484,52 @@ harness drives reset as a falling edge, which is what silicon always sees.
 | kernel | shape | instructions | CV32E40P cycles | Ibex 2-stage cycles | Ibex 3-stage cycles | Ibex2 / CV | Ibex3 / CV | alignment spread CV / Ibex2 / Ibex3 |
 |---|---|---|---|---|---|---|---|---|
 | 3x3 depthwise, C -O2 | 8x16x16 | 66,134 | 69,275 | 74,981 | 67,708 | 1.08 | 0.98 | 2.2% / 2.1% / 2.3% |
-| 3x3 depthwise, C -O3 | 8x16x16 | 52,952 | 54,527 | 61,153 | 53,744 | 1.12 | 0.99 | 1.4% / 1.3% / 1.4% |
+| 3x3 depthwise, C -O3 | 8x16x16 | 52,954 | 54,527 | 61,153 | 53,744 | 1.12 | 0.99 | 1.4% / 1.3% / 1.4% |
 | 3x3 depthwise, hand asm | 8x16x16 | 52,507 | 53,673 | 61,621 | 53,210 | 1.15 | 0.99 | 0.4% / 0.4% / 0.4% |
-| 3x3 depthwise, C -O2 | 16x16x16 | 132,278 | 138,564 | 149,974 | 135,429 | 1.08 | 0.98 | 2.2% / 2.1% / 2.3% |
+| 3x3 depthwise, C -O2 | 16x16x16 | 132,279 | 138,564 | 149,974 | 135,429 | 1.08 | 0.98 | 2.2% / 2.1% / 2.3% |
 | 3x3 depthwise, C -O3 | 16x16x16 | 105,899 | 109,048 | 122,299 | 107,481 | 1.12 | 0.99 | 1.4% / 1.3% / 1.4% |
-| 3x3 depthwise, hand asm | 16x16x16 | 105,000 | 107,335 | 123,210 | 106,408 | 1.15 | 0.99 | 0.4% / 0.4% / 0.4% |
+| 3x3 depthwise, hand asm | 16x16x16 | 105,001 | 107,335 | 123,210 | 106,408 | 1.15 | 0.99 | 0.4% / 0.4% / 0.4% |
 | 3x3 depthwise, C -O2 | 8x32x32 | 298,998 | 313,403 | 337,045 | 306,204 | 1.08 | 0.98 | 2.3% / 2.1% / 2.3% |
-| 3x3 depthwise, C -O3 | 8x32x32 | 241,625 | 249,063 | 276,307 | 245,464 | 1.11 | 0.99 | 1.3% / 1.1% / 1.3% |
-| 3x3 depthwise, hand asm | 8x32x32 | 225,545 | 230,366 | 258,328 | 227,967 | 1.12 | 0.99 | 1.0% / 0.9% / 1.0% |
-| 3x3 depthwise, C -O2 | 32x8x8 | 51,112 | 53,413 | 59,111 | 52,262 | 1.11 | 0.98 | 2.2% / 1.9% / 2.2% |
-| 3x3 depthwise, C -O3 | 32x8x8 | 37,960 | 38,536 | 45,356 | 38,345 | 1.18 | 1.00 | 0.4% / 0.4% / 0.4% |
-| 3x3 depthwise, hand asm | 32x8x8 | 37,990 | 38,754 | 44,484 | 38,371 | 1.15 | 0.99 | 1.0% / 0.9% / 1.0% |
+| 3x3 depthwise, C -O3 | 8x32x32 | 241,626 | 249,063 | 276,307 | 245,464 | 1.11 | 0.99 | 1.3% / 1.1% / 1.3% |
+| 3x3 depthwise, hand asm | 8x32x32 | 225,561 | 230,366 | 258,328 | 227,967 | 1.12 | 0.99 | 1.0% / 0.9% / 1.0% |
+| 3x3 depthwise, C -O2 | 32x8x8 | 51,111 | 53,413 | 59,111 | 52,262 | 1.11 | 0.98 | 2.2% / 1.9% / 2.2% |
+| 3x3 depthwise, C -O3 | 32x8x8 | 37,962 | 38,536 | 45,356 | 38,345 | 1.18 | 1.00 | 0.4% / 0.4% / 0.4% |
+| 3x3 depthwise, hand asm | 32x8x8 | 37,988 | 38,754 | 44,484 | 38,371 | 1.15 | 0.99 | 1.0% / 0.9% / 1.0% |
 | 5x5 depthwise, C -O2 | 8x16x16 | 257,591 | 320,373 | 350,535 | 291,382 | 1.09 | 0.91 | 5.7% / 5.2% / 6.3% |
-| 5x5 depthwise, C -O3 | 8x16x16 | 139,793 | 156,570 | 187,420 | 155,227 | 1.20 | 0.99 | 0.1% / 0.1% / 0.1% |
-| 5x5 depthwise, hand asm | 8x16x16 | 137,935 | 157,421 | 167,695 | 150,702 | 1.07 | 0.96 | 3.2% / 3.0% / 3.4% |
-| 5x5 depthwise, C -O2 | 16x16x16 | 515,159 | 640,723 | 701,045 | 582,740 | 1.09 | 0.91 | 5.7% / 5.2% / 6.3% |
+| 5x5 depthwise, C -O3 | 8x16x16 | 139,796 | 156,570 | 187,420 | 155,227 | 1.20 | 0.99 | 0.1% / 0.1% / 0.1% |
+| 5x5 depthwise, hand asm, output-stationary | 8x16x16 | 129,373 | 131,675 | 189,277 | 130,524 | 1.44 | 0.99 | 0.9% / 0.6% / 0.9% |
+| 5x5 depthwise, hand asm, row-wise | 8x16x16 | 137,935 | 157,421 | 167,695 | 150,702 | 1.07 | 0.96 | 3.2% / 3.0% / 3.4% |
+| 5x5 depthwise, C -O2 | 16x16x16 | 515,157 | 640,723 | 701,045 | 582,740 | 1.09 | 0.91 | 5.7% / 5.2% / 6.3% |
 | 5x5 depthwise, C -O3 | 16x16x16 | 279,594 | 313,160 | 374,842 | 310,473 | 1.20 | 0.99 | 0.1% / 0.1% / 0.1% |
-| 5x5 depthwise, hand asm | 16x16x16 | 275,863 | 314,838 | 335,384 | 301,399 | 1.07 | 0.96 | 3.2% / 3.0% / 3.4% |
-| 5x5 depthwise, C -O2 | 8x32x32 | 1,394,999 | 1,734,262 | 1,897,544 | 1,577,271 | 1.09 | 0.91 | 5.8% / 5.3% / 6.4% |
-| 5x5 depthwise, C -O3 | 8x32x32 | 742,973 | 831,558 | 988,872 | 825,095 | 1.19 | 0.99 | 0.0% / 0.0% / 0.0% |
-| 5x5 depthwise, hand asm | 8x32x32 | 723,167 | 835,159 | 877,074 | 797,976 | 1.05 | 0.96 | 2.2% / 2.1% / 2.3% |
-| 5x5 depthwise, C -O2 | 32x8x8 | 119,462 | 149,413 | 163,559 | 135,846 | 1.09 | 0.91 | 5.0% / 4.5% / 5.5% |
-| 5x5 depthwise, C -O3 | 32x8x8 | 69,864 | 77,289 | 96,491 | 76,010 | 1.25 | 0.98 | 0.9% / 0.7% / 0.9% |
-| 5x5 depthwise, hand asm | 32x8x8 | 69,351 | 77,925 | 86,503 | 75,110 | 1.11 | 0.96 | 2.1% / 1.9% / 2.2% |
+| 5x5 depthwise, hand asm, output-stationary | 16x16x16 | 258,724 | 263,330 | 378,532 | 261,027 | 1.44 | 0.99 | 0.9% / 0.6% / 0.9% |
+| 5x5 depthwise, hand asm, row-wise | 16x16x16 | 275,864 | 314,838 | 335,384 | 301,399 | 1.07 | 0.96 | 3.2% / 3.0% / 3.4% |
+| 5x5 depthwise, C -O2 | 8x32x32 | 1,395,000 | 1,734,262 | 1,897,544 | 1,577,271 | 1.09 | 0.91 | 5.8% / 5.3% / 6.4% |
+| 5x5 depthwise, C -O3 | 8x32x32 | 742,976 | 831,558 | 988,872 | 825,095 | 1.19 | 0.99 | 0.0% / 0.0% / 0.0% |
+| 5x5 depthwise, hand asm, output-stationary | 8x32x32 | 703,199 | 715,741 | 1,029,343 | 709,470 | 1.44 | 0.99 | 0.9% / 0.6% / 0.9% |
+| 5x5 depthwise, hand asm, row-wise | 8x32x32 | 723,169 | 835,159 | 877,074 | 797,976 | 1.05 | 0.96 | 2.2% / 2.1% / 2.3% |
+| 5x5 depthwise, C -O2 | 32x8x8 | 119,463 | 149,413 | 163,559 | 135,846 | 1.09 | 0.91 | 5.0% / 4.5% / 5.5% |
+| 5x5 depthwise, C -O3 | 32x8x8 | 69,867 | 77,289 | 96,491 | 76,010 | 1.25 | 0.98 | 0.9% / 0.7% / 0.9% |
+| 5x5 depthwise, hand asm, output-stationary | 32x8x8 | 58,088 | 59,206 | 84,808 | 58,695 | 1.43 | 0.99 | 0.5% / 0.3% / 0.5% |
+| 5x5 depthwise, hand asm, row-wise | 32x8x8 | 69,351 | 77,925 | 86,503 | 75,110 | 1.11 | 0.96 | 2.1% / 1.9% / 2.2% |
 | 1x1 pointwise, C -O2 | 16x16x8x8 | 131,461 | 164,227 | 181,637 | 147,844 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
-| 1x1 pointwise, C -O3 | 16x16x8x8 | 62,918 | 64,834 | 82,244 | 63,811 | 1.27 | 0.98 | 1.6% / 1.2% / 1.6% |
+| 1x1 pointwise, C -O3 | 16x16x8x8 | 62,788 | 64,834 | 82,244 | 63,811 | 1.27 | 0.98 | 1.6% / 1.2% / 1.6% |
 | 1x1 pointwise, hand asm | 16x16x8x8 | 62,790 | 64,836 | 82,246 | 63,813 | 1.27 | 0.98 | 1.5% / 1.2% / 1.5% |
 | 1x1 pointwise, C -O2 | 8x8x16x16 | 148,998 | 181,764 | 200,198 | 165,381 | 1.10 | 0.91 | 7.9% / 7.2% / 8.7% |
 | 1x1 pointwise, C -O3 | 8x8x16x16 | 67,709 | 79,001 | 85,748 | 78,746 | 1.09 | 1.00 | 0.3% / 0.3% / 0.3% |
-| 1x1 pointwise, hand asm | 8x8x16x16 | 77,064 | 81,157 | 99,591 | 79,110 | 1.23 | 0.97 | 2.2% / 1.8% / 2.3% |
-| 1x1 pointwise, C -O2 | 16x32x8x8 | 262,536 | 328,068 | 362,886 | 295,301 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
-| 1x1 pointwise, C -O3 | 16x32x8x8 | 124,230 | 128,323 | 162,117 | 126,276 | 1.26 | 0.98 | 1.6% / 1.3% / 1.6% |
-| 1x1 pointwise, hand asm | 16x32x8x8 | 124,233 | 128,323 | 162,118 | 126,276 | 1.26 | 0.98 | 1.5% / 1.2% / 1.6% |
-| 1x1 pointwise, C -O2 | 16x16x16x16 | 525,830 | 656,901 | 726,535 | 591,366 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
-| 1x1 pointwise, C -O3 | 16x16x16x16 | 251,654 | 268,292 | 330,246 | 264,197 | 1.23 | 0.98 | 1.3% / 1.1% / 1.4% |
+| 1x1 pointwise, hand asm | 8x8x16x16 | 77,063 | 81,157 | 99,591 | 79,110 | 1.23 | 0.97 | 2.2% / 1.8% / 2.3% |
+| 1x1 pointwise, C -O2 | 16x32x8x8 | 262,534 | 328,068 | 362,886 | 295,301 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
+| 1x1 pointwise, C -O3 | 16x32x8x8 | 124,229 | 128,323 | 162,117 | 126,276 | 1.26 | 0.98 | 1.6% / 1.3% / 1.6% |
+| 1x1 pointwise, hand asm | 16x32x8x8 | 124,229 | 128,323 | 162,118 | 126,276 | 1.26 | 0.98 | 1.5% / 1.2% / 1.6% |
+| 1x1 pointwise, C -O2 | 16x16x16x16 | 525,831 | 656,901 | 726,535 | 591,366 | 1.11 | 0.90 | 9.4% / 8.5% / 10.4% |
+| 1x1 pointwise, C -O3 | 16x16x16x16 | 251,655 | 268,292 | 330,246 | 264,197 | 1.23 | 0.98 | 1.3% / 1.1% / 1.4% |
 | 1x1 pointwise, hand asm | 16x16x16x16 | 251,402 | 259,592 | 329,485 | 255,497 | 1.27 | 0.98 | 1.5% / 1.2% / 1.5% |
 
 Instruction counts and checksums are identical across all three cores in
-all 72 run pairs, which they must be: the counters count the same binary.
-Cycle counts are not. Ibex's 2-stage pipeline takes 1.05 to 1.27x the
+all 80 run pairs, which they must be: the counters count the same binary.
+Cycle counts are not. Ibex's 2-stage pipeline takes 1.05 to 1.44x the
 cycles of CV32E40P on the same code, because every load and store stalls a
-cycle there; the 3-stage pipeline hides that and comes out at 0.90 to
+cycle there; the top of the range is the output-stationary 5x5 kernel, with
+50 loads per output; the 3-stage pipeline hides that and comes out at 0.90 to
 1.00x, slightly faster than CV32E40P on branch-heavy -O2 code because its
 branch target ALU takes a cycle off taken branches.
 
@@ -1488,10 +1541,14 @@ branch target ALU takes a cycle off taken branches.
 | 3x3 depthwise | 16x16x16 | 1.27x | 1.23x | 1.26x | 1.02x | 0.99x | 1.01x |
 | 3x3 depthwise | 8x32x32 | 1.26x | 1.22x | 1.25x | 1.08x | 1.07x | 1.08x |
 | 3x3 depthwise | 32x8x8 | 1.39x | 1.30x | 1.36x | 0.99x | 1.02x | 1.00x |
-| 5x5 depthwise | 8x16x16 | 2.05x | 1.87x | 1.88x | 0.99x | 1.12x | 1.03x |
-| 5x5 depthwise | 16x16x16 | 2.05x | 1.87x | 1.88x | 0.99x | 1.12x | 1.03x |
-| 5x5 depthwise | 8x32x32 | 2.09x | 1.92x | 1.91x | 1.00x | 1.13x | 1.03x |
-| 5x5 depthwise | 32x8x8 | 1.93x | 1.70x | 1.79x | 0.99x | 1.12x | 1.01x |
+| 5x5 depthwise | 8x16x16 | 2.05x | 1.87x | 1.88x | 1.19x | 0.99x | 1.19x |
+| 5x5 depthwise | 16x16x16 | 2.05x | 1.87x | 1.88x | 1.19x | 0.99x | 1.19x |
+| 5x5 depthwise | 8x32x32 | 2.09x | 1.92x | 1.91x | 1.16x | 0.96x | 1.16x |
+| 5x5 depthwise | 32x8x8 | 1.93x | 1.70x | 1.79x | 1.31x | 1.14x | 1.29x |
+| 5x5 depthwise, row-wise hand | 8x16x16 | 2.05x | 1.87x | 1.88x | 0.99x | 1.12x | 1.03x |
+| 5x5 depthwise, row-wise hand | 16x16x16 | 2.05x | 1.87x | 1.88x | 0.99x | 1.12x | 1.03x |
+| 5x5 depthwise, row-wise hand | 8x32x32 | 2.09x | 1.92x | 1.91x | 1.00x | 1.13x | 1.03x |
+| 5x5 depthwise, row-wise hand | 32x8x8 | 1.93x | 1.70x | 1.79x | 0.99x | 1.12x | 1.01x |
 | 1x1 pointwise | 16x16x8x8 | 2.53x | 2.21x | 2.32x | 1.00x | 1.00x | 1.00x |
 | 1x1 pointwise | 8x8x16x16 | 2.30x | 2.33x | 2.10x | 0.97x | 0.86x | 1.00x |
 | 1x1 pointwise | 16x32x8x8 | 2.56x | 2.24x | 2.34x | 1.00x | 1.00x | 1.00x |
@@ -1508,33 +1565,39 @@ branch target ALU takes a cycle off taken branches.
   mechanism is the same: a taken branch whose first 32-bit instruction
   straddles a fetch word costs one extra cycle, on any core that fetches
   aligned words through a prefetch buffer.
-- **Hand asm versus -O3**: within 3% on both cores at all shapes but two,
-  where the hand scalar's design choices interact with the pipeline: the
-  row-wise 5x5 kernel gains 12% on the 2-stage Ibex because its stores do
-  not stall differently from -O3's loads, and the pointwise asm loses 14%
-  at 8x8x16x16 on the same core.
-- **The cycle model** transfers in structure, not in coefficients. On
-  CV32E40P the counters expose load-use stalls and split loads directly and
-  the model holds to under 1%. Ibex's counters expose data-side wait
-  cycles, which account for the memory stalls exactly (coefficient 0.99),
-  but fold the branch penalty into an instruction-side wait counter that
-  overlaps with other stalls (coefficient 0.35). The best fixed-form model,
-  cycles = instructions + data-side wait + 1.5 x taken branches, fits to a
-  mean 1.2% and a maximum 4.5% on the 2-stage core, 1.7% and 7.3% on the
-  3-stage; the 1.5 is the alignment effect averaged. A core's counters
-  determine how exact its cycle model can be.
+- **Hand asm versus -O3**: on 3x3 and pointwise within 3% on all three
+  cores at every shape but one, the pointwise kernel at 8x8x16x16 on the
+  2-stage Ibex (14% slower). On 5x5 the best loop order depends on the
+  pipeline. The output-stationary kernel, 16 to 31% faster than -O3 on
+  CV32E40P, is 16 to 29% faster on the 3-stage Ibex, but on the 2-stage
+  one, where each of its 50 loads per output stalls a cycle, it is 1 to 4%
+  slower at three shapes and 14% faster at 32x8x8. The row-wise kernel,
+  with ten loads and four accumulator stores per output and kernel row,
+  matches -O3 on CV32E40P and gains 12% over it on the 2-stage Ibex. A
+  baseline that is strongest on one pipeline is not strongest on another.
+- **The cycle model** closes exactly on Ibex too, with different terms.
+  On CV32E40P the counters expose load-use stalls and split loads directly
+  and the five-term model holds to a mean 0.08%. Ibex's counters partition
+  every cycle: cycles = instructions + data-side wait + instruction-side
+  wait, with zero error on all 80 runs of both pipelines (least-squares
+  coefficients 1.00, 1.00 and 0.00 for taken branches). The branch and
+  alignment penalties sit inside the instruction-side wait, so Ibex's
+  counters do not separate them, which CV32E40P's do. An earlier version of
+  this section reported a best fixed-form fit of 1.2% mean and 4.5% maximum
+  and concluded that a core's counters bound its model; that misfit was
+  the instrumented-build artefact described under Table 1.
 
 ```
-ibex2: least squares, cycles - instructions = 0.99 x data-side wait + 0.35 x instruction-side wait + 0.98 x taken branches   (R^2 of the stall part 0.9898, worst |residual| 5.7% of cycles, 72 runs)
-fixed form cycles = instr + dwait + iwait: max |error| 8.5%, mean 1.6%, mean signed -0.0%
-fixed form cycles = instr + dwait + 2 x taken branches: max |error| 9.0%, mean 1.7%, mean signed -1.7%
-fixed form cycles = instr + dwait + taken branches + 0.35 x iwait: max |error| 6.1%, mean 1.4%, mean signed -0.2%
-fixed form cycles = instr + dwait + 1.5 x taken branches: max |error| 4.5%, mean 1.2%, mean signed -0.2%
-ibex3: least squares, cycles - instructions = 0.96 x data-side wait + 0.34 x instruction-side wait + 0.97 x taken branches   (R^2 of the stall part 0.9468, worst |residual| 7.1% of cycles, 72 runs)
-fixed form cycles = instr + dwait + iwait: max |error| 10.4%, mean 2.2%, mean signed -0.3%
-fixed form cycles = instr + dwait + 2 x taken branches: max |error| 11.1%, mean 2.3%, mean signed -2.3%
-fixed form cycles = instr + dwait + taken branches + 0.35 x iwait: max |error| 7.5%, mean 1.9%, mean signed -0.5%
-fixed form cycles = instr + dwait + 1.5 x taken branches: max |error| 7.3%, mean 1.7%, mean signed -0.5%
+ibex2: least squares, cycles - instructions = 1.00 x data-side wait + 1.00 x instruction-side wait + 0.00 x taken branches   (R^2 of the stall part 1.0000, worst |residual| 0.0% of cycles, 80 runs)
+fixed form cycles = instr + dwait + iwait: max |error| 0.0%, mean 0.0%, mean signed +0.0%
+fixed form cycles = instr + dwait + 2 x taken branches: max |error| 9.0%, mean 1.5%, mean signed -1.5%
+fixed form cycles = instr + dwait + taken branches + 0.35 x iwait: max |error| 3.2%, mean 0.7%, mean signed -0.2%
+fixed form cycles = instr + dwait + 1.5 x taken branches: max |error| 4.5%, mean 1.1%, mean signed -0.1%
+ibex3: least squares, cycles - instructions = 1.00 x data-side wait + 1.00 x instruction-side wait + 0.00 x taken branches   (R^2 of the stall part 1.0000, worst |residual| 0.0% of cycles, 80 runs)
+fixed form cycles = instr + dwait + iwait: max |error| 0.0%, mean 0.0%, mean signed +0.0%
+fixed form cycles = instr + dwait + 2 x taken branches: max |error| 11.1%, mean 1.8%, mean signed -1.8%
+fixed form cycles = instr + dwait + taken branches + 0.35 x iwait: max |error| 3.9%, mean 0.9%, mean signed -0.2%
+fixed form cycles = instr + dwait + 1.5 x taken branches: max |error| 5.5%, mean 1.3%, mean signed -0.2%
 ```
 
 ### Area
@@ -1591,8 +1654,8 @@ that remains the limit of the study.
   weights reloaded); other orders, such as keeping two weight rows
   resident, were not tried. The row-wise kernel matched -O3 within 1% and
   still lost 17 to 32% to the other order, so "matches the compiler" is
-  not evidence of a strong baseline. The output-stationary kernel has not
-  been run on Ibex.
+  not evidence of a strong baseline. On Ibex 2-stage neither order is best
+  everywhere (see the second-core section).
 - The compiler-generated SIMD kernels in Tables 1 and 2 carry load-use
   stalls a hand schedule avoids; the decomposition section has the
   hand-written counterparts.
@@ -1606,7 +1669,8 @@ that remains the limit of the study.
 ## Reproducing
 
 `./reproduce.sh` at the repository root runs every stage in order
-(simulators, all counter datasets on both cores, both latency sweeps, the
+(simulators, a check of the harness event counts against the CSR counters,
+all counter datasets on both cores, both latency sweeps, the
 alignment term, synthesis and attribution, placement, the model scripts,
 both papers) and a `compare` stage that diffs the regenerated datasets
 against the committed ones; `./reproduce.sh list` names the stages and
