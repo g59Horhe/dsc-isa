@@ -255,10 +255,10 @@ write_tab('tab_block', 'lrrrrr', ['block variant', 'cycles', 'cyc/MAC', '$I$', '
 # ---------------------------------------------------------------- N. Ibex (ibex_model.py stdout), headline shapes
 it = md_tables(run([VENV, 'ibex_model.py']))
 hdr, irows = it[0]; head = {'8x16x16', '16x16x8x8'}
-short = lambda n: n.replace(' depthwise', ' dw').replace(' pointwise', ' pw').replace('C -O2', 'C \\texttt{-O2}').replace('C -O3', 'C \\texttt{-O3}')
+short = lambda n: n.replace(' depthwise', ' dw').replace(' pointwise', ' pw').replace(', row-wise hand', ', row-wise').replace('hand asm, output-stationary', 'hand, out.-stat.').replace('hand asm, row-wise', 'hand, row-wise').replace('C -O2', 'C \\texttt{-O2}').replace('C -O3', 'C \\texttt{-O3}')
 rows = [[short(r[0]), r[1].replace('x', '\\x'), N(int(r[2].replace(',', ''))), N(int(r[3].replace(',', ''))), N(int(r[4].replace(',', ''))), N(int(r[5].replace(',', ''))), r[6], r[7], esc(r[8])] for r in irows if r[1] in head]
 write_tab('tab_ibex', 'llrrrrrrl', ['kernel', 'shape', '$I$', 'CV32E40P', 'Ibex 2-st.', 'Ibex 3-st.', 'Ibex2/CV', 'Ibex3/CV', 'spread CV / Ibex2 / Ibex3'], rows)
 hdr, jrows = it[1]
 rows = [[short(r[0]), r[1].replace('x', '\\x')] + [c.replace('x', '\\x') for c in r[2:]] for r in jrows if r[1] in head]
-write_tab('tab_ibex_ratio', 'llrrrrrr', ['kernel', 'shape', 'CV', 'Ibex2', 'Ibex3', 'CV', 'Ibex2', 'Ibex3'], rows, prehead=' & & \\multicolumn{3}{c}{\\texttt{-O2} / \\texttt{-O3}} & \\multicolumn{3}{c}{\\texttt{-O3} / hand}')
+write_tab('tab_ibex_ratio', 'llrrrrrr', ['kernel', 'shape', 'CV', 'Ibex2', 'Ibex3', 'CV', 'Ibex2', 'Ibex3'], rows, prehead=' & & \\multicolumn{3}{c}{\\texttt{-O2} / \\texttt{-O3}} & \\multicolumn{3}{c}{\\texttt{-O3} / hand}', size='\\setlength{\\tabcolsep}{2.5pt}')
 print('wrote', sorted(os.listdir(GEN)))
