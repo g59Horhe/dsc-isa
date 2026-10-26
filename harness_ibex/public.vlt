@@ -1,0 +1,3 @@
+`verilator_config
+// Expose the HPM event vector so the harness can count events in the measured binary itself.
+public_flat_rw -module "ibex_cs_registers" -var "mhpmcounter_incr"

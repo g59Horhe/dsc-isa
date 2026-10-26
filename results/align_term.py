@@ -39,6 +39,15 @@ SETS = [  # (csv base, shapes, {kernel: (source, cflags)})
   ('wait0_pw', PW, {**grid('pw_asm', 'sw/pwconv_asm.c'), **grid('pw_simd_asm', 'sw/pwconv_simd_asm.c')}),
   ('wait0_clip_pw', PW, {**grid('pw_asm', 'sw/pwconv_asm.c', '_clip', True), **grid('pw_simd_asm', 'sw/pwconv_simd_asm.c', '_clip', True)}),
 ]
+BLK = '-DREAL_HDR=real/block_16x16x16_16.h'
+EXTRA = [  # compiler-generated 5x5 and pointwise kernels, and the block: Ba for their residual columns; reported as a separate group
+  ('wait0_dw5', DW, {'dw5_C_O2': ('sw/dwconv5.c', '-O2'), 'dw5_C_O3': ('sw/dwconv5.c', '-O3')}),
+  ('wait0_pw', PW, {'pw_C_O2': ('sw/pwconv.c', '-O2'), 'pw_C_O3': ('sw/pwconv.c', '-O3'), 'pw_simd_C_O2': ('sw/pwconv_simd.c', '-O2'), 'pw_simd_C_O3': ('sw/pwconv_simd.c', '-O3')}),
+  ('wait0_block', ['16x16x16'], {'blk_C_O3': ('sw/block.c', f'-O3 {BLK}'), 'blk_C_O3_fused': ('sw/block.c', f'-O3 -DBLOCK_FUSED=1 {BLK}'),
+     'blk_simd_rv': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {BLK}'), 'blk_simd_rv_fused': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 -DBLOCK_FUSED=1 {BLK}'),
+     'blk_simd_xp': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} {BLK}'), 'blk_simd_xp_fused': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} -DBLOCK_FUSED=1 {BLK}'),
+     'blk_full': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} {CL} {BLK}'), 'blk_full_fused': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} {CL} -DBLOCK_FUSED=1 {BLK}')}),
+]
 BR = {'beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu', 'beqz', 'bnez', 'blez', 'bgez', 'bltz', 'bgtz', 'j', 'jal', 'c.j', 'c.jal', 'c.beqz', 'c.bnez'}
 def load(fn):
     d = collections.OrderedDict()
@@ -80,7 +89,7 @@ def shape_defs(s):
     f = s.split('x')
     return ['-DCI=%s' % f[0], '-DCO=%s' % f[1], '-DH=%s' % f[2], '-DW=%s' % f[3]] if len(f) == 4 else ['-DCH=%s' % f[0], '-DH=%s' % f[1], '-DW=%s' % f[2]]
 rows = []; tmp = tempfile.mkdtemp(prefix='align_')
-for base, shapes, kernels in SETS:
+for base, shapes, kernels in SETS + [(b, s, k) for b, s, k in EXTRA]:
     P = {p: load(f'{base}_pad{p}.csv') for p in (0, 1)}
     for s in shapes:
         for k, (src, cf) in kernels.items():
@@ -99,11 +108,13 @@ for base, shapes, kernels in SETS:
                     w, n = l.split(); w = int(w, 16); n = int(n); nred += n; t = resolve(w, ln, targets)
                     for r in RULES:
                         if flagged(t, ln, r): ba[r] += n
-                rows.append(dict(base=base, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
+                rows.append(dict(base=base, extra=(base, k) in {(b, kk) for b, _, ks in EXTRA for kk in ks}, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
 def err(rs, col): return [abs(r['cycles'] - r['pred'] - r[col]) / r['cycles'] for r in rs]
 # the equalised set's scalar_asm is the same source and flags as the decomposition set's scalar_asm_rv (identical binaries and
 # cycle counts), so the union has 8 fewer distinct runs than the sum
-distinct = [r for r in rows if not (r['base'] == 'wait0_eqrequant' and r['kernel'] == 'scalar_asm')]
+core = [r for r in rows if not r['extra']]   # the hand-written and equalised sets: the paper's 296 distinct runs
+extra = [r for r in rows if r['extra']]
+distinct = [r for r in core if not (r['base'] == 'wait0_eqrequant' and r['kernel'] == 'scalar_asm')]
 print(f"rule | mean |resid| | max | runs over 1% ({len(distinct)} distinct runs); sw/ubench_align.c confirms rule A: +1 cycle per iteration only with a 32-bit instruction at a 2 mod 4 target")
 for r in RULES:
     e = err(distinct, f'ba_{r.lower()}'); print(f"{r} | {sum(e)/len(e):.2%} | {max(e):.2%} | {sum(x > 0.01 for x in e)}")
@@ -117,8 +128,9 @@ def stats(rs, label):
     old = [abs(r['cycles'] - r['pred']) / r['cycles'] for r in rs]; new = [abs(r['cycles'] - r['pred'] - r['ba']) / r['cycles'] for r in rs]
     print(f"{label}: {len(rs)} runs; four-term model mean |resid| {sum(old)/len(old):.2%} max {max(old):.2%}; with the alignment term mean {sum(new)/len(new):.2%} max {max(new):.2%}; "
           f"runs over 1%: {sum(x > 0.01 for x in old)} -> {sum(x > 0.01 for x in new)}; runs with Ba > 0: {sum(r['ba'] > 0 for r in rs)}")
-hw = [r for r in rows if r['base'] != 'wait0_eqrequant']; eq = [r for r in rows if r['base'] == 'wait0_eqrequant']
+hw = [r for r in core if r['base'] != 'wait0_eqrequant']; eq = [r for r in core if r['base'] == 'wait0_eqrequant']
 stats(eq, 'equalised 3x3 set (6 kernels x 4 shapes x 2 alignments)'); stats(hw, 'hand-written runs (three families, with and without clip)'); stats(distinct, 'all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once)')
+stats(extra, 'compiler-generated 5x5 and pointwise kernels and the block (not part of the 296)')
 print("\n| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | residual, four terms | residual, five terms |\n|---|---|---|---|---|---|---|---|---|---|")
 for r in sorted(rows, key=lambda r: -abs(r['cycles'] - r['pred']) / r['cycles'])[:12]:
     print(f"| {r['kernel']} {r['shape']} pad{r['pad']} | {r['cycles']:,} | {r['instr']:,} | {2*r['brtaken']:,} | {r['ldstall']:,} | {r['split']:,} | {r['redirects']:,} | {r['ba']:,} | {(r['cycles']-r['pred'])/r['cycles']:+.2%} | {(r['cycles']-r['pred']-r['ba'])/r['cycles']:+.2%} |")

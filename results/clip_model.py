@@ -64,8 +64,8 @@ for name, (D, s_rv, s_xp, v_rv, v_xp, v_rvc, v_xpc, s_rvc, s_xpc, outs, o3base, 
     best = lambda s, k: min(D[0][(s, k)], D[1][(s, k)], key=lambda v: v['cycles'])
     shapes = []; [shapes.append(k[0]) for k in D[0] if k[0] not in shapes]
     print(f"\n### {name}\n")
-    print("| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output | model residual, full |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    print("| shape | scalar -O3 | scalar asm | + clip | + hw loop/post-inc | + both | SIMD asm | + clip | + hw loop/post-inc | + both (full Xpulp) | full Xpulp vs -O3 | vs scalar asm | instr ratio vs scalar asm | clip saves per output: cycles | instructions | model residual, full |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for s in shapes:
         c = lambda k: best(s, k)['cycles']; o3 = min(O3[0][(s, o3k)]['cycles'], O3[1][(s, o3k)]['cycles'])
         full = best(s, v_xpc); n = outs(s)
@@ -73,7 +73,7 @@ for name, (D, s_rv, s_xp, v_rv, v_xp, v_rvc, v_xpc, s_rvc, s_xpc, outs, o3base, 
             for p in (0, 1):
                 v = D[p][(s, k)]; worst = max(worst, abs(v['resid']) / v['cycles'])
                 if D[p][(s, k)]['chk'] != D[p][(s, s_rv)]['chk']: chkbad += 1
-        print(f"| {s} | {o3:,} | {c(s_rv):,} | {c(s_rvc):,} | {c(s_xp):,} | {c(s_xpc):,} | {c(v_rv):,} | {c(v_rvc):,} | {c(v_xp):,} | {c(v_xpc):,} | {o3/c(v_xpc):.2f}x | {c(s_rv)/c(v_xpc):.2f}x | {best(s, s_rv)['instr']/full['instr']:.2f} | {(c(v_xp)-c(v_xpc))/n:.2f} | {full['resid']/full['cycles']:+.1%} |")
+        print(f"| {s} | {o3:,} | {c(s_rv):,} | {c(s_rvc):,} | {c(s_xp):,} | {c(s_xpc):,} | {c(v_rv):,} | {c(v_rvc):,} | {c(v_xp):,} | {c(v_xpc):,} | {o3/c(v_xpc):.2f}x | {c(s_rv)/c(v_xpc):.2f}x | {best(s, s_rv)['instr']/full['instr']:.2f} | {(c(v_xp)-c(v_xpc))/n:.2f} | {(D[0][(s, v_xp)]['instr']-D[0][(s, v_xpc)]['instr'])/n:.2f} | {full['resid']/full['cycles']:+.1%} |")
     s0 = shapes[0]; c = lambda k: best(s0, k)['cycles']
     cyc = {(0,0,0): c(s_rv), (0,1,0): c(s_xp), (0,0,1): c(s_rvc), (0,1,1): c(s_xpc),
            (1,0,0): c(v_rv), (1,1,0): c(v_xp), (1,0,1): c(v_rvc), (1,1,1): c(v_xpc)}
@@ -97,6 +97,12 @@ for name, (D, s_rv, s_xp, v_rv, v_xp, v_rvc, v_xpc, s_rvc, s_xpc, outs, o3base, 
           f"cycle model applied to both sides {base['pred']/full['pred']:.2f}; baseline non-instruction share {bshare:.1%} "
           f"({2*base['brtaken']:,} taken-branch cycles, {base['ldstall']:,} load-use stalls, {base['split']:,} split accesses, {base['resid']:,} residual); "
           f"full-Xpulp split-load share {full['split']/full['cycles']:.1%}; activation words loaded {outs(s0)*act_words:,} = {macs/(outs(s0)*act_words):.2f} MACs per activation word (loads retired {full['loads']:,})")
+    sp = [D[p][(s0, s_rv)]['cycles'] / D[p][(s0, v_xpc)]['cycles'] for p in (0, 1)]
+    spo = [O3[p][(s0, o3k)]['cycles'] / D[p][(s0, v_xpc)]['cycles'] for p in (0, 1)]
+    print(f"{name}, {s0}: with both kernels at the same code alignment the speedup over scalar asm is {min(sp):.2f}x to {max(sp):.2f}x (pad 0, pad 1: {sp[0]:.2f}x, {sp[1]:.2f}x) and over -O3 {min(spo):.2f}x to {max(spo):.2f}x; the quoted value pairs each kernel's better alignment")
+    cs = [(D[p][(s0, a)]['cycles'] - D[p][(s0, b)]['cycles']) / outs(s0) for p in (0, 1) for a, b in ((s_rv, s_rvc), (s_xp, s_xpc), (v_rv, v_rvc), (v_xp, v_xpc))]
+    ci = [(D[p][(s0, a)]['instr'] - D[p][(s0, b)]['instr']) / outs(s0) for p in (0, 1) for a, b in ((s_rv, s_rvc), (s_xp, s_xpc), (v_rv, v_rvc), (v_xp, v_xpc))]
+    print(f"{name}, {s0}: clip saves {min(ci):.3f} to {max(ci):.3f} instructions and {min(cs):.3f} to {max(cs):.3f} cycles per output over the four cell pairs and both alignments")
     short = {'3x3 depthwise': '3\\x3 dw', '5x5 depthwise': '5\\x5 dw', '1x1 pointwise': '1\\x1 pw'}[name]
     for lab, v in (("\\textit{Shapley value, order removed}", None), ("\\quad datapath", f"{sh[0]:.2f}\\x"), ("\\quad control (hw loop, post-incr.)", f"{sh[1]:.2f}\\x"), ("\\quad clip", f"{sh[2]:.2f}\\x"),
                    ("\\textit{added first, to the scalar kernel}", None), ("\\quad datapath alone", f"{af[0]:.2f}\\x"), ("\\quad control alone", f"{af[1]:.2f}\\x"), ("\\quad clip alone", f"{af[2]:.2f}\\x"),
@@ -117,7 +123,14 @@ for base, pat in (('wait0_decomp', 'asm'), ('wait0_clip_dw3', 'asm'), ('wait0_dw
             if re.search(pat, k[1]): hw.append((base, k, v))
 ape4 = [abs(v['resid'] + v['ba']) / v['cycles'] for _, _, v in hw]; ape5 = [abs(v['resid']) / v['cycles'] for _, _, v in hw]
 w4 = max(hw, key=lambda t: abs(t[2]['resid'] + t[2]['ba']) / t[2]['cycles'])
-fullx = [t for t in hw if t[1][1].endswith('_xp_clip')]
+fullx = [t for t in hw if t[1][1].endswith('_xp_clip') and 'simd' in t[1][1]]   # full Xpulp: SIMD datapath + hardware loops/post-increment + clip
+fam_of = lambda k: '5x5 depthwise' if k.startswith('dw5') else ('1x1 pointwise' if k.startswith('pw') else '3x3 depthwise')
+print("\nhand-written runs by family and variant (each: 4 shapes x 2 alignments):\n")
+print("| family | kernels | runs | of which full Xpulp |\n|---|---|---|---|")
+for fam in ('3x3 depthwise', '5x5 depthwise', '1x1 pointwise'):
+    ks = sorted({t[1][1] for t in hw if fam_of(t[1][1]) == fam})
+    print(f"| {fam} | {', '.join(ks)} | {sum(fam_of(t[1][1]) == fam for t in hw)} | {sum(fam_of(t[1][1]) == fam for t in fullx)} |")
+print(f"| total | | {len(hw)} | {len(fullx)} |")
 print(f"cycle model over all {len(hw)} hand-written runs (three families, with and without clip, both alignments): four terms mean |residual| {sum(ape4)/len(ape4):.2%}, max {max(ape4):.2%} ({w4[1][1]} {w4[1][0]} {w4[0]}_pad?); "
       f"with the alignment term Ba ({sum(1 for _, _, v in hw if v['ba'])} runs have Ba > 0) mean {sum(ape5)/len(ape5):.2%}, max {max(ape5):.2%}; "
       f"full-Xpulp kernels only ({len(fullx)} runs): max {max(abs(v['resid'])/v['cycles'] for _, _, v in fullx):.2%}")

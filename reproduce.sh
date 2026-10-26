@@ -1,15 +1,16 @@
 #!/bin/bash
 # Reproduce every dataset, flow output, table and paper in this repository.
 #
-#   ./reproduce.sh                 run every stage in order (about 25 minutes after the simulators are built)
+#   ./reproduce.sh                 run every stage in order (about 15 minutes after the simulators are built)
 #   ./reproduce.sh sims collect    run the named stages only
 #   ./reproduce.sh list            print the stages
 #
 # Stages, with the times measured on a fresh clone (one laptop, Verilator -j4):
 #   sims      build the CV32E40P (RV32IMC, Xpulp) and Ibex (2-, 3-stage) simulators   ~5 min
 #   check     README regression values (hello, dotp)                                 seconds
-#   collect   every wait-0 counter dataset in results/ (CV32E40P)                    10 min
-#   ibex      the scalar datasets on Ibex 2- and 3-stage                             5 min
+#   validate  harness event counts against the cores' CSR counters                  15 s
+#   collect   every wait-0 counter dataset in results/ (CV32E40P)                    2 min
+#   ibex      the scalar datasets on Ibex 2- and 3-stage                             1 min
 #   sweeps    data-port and instruction-port latency sweeps                          30 s
 #   align     the branch-target alignment term (rebuilds 304 binaries)               1 min
 #   syn       Sky130 synthesis: flat totals, per-module attribution, Ibex            1.5 min
@@ -60,6 +61,7 @@ K_BLOCK="blk_C_O3|sw/block.c|-O3 blk_C_O3_fused|sw/block.c|-O3+-DBLOCK_FUSED=1 b
 K_IBEX_DW3="scalar_O2|sw/dwconv_opt.c|-O2 scalar_O3|sw/dwconv_opt.c|-O3 scalar_asm_rv|sw/dwconv_asm.c|-O2"
 K_IBEX_DW5="dw5_C_O2|sw/dwconv5.c|-O2 dw5_C_O3|sw/dwconv5.c|-O3 dw5_asm_rv|sw/dwconv5_asm.c|-O2"
 K_IBEX_PW="pw_C_O2|sw/pwconv.c|-O2 pw_C_O3|sw/pwconv.c|-O3 pw_asm_rv|sw/pwconv_asm.c|-O2"
+K_IBEX_DW5OS="dw5_os_asm_rv|sw/dwconv5_os_asm.c|-O2"
 # sweep.sh takes sources relative to sw/
 S_DEC="scalar_rv|dwconv_asm.c|-O2 scalar_xp|dwconv_asm.c|-O2+$XP unal_rv|dwconv_simd_asm.c|-O2 unal_xp|dwconv_simd_asm.c|-O2+$XP al_rv|dwconv_simd_al_asm.c|-O2 al_xp|dwconv_simd_al_asm.c|-O2+$XP"
 S_IF="scalar_rv|dwconv_asm.c|-O2+$CL scalar_xp|dwconv_asm.c|-O2+$XP+$CL unal_rv|dwconv_simd_asm.c|-O2+$CL unal_xp|dwconv_simd_asm.c|-O2+$XP+$CL al_rv|dwconv_simd_al_asm.c|-O2+$CL al_xp|dwconv_simd_al_asm.c|-O2+$XP+$CL"
@@ -67,6 +69,7 @@ S_IF_PW="pw_rv|pwconv_asm.c|-O2+$CL pw_xp|pwconv_asm.c|-O2+$XP+$CL pws_rv|pwconv
 
 stage_sims()    { log sims; make -C harness all && make -C harness_ibex all; }
 stage_check()   { log check; (cd sw && make run-hello && make run-dotp); }
+stage_validate() { log validate; (cd results && python3 counter_validation.py > /dev/null && cp counter_validation.txt ../$OUT/); }   # harness event counts against the CSR counters
 stage_collect() {
   log collect
   collect eqrequant "$DW" "$K_EQ";            collect decomp "$DW" "$K_DEC";        collect clip_dw3 "$DW" "$K_DEC_CLIP"
@@ -78,7 +81,7 @@ stage_collect() {
   REAL_HDR_PREFIX=real/pw      collect clip_real_pw "$PW" "$K_PW_CLIP"
   collect block "16:16:16" "$K_BLOCK" "-DREAL_HDR=real/block_16x16x16_16.h"
 }
-stage_ibex()    { log ibex; for c in ibex2 ibex3; do collect_ibex $c dw3 "$DW" "$K_IBEX_DW3"; collect_ibex $c dw5 "$DW" "$K_IBEX_DW5"; collect_ibex $c pw "$PW" "$K_IBEX_PW"; done; }
+stage_ibex()    { log ibex; for c in ibex2 ibex3; do collect_ibex $c dw3 "$DW" "$K_IBEX_DW3"; collect_ibex $c dw5 "$DW" "$K_IBEX_DW5"; collect_ibex $c dw5os "$DW" "$K_IBEX_DW5OS"; collect_ibex $c pw "$PW" "$K_IBEX_PW"; done; }
 stage_sweeps()  {
   log sweeps
   KERNELS="$S_DEC" harness/sweep.sh > $OUT/decomp_latency_sweep.txt
@@ -128,8 +131,8 @@ for cfg in ('base', 'pulp'):
 print('\nsummary:', 'all compared datasets identical' if not bad else f'{bad} dataset(s) differ')
 EOF
 }
-STAGES="sims check collect ibex sweeps align syn place models papers compare"
+STAGES="sims check validate collect ibex sweeps align syn place models papers compare"
 [ $# -gt 0 ] && STAGES="$*"
-[ "$STAGES" = list ] && { echo "sims check collect ibex sweeps align syn place models papers compare"; exit 0; }
+[ "$STAGES" = list ] && { echo "sims check validate collect ibex sweeps align syn place models papers compare"; exit 0; }
 for st in $STAGES; do stage_$st || echo "!! stage $st reported an error"; done
 log done

@@ -51,3 +51,41 @@ try:   # five-term model: + Ba, the branch-target alignment term measured per ru
     ape5=[abs(v['cycles']-v['pred5'])/v['cycles'] for v in allv]
     print(f"with the alignment term Ba (cycles = I + 2 Bt + Slu + Asplit + Ba): R2={r2([v['pred5'] for v in allv],ys):.4f}, mean |resid| {sum(ape5)/len(ape5)*100:.2f}%, max {max(ape5)*100:.2f}%")
 except FileNotFoundError: pass
+
+# ---------------------------------------------------------------- markdown tables for RESULTS.md
+# Counters and cycles in every row come from the same binary (harness EVENTS line, see
+# harness/collect_wait0.sh). "Better alignment" picks, per kernel, the code alignment with
+# fewer cycles; the counters quoted with it come from that same run.
+NAMES = {'scalar_O2': 'scalar C, -O2', 'scalar_O3': 'scalar C, -O3', 'scalar_asm': 'scalar asm', 'simd_unal': 'SIMD unaligned', 'simd_al': 'SIMD aligned', 'simd_al_O3': 'SIMD aligned, -O3'}
+try:
+    BA = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open(f"{S}/wait0_align.csv"))}
+except FileNotFoundError:
+    BA = {}
+for p in (0, 1):
+    for k, v in P[p].items(): v['ba'] = BA.get((k[0], k[1], p), 0); v['pred5'] = v['pred'] + v['ba']; v['resid5'] = v['cycles'] - v['pred5']
+bestrun = lambda s, k: min(P[0][(s, k)], P[1][(s, k)], key=lambda v: v['cycles'])
+print("\n## markdown: Table 1\n")
+print("| shape | kernel | cycles (pad 0) | cycles (pad 1) | instructions | fetches | data reads | data writes | taken branches | load-use stalls | split-load accesses | checksum |")
+print("|---|---|---|---|---|---|---|---|---|---|---|---|")
+for s in shapes:
+    for i, k in enumerate(NAMES):
+        a, b = P[0][(s, k)], P[1][(s, k)]
+        print(f"| {s if i == 0 else ''} | {NAMES[k]} | {a['cycles']:,} | {b['cycles']:,} | {a['instr']:,} | {a['ifetch']:,} | {a['dread']:,} | {a['dwrite']:,} | {a['brtaken']:,} | {a['ldstall']:,} | {a['split']:,} | {a['chk']} |")
+print("\n## markdown: predictors\n")
+print("| predictor | R^2 over 48 runs |\n|---|---|")
+for lab, key in (("five-term model (with the alignment term)", 'pred5'), ("four-term model (without it)", 'pred'), ("instructions retired alone", 'instr'), ("instruction fetches alone", 'ifetch'), ("loads alone", 'loads'), ("data reads alone", 'dread')):
+    print(f"| {lab} | {r2([v[key] for v in allv], ys):.4f} |")
+print("\n## markdown: per-kernel shares\n")
+print("| shape | kernel | instructions | taken-branch penalty | load-use stalls | split loads | alignment term | residual |")
+print("|---|---|---|---|---|---|---|---|")
+for s in shapes:
+    for k in NAMES:
+        v = bestrun(s, k); c = v['cycles']
+        print(f"| {s} | {NAMES[k]} | {v['instr']/c:.1%} | {2*v['brtaken']/c:.1%} | {v['ldstall']/c:.1%} | {v['split']/c:.1%} | {v['ba']/c:.1%} | {v['resid5']/c:+.1%} |")
+print("\n## markdown: Table 2\n")
+print("| shape | SIMD aligned vs -O2 | instr ratio | vs -O3 | instr ratio | vs asm | instr ratio | SIMD unaligned vs asm |")
+print("|---|---|---|---|---|---|---|---|")
+for s in shapes:
+    al = min(bestrun(s, 'simd_al'), bestrun(s, 'simd_al_O3'), key=lambda v: v['cycles'])
+    o2, o3, asm, un = (bestrun(s, k) for k in ('scalar_O2', 'scalar_O3', 'scalar_asm', 'simd_unal'))
+    print(f"| {s} | {o2['cycles']/al['cycles']:.2f}x | {o2['instr']/al['instr']:.2f} | {o3['cycles']/al['cycles']:.2f}x | {o3['instr']/al['instr']:.2f} | {asm['cycles']/al['cycles']:.2f}x | {asm['instr']/al['instr']:.2f} | {asm['cycles']/un['cycles']:.2f}x |")

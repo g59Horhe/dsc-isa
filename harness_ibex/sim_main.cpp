@@ -24,9 +24,16 @@
 // While the cycle counter runs, the harness counts data-port reads and
 // writes and instruction-port fetches (32-bit words), reported on the
 // MEASURED line. An unaligned word load from the core shows as two reads.
+//
+// EVENTS line: the core's own performance-counter event signals, integrated by
+// the harness over the same window as the cycle count, in the same binary. The
+// evN numbering follows sw/bench.h PERF_EVENT; reading the CSR counter instead
+// needs a separately compiled, instrumented binary, whose code and layout can
+// differ from the measured one.
 
 #include <verilated.h>
 #include "Vibex_top.h"
+#include "Vibex_top___024root.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -90,6 +97,7 @@ int main(int argc, char** argv) {
     dut->scramble_nonce_i = 0;
     dut->fetch_enable_i = 0;   // ibex_mubi_t: 4'b0101 = on, 4'b1010 = off
 
+    uint64_t ev[11] = {0};   // ev1..ev10 as in sw/bench.h IBEX_COUNTERS (ev3 unused)
     int i_delay = -1; uint32_t i_data = 0;
     int d_delay = -1; uint32_t d_data = 0;
     uint64_t cycle = 0;
@@ -150,6 +158,11 @@ int main(int argc, char** argv) {
             }
         }
 
+        if (counting) {   // ibex_cs_registers event vector; CSR 0xB0N counts bit N (sw/bench.h maps ev1 to minstret = bit 2, ev2 to bit 3)
+            uint32_t inc = dut->rootp->ibex_top__DOT__u_ibex_core__DOT__cs_registers_i__DOT__mhpmcounter_incr;
+            static const int bit[11] = {0, 2, 3, 0, 4, 5, 6, 7, 8, 9, 10};
+            for (int e = 1; e <= 10; e++) if (e != 3) ev[e] += (inc >> bit[e]) & 1;
+        }
         dut->clk_i = 1;
         dut->eval();
 
@@ -171,6 +184,7 @@ int main(int argc, char** argv) {
         if (measured_valid)
             printf("MEASURED %llu cycles (wait_states=%u iwait=%u) dread=%llu dwrite=%llu ifetch=%llu\n",
                    (unsigned long long)measured, wait_states, iwait, (unsigned long long)n_dread, (unsigned long long)n_dwrite, (unsigned long long)n_ifetch);
+        if (measured_valid) { printf("EVENTS"); for (int e = 1; e <= 10; e++) if (e != 3) printf(" ev%d=%llu", e, (unsigned long long)ev[e]); printf("\n"); }
         return 0;
     }
     printf("TIMEOUT after %llu cycles\n", (unsigned long long)cycle);

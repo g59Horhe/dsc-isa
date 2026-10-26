@@ -13,6 +13,13 @@ def load(fn):
         v['split'] = v['dread'] - v['loads']; v['pred'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['resid'] = v['cycles'] - v['pred']
     return d
 P = {p: load(f'wait0_block_pad{p}.csv') for p in (0, 1)}
+try:   # five-term model: the branch-target alignment term, measured per run by align_term.py
+    _A = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+except FileNotFoundError:
+    _A = {}
+for _p in (0, 1):
+    for _k, _v in P[_p].items():   # runs are keyed by kernel only here
+        _v['ba'] = _A.get(('16x16x16', _k, _p), 0); _v['pred'] += _v['ba']; _v['resid'] = _v['cycles'] - _v['pred']
 best = lambda k: min(P[0][k], P[1][k], key=lambda v: v['cycles'])
 names = {'blk_C_O3': 'C -O3, transform', 'blk_C_O3_fused': 'C -O3, fused store', 'blk_simd_rv': 'SIMD asm, RV32IMC ctrl, transform', 'blk_simd_rv_fused': 'SIMD asm, RV32IMC ctrl, fused',
          'blk_simd_xp': 'SIMD + hw loops, transform', 'blk_simd_xp_fused': 'SIMD + hw loops, fused', 'blk_full': 'full Xpulp (+ clip), transform', 'blk_full_fused': 'full Xpulp (+ clip), fused'}

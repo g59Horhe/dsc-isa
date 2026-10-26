@@ -21,10 +21,17 @@
 // While the cycle counter runs, the harness counts data-port reads and
 // writes and instruction-port fetches (32-bit words), reported on the
 // MEASURED line. An unaligned word load from the core shows as two reads.
+//
+// EVENTS line: the core's own performance-counter event signals, integrated by
+// the harness over the same window as the cycle count, in the same binary. The
+// evN numbering follows sw/bench.h PERF_EVENT; reading the CSR counter instead
+// needs a separately compiled, instrumented binary, whose code and layout can
+// differ from the measured one.
 
 #include <map>
 #include <verilated.h>
 #include "Vcv32e40p_core.h"
+#include "Vcv32e40p_core___024root.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -86,6 +93,7 @@ int main(int argc, char** argv) {
     dut->data_gnt_i=0; dut->data_rvalid_i=0; dut->data_rdata_i=0;
     dut->apu_gnt_i=0; dut->apu_rvalid_i=0; dut->apu_result_i=0; dut->apu_flags_i=0;
 
+    uint64_t ev[11] = {0};   // ev1..ev10 as in sw/bench.h
     int i_delay = -1; uint32_t i_data = 0;
     int d_delay = -1; uint32_t d_data = 0;
     uint64_t cycle = 0;
@@ -148,6 +156,19 @@ int main(int argc, char** argv) {
             }
         }
 
+        if (counting) {   // registered event outputs, sampled where the CSR counter would add them
+            auto* q = dut->rootp;
+            ev[1] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_minstret_o;
+            ev[2] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_ld_stall_o;
+            ev[3] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_jr_stall_o;
+            ev[4] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_imiss_o;
+            ev[5] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_load_o;
+            ev[6] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_store_o;
+            ev[7] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_jump_o;
+            ev[8] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_branch_o;
+            ev[9] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_branch_taken_o;
+            ev[10] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_compressed_o;
+        }
         dut->clk_i = 1;
         dut->eval();
 
@@ -169,6 +190,7 @@ int main(int argc, char** argv) {
         if (measured_valid)
             printf("MEASURED %llu cycles (wait_states=%u iwait=%u) dread=%llu dwrite=%llu ifetch=%llu\n",
                    (unsigned long long)measured, wait_states, iwait, (unsigned long long)n_dread, (unsigned long long)n_dwrite, (unsigned long long)n_ifetch);
+        if (measured_valid) { printf("EVENTS"); for (int e = 1; e <= 10; e++) printf(" ev%d=%llu", e, (unsigned long long)ev[e]); printf("\n"); }
         return 0;
     }
     printf("TIMEOUT after %llu cycles\n", (unsigned long long)cycle);

@@ -1,5 +1,9 @@
 #!/bin/bash
 # usage: collect_wait0.sh <outcsv> <events: "" for plain only> [extra cflags]
+# Every value in a row comes from one binary: cycles and bus traffic from the MEASURED
+# line, event counts evN from the EVENTS line (the core's counter event signals,
+# integrated by the harness over the same window). No instrumented builds are made;
+# results/counter_validation.py checks the EVENTS counts against the CSR counters.
 # KERNELS env var overrides the kernel list: entries "name|source|cflags" separated by spaces;
 # write "+" for a space inside cflags, e.g. "-O2+-DXPULP_CTRL=1".
 export PATH=${RISCV_BIN:-/opt/riscv/bin}:$PATH   # riscv32-unknown-elf toolchain
@@ -17,17 +21,15 @@ for shape in $SHAPES; do
  KERNELS=${KERNELS:-"scalar_O2|sw/dwconv_opt.c|-O2 scalar_O3|sw/dwconv_opt.c|-O3 scalar_asm|sw/dwconv_asm.c|-O2 simd_unal|sw/dwconv_simd.c|-O2 simd_al|sw/dwconv_simd_al.c|-O2 simd_al_O3|sw/dwconv_simd_al.c|-O3"}
  for spec in $KERNELS; do
   IFS='|' read -r name src opt <<< "$spec"; opt=${opt//+/ }   # "+" in cflags stands for a space
-  for e in plain $EVENTS; do
-   if [ $e = plain ]; then arch=rv32imc; def=""; else arch=rv32imc_zicsr; def="-DPERF_EVENT=$e"; fi
-   riscv32-unknown-elf-gcc -I sw -march=$arch -mabi=ilp32 -nostdlib -nostartfiles $opt $def $EXTRA $REALF $DEFS -T sw/link.ld sw/crt0.S $src -o $D/x.elf 2>/dev/null || { echo "$shape,$name,$e,BUILDFAIL," >> $OUT; continue; }
-   case "$opt" in *XPULP_CTRL=1*) python3 harness/check_hwloop.py $D/x.elf > /dev/null || { echo "$shape,$name,$e,HWLOOPFAIL," >> $OUT; continue; };; esac
-   riscv32-unknown-elf-objcopy -O binary $D/x.elf $D/x.bin && python3 sw/bin2hex.py $D/x.bin > $D/x.hex
-   r=$($SIM --hex $D/x.hex --cycles 50000000 --wait 0); chk=$(echo "$r" | grep -oP 'value = \K[0-9]+')
-   if [ $e = plain ]; then
-     m=$(echo "$r" | grep MEASURED)
-     for f in cycles:'MEASURED \K[0-9]+' dread:'dread=\K[0-9]+' dwrite:'dwrite=\K[0-9]+' ifetch:'ifetch=\K[0-9]+'; do IFS=: read -r k p <<< "$f"; echo "$SNAME,$name,$k,$(echo "$m" | grep -oP "$p"),$chk" >> $OUT; done
-   else echo "$SNAME,$name,ev$e,$(echo "$r" | grep -oP 'AUX \K[0-9]+' | head -1),$chk" >> $OUT; fi
-  done
+  arch=rv32imc
+  riscv32-unknown-elf-gcc -I sw -march=$arch -mabi=ilp32 -nostdlib -nostartfiles $opt $EXTRA $REALF $DEFS -T sw/link.ld sw/crt0.S $src -o $D/x.elf 2>/dev/null || { for e in plain $EVENTS; do echo "$shape,$name,$e,BUILDFAIL," >> $OUT; done; continue; }
+  case "$opt" in *XPULP_CTRL=1*) python3 harness/check_hwloop.py $D/x.elf > /dev/null || { echo "$shape,$name,plain,HWLOOPFAIL," >> $OUT; continue; };; esac
+  riscv32-unknown-elf-objcopy -O binary $D/x.elf $D/x.bin && python3 sw/bin2hex.py $D/x.bin > $D/x.hex
+  r=$($SIM --hex $D/x.hex --cycles 50000000 --wait 0); chk=$(echo "$r" | grep -oP 'value = \K[0-9]+')
+  m=$(echo "$r" | grep MEASURED); evl=$(echo "$r" | grep '^EVENTS')
+  [ -n "$m" ] && [ -n "$evl" ] || { echo "$shape,$name,plain,RUNFAIL," >> $OUT; continue; }
+  for f in cycles:'MEASURED \K[0-9]+' dread:'dread=\K[0-9]+' dwrite:'dwrite=\K[0-9]+' ifetch:'ifetch=\K[0-9]+'; do IFS=: read -r k p <<< "$f"; echo "$SNAME,$name,$k,$(echo "$m" | grep -oP "$p"),$chk" >> $OUT; done
+  for e in $EVENTS; do echo "$SNAME,$name,ev$e,$(echo "$evl" | grep -oP "\bev$e=\K[0-9]+"),$chk" >> $OUT; done
  done
 done
 rm -rf $D; echo DONE >> $OUT

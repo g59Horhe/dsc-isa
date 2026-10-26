@@ -20,8 +20,8 @@ VFLAGS = --cc --exe --build -j 4 -Wno-fatal -Wno-WIDTH -Wno-UNOPTFLAT -Wno-ENUMV
 .PHONY: all ibex2 ibex3 clean
 all: ibex2 ibex3
 ibex2:
-	$(VERILATOR) $(VFLAGS) -GWritebackStage=0 --Mdir obj_ibex2 $(SRCS) sim_main.cpp
+	$(VERILATOR) $(VFLAGS) -GWritebackStage=0 --Mdir obj_ibex2 public.vlt $(SRCS) sim_main.cpp
 ibex3:
-	$(VERILATOR) $(VFLAGS) -GWritebackStage=1 --Mdir obj_ibex3 $(SRCS) sim_main.cpp
+	$(VERILATOR) $(VFLAGS) -GWritebackStage=1 --Mdir obj_ibex3 public.vlt $(SRCS) sim_main.cpp
 clean:
 	rm -rf obj_ibex2 obj_ibex3

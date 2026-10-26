@@ -32,10 +32,10 @@ VFLAGS = --cc --exe --build -j 4 -Wno-fatal -Wno-BLKANDNBLK \
 all: base pulp
 
 base:
-	$(VERILATOR) $(VFLAGS) --Mdir obj_base -GCOREV_PULP=0 $(SRCS) sim_main.cpp
+	$(VERILATOR) $(VFLAGS) --Mdir obj_base -GCOREV_PULP=0 public.vlt $(SRCS) sim_main.cpp
 
 pulp:
-	$(VERILATOR) $(VFLAGS) --Mdir obj_pulp -GCOREV_PULP=1 $(SRCS) sim_main.cpp
+	$(VERILATOR) $(VFLAGS) --Mdir obj_pulp -GCOREV_PULP=1 public.vlt $(SRCS) sim_main.cpp
 
 test.hex: assemble.py
 	python3 assemble.py > test.hex

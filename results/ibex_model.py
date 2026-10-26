@@ -11,25 +11,30 @@ def load(fn, ibex):
     for r in csv.DictReader(l for l in open(fn) if not l.startswith('DONE')):
         d.setdefault((r['shape'], r['kernel']), {})[r['event']] = int(r['value']); d[(r['shape'], r['kernel'])]['chk'] = r['chk']
     for v in d.values():
-        v['instr'] = v['ev1']; v['brtaken'] = v['ev9']; v['loads'] = v['ev5']; v['stores'] = v['ev6'] - 1 if 'ev6' in v else v['dwrite']
+        v['instr'] = v['ev1']; v['brtaken'] = v['ev9']; v['loads'] = v['ev5']; v['stores'] = v['ev6'] - 1 if 'ev6' in v else v['dwrite']   # the harness window includes the stop-marker store
         if ibex: v['dwait'] = v['ev2']; v['iwait'] = v['ev4']; v['br'] = v['ev8']; v['comp'] = v['ev10']
         else: v['ldstall'] = v['ev2']
     return d
-fams = [('3x3 depthwise', 'dw3', {'scalar_O2': ('wait0_eqrequant', 'scalar_O2'), 'scalar_O3': ('wait0_eqrequant', 'scalar_O3'), 'scalar_asm_rv': ('wait0_decomp', 'scalar_asm_rv')}, lambda s: (lambda c,h,w: c*(h-2)*(w-2))(*map(int, s.split('x')))*9),
-        ('5x5 depthwise', 'dw5', {'dw5_C_O2': ('wait0_dw5', 'dw5_C_O2'), 'dw5_C_O3': ('wait0_dw5', 'dw5_C_O3'), 'dw5_asm_rv': ('wait0_dw5', 'dw5_asm_rv')}, lambda s: (lambda c,h,w: c*(h-4)*(w-4))(*map(int, s.split('x')))*25),
-        ('1x1 pointwise', 'pw', {'pw_C_O2': ('wait0_pw', 'pw_C_O2'), 'pw_C_O3': ('wait0_pw', 'pw_C_O3'), 'pw_asm_rv': ('wait0_pw', 'pw_asm_rv')}, lambda s: (lambda ci,co,h,w: ci*co*h*w)(*map(int, s.split('x'))))]
-names = {'scalar_O2': 'C -O2', 'scalar_O3': 'C -O3', 'scalar_asm_rv': 'hand asm', 'dw5_C_O2': 'C -O2', 'dw5_C_O3': 'C -O3', 'dw5_asm_rv': 'hand asm', 'pw_C_O2': 'C -O2', 'pw_C_O3': 'C -O3', 'pw_asm_rv': 'hand asm'}
+# kernel -> (CV32E40P dataset, kernel name, Ibex dataset tag); the first three are -O2, -O3, hand; for 5x5 the hand
+# kernel is the output-stationary one (the paper's baseline), and the row-wise kernel follows as a fourth entry
+fams = [('3x3 depthwise', {'scalar_O2': ('wait0_eqrequant', 'scalar_O2', 'dw3'), 'scalar_O3': ('wait0_eqrequant', 'scalar_O3', 'dw3'), 'scalar_asm_rv': ('wait0_decomp', 'scalar_asm_rv', 'dw3')}),
+        ('5x5 depthwise', {'dw5_C_O2': ('wait0_dw5', 'dw5_C_O2', 'dw5'), 'dw5_C_O3': ('wait0_dw5', 'dw5_C_O3', 'dw5'), 'dw5_os_asm_rv': ('wait0_dw5os', 'dw5_os_asm_rv', 'dw5os'), 'dw5_asm_rv': ('wait0_dw5', 'dw5_asm_rv', 'dw5')}),
+        ('1x1 pointwise', {'pw_C_O2': ('wait0_pw', 'pw_C_O2', 'pw'), 'pw_C_O3': ('wait0_pw', 'pw_C_O3', 'pw'), 'pw_asm_rv': ('wait0_pw', 'pw_asm_rv', 'pw')})]
+names = {'scalar_O2': 'C -O2', 'scalar_O3': 'C -O3', 'scalar_asm_rv': 'hand asm', 'dw5_C_O2': 'C -O2', 'dw5_C_O3': 'C -O3', 'dw5_os_asm_rv': 'hand asm, output-stationary', 'dw5_asm_rv': 'hand asm, row-wise', 'pw_C_O2': 'C -O2', 'pw_C_O3': 'C -O3', 'pw_asm_rv': 'hand asm'}
+def gather(kmap):
+    I2, I3, CV = {0: {}, 1: {}}, {0: {}, 1: {}}, {0: {}, 1: {}}
+    for k, (base, ck, tag) in kmap.items():
+        for p in (0, 1):
+            for D, fn, ib in ((CV, f'{base}_pad{p}.csv', False), (I2, f'wait0_ibex2_{tag}_pad{p}.csv', True), (I3, f'wait0_ibex3_{tag}_pad{p}.csv', True)):
+                for (s, kk), v in load(fn, ib).items():
+                    if kk == ck: D[p][(s, k)] = v
+    shapes = []; [shapes.append(s) for (s, _) in I2[0] if s not in shapes]
+    return I2, I3, CV, shapes
 allrows = {'ibex2': [], 'ibex3': []}; mism = 0
 print("| kernel | shape | instructions | CV32E40P cycles | Ibex 2-stage cycles | Ibex 3-stage cycles | Ibex2 / CV | Ibex3 / CV | alignment spread CV / Ibex2 / Ibex3 |")
 print("|---|---|---|---|---|---|---|---|---|")
-for fam, tag, kmap, macs in fams:
-    I2 = {p: load(f'wait0_ibex2_{tag}_pad{p}.csv', True) for p in (0, 1)}; I3 = {p: load(f'wait0_ibex3_{tag}_pad{p}.csv', True) for p in (0, 1)}
-    CV = {}
-    for k, (base, ck) in kmap.items():
-        for p in (0, 1):
-            for (s, kk), v in load(f'{base}_pad{p}.csv', False).items():
-                if kk == ck: CV.setdefault(p, {})[(s, k)] = v
-    shapes = []; [shapes.append(k[0]) for k in I2[0] if k[0] not in shapes]
+for fam, kmap in fams:
+    I2, I3, CV, shapes = gather(kmap)
     for s in shapes:
         for k in kmap:
             cv = [CV[p][(s, k)] for p in (0, 1)]; i2 = [I2[p][(s, k)] for p in (0, 1)]; i3 = [I3[p][(s, k)] for p in (0, 1)]
@@ -42,19 +47,15 @@ print(f"\ninstruction-count or checksum mismatches between cores: {mism}")
 # -O2/-O3 and hand asm on each core
 print("\n| kernel | shape | -O2 / -O3: CV32E40P | Ibex2 | Ibex3 | -O3 / hand asm: CV32E40P | Ibex2 | Ibex3 |")
 print("|---|---|---|---|---|---|---|---|")
-for fam, tag, kmap, macs in fams:
-    I2 = {p: load(f'wait0_ibex2_{tag}_pad{p}.csv', True) for p in (0, 1)}; I3 = {p: load(f'wait0_ibex3_{tag}_pad{p}.csv', True) for p in (0, 1)}
-    CV = {}
-    for k, (base, ck) in kmap.items():
-        for p in (0, 1):
-            for (s, kk), v in load(f'{base}_pad{p}.csv', False).items():
-                if kk == ck: CV.setdefault(p, {})[(s, k)] = v
-    ks = list(kmap); shapes = []; [shapes.append(k[0]) for k in I2[0] if k[0] not in shapes]
-    for s in shapes:
-        r = []
-        for D in (CV, I2, I3):
-            b = lambda k: min(D[p][(s, k)]['cycles'] for p in (0, 1)); r.append((b(ks[0]) / b(ks[1]), b(ks[1]) / b(ks[2])))
-        print(f"| {fam} | {s} | {r[0][0]:.2f}x | {r[1][0]:.2f}x | {r[2][0]:.2f}x | {r[0][1]:.2f}x | {r[1][1]:.2f}x | {r[2][1]:.2f}x |")
+for fam, kmap in fams:
+    I2, I3, CV, shapes = gather(kmap)
+    ks = list(kmap)
+    for hand, label in ((ks[2], fam),) + (((ks[3], fam + ', row-wise hand'),) if len(ks) > 3 else ()):
+        for s in shapes:
+            r = []
+            for D in (CV, I2, I3):
+                b = lambda k: min(D[p][(s, k)]['cycles'] for p in (0, 1)); r.append((b(ks[0]) / b(ks[1]), b(ks[1]) / b(hand)))
+            print(f"| {label} | {s} | {r[0][0]:.2f}x | {r[1][0]:.2f}x | {r[2][0]:.2f}x | {r[0][1]:.2f}x | {r[1][1]:.2f}x | {r[2][1]:.2f}x |")
 # cycle model fit for Ibex: least squares cycles = instr + a*dwait + b*iwait + c*brtaken + d*(loads+stores)
 def lstsq(X, y, cyc):
     import numpy as np

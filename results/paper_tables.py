@@ -123,8 +123,7 @@ for base, pat in (('wait0_decomp', 'asm'), ('wait0_clip_dw3', 'asm'), ('wait0_dw
             if re.search(pat, k[1]): hw.append(v)
 eq = [v for p in (0, 1) for v in E[p].values()]
 distinct = hw + [v for p in (0, 1) for k, v in E[p].items() if k[1] != 'scalar_asm']
-fullx = [v for v in hw if v.get('chk') is not None and any(v is x for x in hw)]  # placeholder, replaced below
-fullx = [v for base in ('wait0_clip_dw3', 'wait0_clip_dw5', 'wait0_dw5os', 'wait0_clip_pw') for p in (0, 1) for k, v in load(base, p).items() if k[1].endswith('_xp_clip')]
+fullx = [v for base in ('wait0_clip_dw3', 'wait0_clip_dw5', 'wait0_clip_pw') for p in (0, 1) for k, v in load(base, p).items() if k[1].endswith('_xp_clip') and 'simd' in k[1]]   # full Xpulp: SIMD + hardware loops + clip
 def stats(rs, label):
     ys = [v['cycles'] for v in rs]; e4 = [abs(v['resid4']) / v['cycles'] for v in rs]; e5 = [abs(v['resid']) / v['cycles'] for v in rs]
     return [label, str(len(rs)), f"{r2([v['pred4'] for v in rs], ys):.4f}", P(sum(e4) / len(e4), 2), P(max(e4), 2), f"{r2([v['pred'] for v in rs], ys):.4f}", P(sum(e5) / len(e5), 2), P(max(e5), 2)]

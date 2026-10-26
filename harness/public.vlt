@@ -1,0 +1,3 @@
+`verilator_config
+// Expose the HPM event signals so the harness can count events in the measured binary itself.
+public_flat_rw -module "cv32e40p_id_stage" -var "mhpmevent_*"
