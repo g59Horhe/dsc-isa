@@ -11,7 +11,7 @@ shape,kernel,event,value,chk
 8x16x16,scalar_asm_rv,dread,6824,9826
 8x16x16,scalar_asm_rv,dwrite,1586,9826
 8x16x16,scalar_asm_rv,ifetch,41768,9826
-8x16x16,scalar_asm_rv,ev1,50941,9826
+8x16x16,scalar_asm_rv,ev1,50942,9826
 8x16x16,scalar_asm_rv,ev2,0,9826
 8x16x16,scalar_asm_rv,ev5,6824,9826
 8x16x16,scalar_asm_rv,ev9,463,9826
@@ -19,7 +19,7 @@ shape,kernel,event,value,chk
 8x16x16,scalar_asm_xp,dread,7048,9826
 8x16x16,scalar_asm_xp,dwrite,1826,9826
 8x16x16,scalar_asm_xp,ifetch,48936,9826
-8x16x16,scalar_asm_xp,ev1,50390,9826
+8x16x16,scalar_asm_xp,ev1,50391,9826
 8x16x16,scalar_asm_xp,ev2,0,9826
 8x16x16,scalar_asm_xp,ev5,7048,9826
 8x16x16,scalar_asm_xp,ev9,127,9826
@@ -27,7 +27,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_unal_asm_rv,dread,8136,9826
 8x16x16,simd_unal_asm_rv,dwrite,1568,9826
 8x16x16,simd_unal_asm_rv,ifetch,31909,9826
-8x16x16,simd_unal_asm_rv,ev1,32075,9826
+8x16x16,simd_unal_asm_rv,ev1,32074,9826
 8x16x16,simd_unal_asm_rv,ev2,0,9826
 8x16x16,simd_unal_asm_rv,ev5,4776,9826
 8x16x16,simd_unal_asm_rv,ev9,1567,9826
@@ -35,7 +35,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_unal_asm_xp,dread,8136,9826
 8x16x16,simd_unal_asm_xp,dwrite,1568,9826
 8x16x16,simd_unal_asm_xp,ifetch,27549,9826
-8x16x16,simd_unal_asm_xp,ev1,27372,9826
+8x16x16,simd_unal_asm_xp,ev1,27483,9826
 8x16x16,simd_unal_asm_xp,ev2,0,9826
 8x16x16,simd_unal_asm_xp,ev5,4776,9826
 8x16x16,simd_unal_asm_xp,ev9,111,9826
@@ -43,7 +43,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_al_asm_rv,dread,3096,9826
 8x16x16,simd_al_asm_rv,dwrite,1568,9826
 8x16x16,simd_al_asm_rv,ifetch,32750,9826
-8x16x16,simd_al_asm_rv,ev1,35669,9826
+8x16x16,simd_al_asm_rv,ev1,35667,9826
 8x16x16,simd_al_asm_rv,ev2,672,9826
 8x16x16,simd_al_asm_rv,ev5,2760,9826
 8x16x16,simd_al_asm_rv,ev9,351,9826
@@ -51,7 +51,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_al_asm_xp,dread,3096,9826
 8x16x16,simd_al_asm_xp,dwrite,1568,9826
 8x16x16,simd_al_asm_xp,ifetch,34335,9826
-8x16x16,simd_al_asm_xp,ev1,34774,9826
+8x16x16,simd_al_asm_xp,ev1,34660,9826
 8x16x16,simd_al_asm_xp,ev2,672,9826
 8x16x16,simd_al_asm_xp,ev5,2760,9826
 8x16x16,simd_al_asm_xp,ev9,127,9826
@@ -59,7 +59,7 @@ shape,kernel,event,value,chk
 16x16x16,scalar_O3,dread,11378,9921
 16x16x16,scalar_O3,dwrite,3409,9921
 16x16x16,scalar_O3,ifetch,83415,9921
-16x16x16,scalar_O3,ev1,102752,9921
+16x16x16,scalar_O3,ev1,102750,9921
 16x16x16,scalar_O3,ev2,0,9921
 16x16x16,scalar_O3,ev5,11378,9921
 16x16x16,scalar_O3,ev9,1567,9921
@@ -67,7 +67,7 @@ shape,kernel,event,value,chk
 16x16x16,scalar_asm_rv,dread,13632,9921
 16x16x16,scalar_asm_rv,dwrite,3169,9921
 16x16x16,scalar_asm_rv,ifetch,84214,9921
-16x16x16,scalar_asm_rv,ev1,101883,9921
+16x16x16,scalar_asm_rv,ev1,101885,9921
 16x16x16,scalar_asm_rv,ev2,0,9921
 16x16x16,scalar_asm_rv,ev5,13632,9921
 16x16x16,scalar_asm_rv,ev9,927,9921
@@ -75,7 +75,7 @@ shape,kernel,event,value,chk
 16x16x16,scalar_asm_xp,dread,14080,9921
 16x16x16,scalar_asm_xp,dwrite,3649,9921
 16x16x16,scalar_asm_xp,ifetch,97656,9921
-16x16x16,scalar_asm_xp,ev1,100556,9921
+16x16x16,scalar_asm_xp,ev1,100558,9921
 16x16x16,scalar_asm_xp,ev2,0,9921
 16x16x16,scalar_asm_xp,ev5,14080,9921
 16x16x16,scalar_asm_xp,ev9,255,9921
@@ -83,7 +83,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_unal_asm_rv,dread,16272,9921
 16x16x16,simd_unal_asm_rv,dwrite,3136,9921
 16x16x16,simd_unal_asm_rv,ifetch,63781,9921
-16x16x16,simd_unal_asm_rv,ev1,64123,9921
+16x16x16,simd_unal_asm_rv,ev1,64122,9921
 16x16x16,simd_unal_asm_rv,ev2,0,9921
 16x16x16,simd_unal_asm_rv,ev5,9552,9921
 16x16x16,simd_unal_asm_rv,ev9,3135,9921
@@ -91,7 +91,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_unal_asm_xp,dread,16272,9921
 16x16x16,simd_unal_asm_xp,dwrite,3136,9921
 16x16x16,simd_unal_asm_xp,ifetch,55046,9921
-16x16x16,simd_unal_asm_xp,ev1,54940,9921
+16x16x16,simd_unal_asm_xp,ev1,54939,9921
 16x16x16,simd_unal_asm_xp,ev2,0,9921
 16x16x16,simd_unal_asm_xp,ev5,9552,9921
 16x16x16,simd_unal_asm_xp,ev9,223,9921
@@ -99,7 +99,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_al_asm_rv,dread,6192,9921
 16x16x16,simd_al_asm_rv,dwrite,3136,9921
 16x16x16,simd_al_asm_rv,ifetch,65494,9921
-16x16x16,simd_al_asm_rv,ev1,71325,9921
+16x16x16,simd_al_asm_rv,ev1,71324,9921
 16x16x16,simd_al_asm_rv,ev2,1344,9921
 16x16x16,simd_al_asm_rv,ev5,5520,9921
 16x16x16,simd_al_asm_rv,ev9,703,9921
@@ -107,7 +107,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_al_asm_xp,dread,6192,9921
 16x16x16,simd_al_asm_xp,dwrite,3136,9921
 16x16x16,simd_al_asm_xp,ifetch,68840,9921
-16x16x16,simd_al_asm_xp,ev1,69534,9921
+16x16x16,simd_al_asm_xp,ev1,69533,9921
 16x16x16,simd_al_asm_xp,ev2,1344,9921
 16x16x16,simd_al_asm_xp,ev5,5520,9921
 16x16x16,simd_al_asm_xp,ev9,255,9921
@@ -115,7 +115,7 @@ shape,kernel,event,value,chk
 8x32x32,scalar_O3,dread,23377,39212
 8x32x32,scalar_O3,dwrite,7465,39212
 8x32x32,scalar_O3,ifetch,190710,39212
-8x32x32,scalar_O3,ev1,234429,39212
+8x32x32,scalar_O3,ev1,234430,39212
 8x32x32,scalar_O3,ev2,0,39212
 8x32x32,scalar_O3,ev5,23377,39212
 8x32x32,scalar_O3,ev9,3599,39212
@@ -123,15 +123,15 @@ shape,kernel,event,value,chk
 8x32x32,scalar_asm_rv,dread,23129,39212
 8x32x32,scalar_asm_rv,dwrite,7217,39212
 8x32x32,scalar_asm_rv,ifetch,189510,39212
-8x32x32,scalar_asm_rv,ev1,218350,39212
+8x32x32,scalar_asm_rv,ev1,218342,39212
 8x32x32,scalar_asm_rv,ev2,0,39212
-8x32x32,scalar_asm_rv,ev5,23137,39212
+8x32x32,scalar_asm_rv,ev5,23129,39212
 8x32x32,scalar_asm_rv,ev9,2399,39212
 8x32x32,scalar_asm_xp,cycles,212852,39212
 8x32x32,scalar_asm_xp,dread,23377,39212
 8x32x32,scalar_asm_xp,dwrite,7233,39212
 8x32x32,scalar_asm_xp,ifetch,212326,39212
-8x32x32,scalar_asm_xp,ev1,212126,39212
+8x32x32,scalar_asm_xp,ev1,212127,39212
 8x32x32,scalar_asm_xp,ev2,240,39212
 8x32x32,scalar_asm_xp,ev5,23377,39212
 8x32x32,scalar_asm_xp,ev9,239,39212
@@ -139,7 +139,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_unal_asm_rv,dread,37512,39212
 8x32x32,simd_unal_asm_rv,dwrite,7200,39212
 8x32x32,simd_unal_asm_rv,ifetch,144942,39212
-8x32x32,simd_unal_asm_rv,ev1,144989,39212
+8x32x32,simd_unal_asm_rv,ev1,144987,39212
 8x32x32,simd_unal_asm_rv,ev2,0,39212
 8x32x32,simd_unal_asm_rv,ev5,21672,39212
 8x32x32,simd_unal_asm_rv,ev9,7199,39212
@@ -147,7 +147,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_unal_asm_xp,dread,37512,39212
 8x32x32,simd_unal_asm_xp,dwrite,7200,39212
 8x32x32,simd_unal_asm_xp,ifetch,124063,39212
-8x32x32,simd_unal_asm_xp,ev1,123870,39212
+8x32x32,simd_unal_asm_xp,ev1,123628,39212
 8x32x32,simd_unal_asm_xp,ev2,0,39212
 8x32x32,simd_unal_asm_xp,ev5,21672,39212
 8x32x32,simd_unal_asm_xp,ev9,239,39212
@@ -155,7 +155,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_al_asm_rv,dread,12312,39212
 8x32x32,simd_al_asm_rv,dwrite,7200,39212
 8x32x32,simd_al_asm_rv,ifetch,150271,39212
-8x32x32,simd_al_asm_rv,ev1,161318,39212
+8x32x32,simd_al_asm_rv,ev1,161316,39212
 8x32x32,simd_al_asm_rv,ev2,1440,39212
 8x32x32,simd_al_asm_rv,ev5,11592,39212
 8x32x32,simd_al_asm_rv,ev9,1695,39212
@@ -163,7 +163,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_al_asm_xp,dread,12312,39212
 8x32x32,simd_al_asm_xp,dwrite,7200,39212
 8x32x32,simd_al_asm_xp,ifetch,155807,39212
-8x32x32,simd_al_asm_xp,ev1,156519,39212
+8x32x32,simd_al_asm_xp,ev1,156277,39212
 8x32x32,simd_al_asm_xp,ev2,1440,39212
 8x32x32,simd_al_asm_xp,ev5,11592,39212
 8x32x32,simd_al_asm_xp,ev9,255,39212
@@ -171,15 +171,15 @@ shape,kernel,event,value,chk
 32x8x8,scalar_O3,dread,5792,30193
 32x8x8,scalar_O3,dwrite,1826,30193
 32x8x8,scalar_O3,ifetch,30532,30193
-32x8x8,scalar_O3,ev1,36815,30193
+32x8x8,scalar_O3,ev1,37194,30193
 32x8x8,scalar_O3,ev2,192,30193
-32x8x8,scalar_O3,ev5,5600,30193
+32x8x8,scalar_O3,ev5,5792,30193
 32x8x8,scalar_O3,ev9,191,30193
 32x8x8,scalar_asm_rv,cycles,37602,30193
 32x8x8,scalar_asm_rv,dread,4928,30193
 32x8x8,scalar_asm_rv,dwrite,1184,30193
 32x8x8,scalar_asm_rv,ifetch,31969,30193
-32x8x8,scalar_asm_rv,ev1,36841,30193
+32x8x8,scalar_asm_rv,ev1,36836,30193
 32x8x8,scalar_asm_rv,ev2,0,30193
 32x8x8,scalar_asm_rv,ev5,4928,30193
 32x8x8,scalar_asm_rv,ev9,383,30193
@@ -187,7 +187,7 @@ shape,kernel,event,value,chk
 32x8x8,scalar_asm_xp,dread,5152,30193
 32x8x8,scalar_asm_xp,dwrite,1248,30193
 32x8x8,scalar_asm_xp,ifetch,36672,30193
-32x8x8,scalar_asm_xp,ev1,36841,30193
+32x8x8,scalar_asm_xp,ev1,36645,30193
 32x8x8,scalar_asm_xp,ev2,192,30193
 32x8x8,scalar_asm_xp,ev5,5152,30193
 32x8x8,scalar_asm_xp,ev9,191,30193
@@ -195,7 +195,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_unal_asm_rv,dread,6048,30193
 32x8x8,simd_unal_asm_rv,dwrite,1152,30193
 32x8x8,simd_unal_asm_rv,ifetch,24418,30193
-32x8x8,simd_unal_asm_rv,ev1,24618,30193
+32x8x8,simd_unal_asm_rv,ev1,24614,30193
 32x8x8,simd_unal_asm_rv,ev2,0,30193
 32x8x8,simd_unal_asm_rv,ev5,3744,30193
 32x8x8,simd_unal_asm_rv,ev9,1151,30193
@@ -203,7 +203,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_unal_asm_xp,dread,6048,30193
 32x8x8,simd_unal_asm_xp,dwrite,1152,30193
 32x8x8,simd_unal_asm_xp,ifetch,21507,30193
-32x8x8,simd_unal_asm_xp,ev1,21547,30193
+32x8x8,simd_unal_asm_xp,ev1,21351,30193
 32x8x8,simd_unal_asm_xp,ev2,0,30193
 32x8x8,simd_unal_asm_xp,ev5,3744,30193
 32x8x8,simd_unal_asm_xp,ev9,191,30193
@@ -211,7 +211,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_al_asm_rv,dread,3168,30193
 32x8x8,simd_al_asm_rv,dwrite,1152,30193
 32x8x8,simd_al_asm_rv,ifetch,24868,30193
-32x8x8,simd_al_asm_rv,ev1,27564,30193
+32x8x8,simd_al_asm_rv,ev1,27560,30193
 32x8x8,simd_al_asm_rv,ev2,1152,30193
 32x8x8,simd_al_asm_rv,ev5,2592,30193
 32x8x8,simd_al_asm_rv,ev9,255,30193
@@ -219,7 +219,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_al_asm_xp,dread,3168,30193
 32x8x8,simd_al_asm_xp,dwrite,1152,30193
 32x8x8,simd_al_asm_xp,ifetch,26596,30193
-32x8x8,simd_al_asm_xp,ev1,26988,30193
+32x8x8,simd_al_asm_xp,ev1,27176,30193
 32x8x8,simd_al_asm_xp,ev2,1152,30193
 32x8x8,simd_al_asm_xp,ev5,2592,30193
 32x8x8,simd_al_asm_xp,ev9,255,30193

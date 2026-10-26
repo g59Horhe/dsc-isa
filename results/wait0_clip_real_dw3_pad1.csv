@@ -3,7 +3,7 @@ shape,kernel,event,value,chk
 8x16x16,scalar_asm_rv_clip,dread,6824,26589
 8x16x16,scalar_asm_rv_clip,dwrite,1586,26589
 8x16x16,scalar_asm_rv_clip,ifetch,34824,26589
-8x16x16,scalar_asm_rv_clip,ev1,41533,26589
+8x16x16,scalar_asm_rv_clip,ev1,41534,26589
 8x16x16,scalar_asm_rv_clip,ev2,0,26589
 8x16x16,scalar_asm_rv_clip,ev5,6824,26589
 8x16x16,scalar_asm_rv_clip,ev9,463,26589
@@ -11,7 +11,7 @@ shape,kernel,event,value,chk
 8x16x16,scalar_asm_xp_clip,dread,7048,26589
 8x16x16,scalar_asm_xp_clip,dwrite,1826,26589
 8x16x16,scalar_asm_xp_clip,ifetch,39872,26589
-8x16x16,scalar_asm_xp_clip,ev1,40982,26589
+8x16x16,scalar_asm_xp_clip,ev1,40983,26589
 8x16x16,scalar_asm_xp_clip,ev2,0,26589
 8x16x16,scalar_asm_xp_clip,ev5,7048,26589
 8x16x16,scalar_asm_xp_clip,ev9,127,26589
@@ -19,7 +19,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_unal_asm_rv_clip,dread,8136,26589
 8x16x16,simd_unal_asm_rv_clip,dwrite,1568,26589
 8x16x16,simd_unal_asm_rv_clip,ifetch,22613,26589
-8x16x16,simd_unal_asm_rv_clip,ev1,22667,26589
+8x16x16,simd_unal_asm_rv_clip,ev1,22666,26589
 8x16x16,simd_unal_asm_rv_clip,ev2,0,26589
 8x16x16,simd_unal_asm_rv_clip,ev5,4776,26589
 8x16x16,simd_unal_asm_rv_clip,ev9,1567,26589
@@ -27,7 +27,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_unal_asm_xp_clip,dread,8136,26589
 8x16x16,simd_unal_asm_xp_clip,dwrite,1568,26589
 8x16x16,simd_unal_asm_xp_clip,ifetch,18141,26589
-8x16x16,simd_unal_asm_xp_clip,ev1,17964,26589
+8x16x16,simd_unal_asm_xp_clip,ev1,18075,26589
 8x16x16,simd_unal_asm_xp_clip,ev2,0,26589
 8x16x16,simd_unal_asm_xp_clip,ev5,4776,26589
 8x16x16,simd_unal_asm_xp_clip,ev9,111,26589
@@ -35,7 +35,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_al_asm_rv_clip,dread,3096,26589
 8x16x16,simd_al_asm_rv_clip,dwrite,1568,26589
 8x16x16,simd_al_asm_rv_clip,ifetch,24126,26589
-8x16x16,simd_al_asm_rv_clip,ev1,26261,26589
+8x16x16,simd_al_asm_rv_clip,ev1,26259,26589
 8x16x16,simd_al_asm_rv_clip,ev2,672,26589
 8x16x16,simd_al_asm_rv_clip,ev5,2760,26589
 8x16x16,simd_al_asm_rv_clip,ev9,351,26589
@@ -43,7 +43,7 @@ shape,kernel,event,value,chk
 8x16x16,simd_al_asm_xp_clip,dread,3096,26589
 8x16x16,simd_al_asm_xp_clip,dwrite,1568,26589
 8x16x16,simd_al_asm_xp_clip,ifetch,25039,26589
-8x16x16,simd_al_asm_xp_clip,ev1,25366,26589
+8x16x16,simd_al_asm_xp_clip,ev1,25252,26589
 8x16x16,simd_al_asm_xp_clip,ev2,672,26589
 8x16x16,simd_al_asm_xp_clip,ev5,2760,26589
 8x16x16,simd_al_asm_xp_clip,ev9,127,26589
@@ -51,7 +51,7 @@ shape,kernel,event,value,chk
 16x16x16,scalar_asm_rv_clip,dread,13632,8777
 16x16x16,scalar_asm_rv_clip,dwrite,3169,8777
 16x16x16,scalar_asm_rv_clip,ifetch,69878,8777
-16x16x16,scalar_asm_rv_clip,ev1,83067,8777
+16x16x16,scalar_asm_rv_clip,ev1,83069,8777
 16x16x16,scalar_asm_rv_clip,ev2,0,8777
 16x16x16,scalar_asm_rv_clip,ev5,13632,8777
 16x16x16,scalar_asm_rv_clip,ev9,927,8777
@@ -59,7 +59,7 @@ shape,kernel,event,value,chk
 16x16x16,scalar_asm_xp_clip,dread,14080,8777
 16x16x16,scalar_asm_xp_clip,dwrite,3649,8777
 16x16x16,scalar_asm_xp_clip,ifetch,79527,8777
-16x16x16,scalar_asm_xp_clip,ev1,81740,8777
+16x16x16,scalar_asm_xp_clip,ev1,81742,8777
 16x16x16,scalar_asm_xp_clip,ev2,0,8777
 16x16x16,scalar_asm_xp_clip,ev5,14080,8777
 16x16x16,scalar_asm_xp_clip,ev9,255,8777
@@ -67,7 +67,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_unal_asm_rv_clip,dread,16272,8777
 16x16x16,simd_unal_asm_rv_clip,dwrite,3136,8777
 16x16x16,simd_unal_asm_rv_clip,ifetch,45174,8777
-16x16x16,simd_unal_asm_rv_clip,ev1,45307,8777
+16x16x16,simd_unal_asm_rv_clip,ev1,45306,8777
 16x16x16,simd_unal_asm_rv_clip,ev2,0,8777
 16x16x16,simd_unal_asm_rv_clip,ev5,9552,8777
 16x16x16,simd_unal_asm_rv_clip,ev9,3135,8777
@@ -75,7 +75,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_unal_asm_xp_clip,dread,16272,8777
 16x16x16,simd_unal_asm_xp_clip,dwrite,3136,8777
 16x16x16,simd_unal_asm_xp_clip,ifetch,36230,8777
-16x16x16,simd_unal_asm_xp_clip,ev1,36124,8777
+16x16x16,simd_unal_asm_xp_clip,ev1,36123,8777
 16x16x16,simd_unal_asm_xp_clip,ev2,0,8777
 16x16x16,simd_unal_asm_xp_clip,ev5,9552,8777
 16x16x16,simd_unal_asm_xp_clip,ev9,223,8777
@@ -83,7 +83,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_al_asm_rv_clip,dread,6192,8777
 16x16x16,simd_al_asm_rv_clip,dwrite,3136,8777
 16x16x16,simd_al_asm_rv_clip,ifetch,48247,8777
-16x16x16,simd_al_asm_rv_clip,ev1,52509,8777
+16x16x16,simd_al_asm_rv_clip,ev1,52508,8777
 16x16x16,simd_al_asm_rv_clip,ev2,1344,8777
 16x16x16,simd_al_asm_rv_clip,ev5,5520,8777
 16x16x16,simd_al_asm_rv_clip,ev9,703,8777
@@ -91,7 +91,7 @@ shape,kernel,event,value,chk
 16x16x16,simd_al_asm_xp_clip,dread,6192,8777
 16x16x16,simd_al_asm_xp_clip,dwrite,3136,8777
 16x16x16,simd_al_asm_xp_clip,ifetch,50247,8777
-16x16x16,simd_al_asm_xp_clip,ev1,50718,8777
+16x16x16,simd_al_asm_xp_clip,ev1,50717,8777
 16x16x16,simd_al_asm_xp_clip,ev2,1344,8777
 16x16x16,simd_al_asm_xp_clip,ev5,5520,8777
 16x16x16,simd_al_asm_xp_clip,ev9,255,8777
@@ -99,15 +99,15 @@ shape,kernel,event,value,chk
 8x32x32,scalar_asm_rv_clip,dread,23129,54966
 8x32x32,scalar_asm_rv_clip,dwrite,7217,54966
 8x32x32,scalar_asm_rv_clip,ifetch,151103,54966
-8x32x32,scalar_asm_rv_clip,ev1,175150,54966
+8x32x32,scalar_asm_rv_clip,ev1,175142,54966
 8x32x32,scalar_asm_rv_clip,ev2,0,54966
-8x32x32,scalar_asm_rv_clip,ev5,23137,54966
+8x32x32,scalar_asm_rv_clip,ev5,23129,54966
 8x32x32,scalar_asm_rv_clip,ev9,2399,54966
 8x32x32,scalar_asm_xp_clip,cycles,169652,54966
 8x32x32,scalar_asm_xp_clip,dread,23377,54966
 8x32x32,scalar_asm_xp_clip,dwrite,7233,54966
 8x32x32,scalar_asm_xp_clip,ifetch,169126,54966
-8x32x32,scalar_asm_xp_clip,ev1,168926,54966
+8x32x32,scalar_asm_xp_clip,ev1,168927,54966
 8x32x32,scalar_asm_xp_clip,ev2,240,54966
 8x32x32,scalar_asm_xp_clip,ev5,23377,54966
 8x32x32,scalar_asm_xp_clip,ev9,239,54966
@@ -115,7 +115,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_unal_asm_rv_clip,dread,37512,54966
 8x32x32,simd_unal_asm_rv_clip,dwrite,7200,54966
 8x32x32,simd_unal_asm_rv_clip,ifetch,108934,54966
-8x32x32,simd_unal_asm_rv_clip,ev1,101789,54966
+8x32x32,simd_unal_asm_rv_clip,ev1,101787,54966
 8x32x32,simd_unal_asm_rv_clip,ev2,0,54966
 8x32x32,simd_unal_asm_rv_clip,ev5,21672,54966
 8x32x32,simd_unal_asm_rv_clip,ev9,7199,54966
@@ -123,7 +123,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_unal_asm_xp_clip,dread,37512,54966
 8x32x32,simd_unal_asm_xp_clip,dwrite,7200,54966
 8x32x32,simd_unal_asm_xp_clip,ifetch,80863,54966
-8x32x32,simd_unal_asm_xp_clip,ev1,80670,54966
+8x32x32,simd_unal_asm_xp_clip,ev1,80428,54966
 8x32x32,simd_unal_asm_xp_clip,ev2,0,54966
 8x32x32,simd_unal_asm_xp_clip,ev5,21672,54966
 8x32x32,simd_unal_asm_xp_clip,ev9,239,54966
@@ -131,7 +131,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_al_asm_rv_clip,dread,12312,54966
 8x32x32,simd_al_asm_rv_clip,dwrite,7200,54966
 8x32x32,simd_al_asm_rv_clip,ifetch,110671,54966
-8x32x32,simd_al_asm_rv_clip,ev1,118118,54966
+8x32x32,simd_al_asm_rv_clip,ev1,118116,54966
 8x32x32,simd_al_asm_rv_clip,ev2,1440,54966
 8x32x32,simd_al_asm_rv_clip,ev5,11592,54966
 8x32x32,simd_al_asm_rv_clip,ev9,1695,54966
@@ -139,7 +139,7 @@ shape,kernel,event,value,chk
 8x32x32,simd_al_asm_xp_clip,dread,12312,54966
 8x32x32,simd_al_asm_xp_clip,dwrite,7200,54966
 8x32x32,simd_al_asm_xp_clip,ifetch,112847,54966
-8x32x32,simd_al_asm_xp_clip,ev1,113319,54966
+8x32x32,simd_al_asm_xp_clip,ev1,113077,54966
 8x32x32,simd_al_asm_xp_clip,ev2,1440,54966
 8x32x32,simd_al_asm_xp_clip,ev5,11592,54966
 8x32x32,simd_al_asm_xp_clip,ev9,255,54966
@@ -147,7 +147,7 @@ shape,kernel,event,value,chk
 32x8x8,scalar_asm_rv_clip,dread,4928,36837
 32x8x8,scalar_asm_rv_clip,dwrite,1184,36837
 32x8x8,scalar_asm_rv_clip,ifetch,25633,36837
-32x8x8,scalar_asm_rv_clip,ev1,29929,36837
+32x8x8,scalar_asm_rv_clip,ev1,29924,36837
 32x8x8,scalar_asm_rv_clip,ev2,0,36837
 32x8x8,scalar_asm_rv_clip,ev5,4928,36837
 32x8x8,scalar_asm_rv_clip,ev9,383,36837
@@ -155,7 +155,7 @@ shape,kernel,event,value,chk
 32x8x8,scalar_asm_xp_clip,dread,5152,36837
 32x8x8,scalar_asm_xp_clip,dwrite,1248,36837
 32x8x8,scalar_asm_xp_clip,ifetch,29760,36837
-32x8x8,scalar_asm_xp_clip,ev1,29929,36837
+32x8x8,scalar_asm_xp_clip,ev1,29733,36837
 32x8x8,scalar_asm_xp_clip,ev2,192,36837
 32x8x8,scalar_asm_xp_clip,ev5,5152,36837
 32x8x8,scalar_asm_xp_clip,ev9,191,36837
@@ -163,7 +163,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_unal_asm_rv_clip,dread,6048,36837
 32x8x8,simd_unal_asm_rv_clip,dwrite,1152,36837
 32x8x8,simd_unal_asm_rv_clip,ifetch,18497,36837
-32x8x8,simd_unal_asm_rv_clip,ev1,17706,36837
+32x8x8,simd_unal_asm_rv_clip,ev1,17702,36837
 32x8x8,simd_unal_asm_rv_clip,ev2,0,36837
 32x8x8,simd_unal_asm_rv_clip,ev5,3744,36837
 32x8x8,simd_unal_asm_rv_clip,ev9,1151,36837
@@ -171,7 +171,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_unal_asm_xp_clip,dread,6048,36837
 32x8x8,simd_unal_asm_xp_clip,dwrite,1152,36837
 32x8x8,simd_unal_asm_xp_clip,ifetch,14595,36837
-32x8x8,simd_unal_asm_xp_clip,ev1,14635,36837
+32x8x8,simd_unal_asm_xp_clip,ev1,14439,36837
 32x8x8,simd_unal_asm_xp_clip,ev2,0,36837
 32x8x8,simd_unal_asm_xp_clip,ev5,3744,36837
 32x8x8,simd_unal_asm_xp_clip,ev9,191,36837
@@ -179,7 +179,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_al_asm_rv_clip,dread,3168,36837
 32x8x8,simd_al_asm_rv_clip,dwrite,1152,36837
 32x8x8,simd_al_asm_rv_clip,ifetch,18532,36837
-32x8x8,simd_al_asm_rv_clip,ev1,20652,36837
+32x8x8,simd_al_asm_rv_clip,ev1,20648,36837
 32x8x8,simd_al_asm_rv_clip,ev2,1152,36837
 32x8x8,simd_al_asm_rv_clip,ev5,2592,36837
 32x8x8,simd_al_asm_rv_clip,ev9,255,36837
@@ -187,7 +187,7 @@ shape,kernel,event,value,chk
 32x8x8,simd_al_asm_xp_clip,dread,3168,36837
 32x8x8,simd_al_asm_xp_clip,dwrite,1152,36837
 32x8x8,simd_al_asm_xp_clip,ifetch,19876,36837
-32x8x8,simd_al_asm_xp_clip,ev1,20076,36837
+32x8x8,simd_al_asm_xp_clip,ev1,20264,36837
 32x8x8,simd_al_asm_xp_clip,ev2,1152,36837
 32x8x8,simd_al_asm_xp_clip,ev5,2592,36837
 32x8x8,simd_al_asm_xp_clip,ev9,255,36837

@@ -11,7 +11,7 @@ shape,kernel,event,value,chk
 8x16x16,dw5_C_O3,dread,41904,64862
 8x16x16,dw5_C_O3,dwrite,4376,64862
 8x16x16,dw5_C_O3,ifetch,96518,64862
-8x16x16,dw5_C_O3,ev1,139793,64862
+8x16x16,dw5_C_O3,ev1,139796,64862
 8x16x16,dw5_C_O3,ev2,14088,64862
 8x16x16,dw5_C_O3,ev5,41904,64862
 8x16x16,dw5_C_O3,ev9,1343,64862
@@ -27,7 +27,7 @@ shape,kernel,event,value,chk
 8x16x16,dw5_asm_xp,dread,15840,64862
 8x16x16,dw5_asm_xp,dwrite,6912,64862
 8x16x16,dw5_asm_xp,ifetch,116396,64862
-8x16x16,dw5_asm_xp,ev1,116713,64862
+8x16x16,dw5_asm_xp,ev1,117001,64862
 8x16x16,dw5_asm_xp,ev2,5760,64862
 8x16x16,dw5_asm_xp,ev5,15840,64862
 8x16x16,dw5_asm_xp,ev9,383,64862
@@ -43,7 +43,7 @@ shape,kernel,event,value,chk
 8x16x16,dw5_simd_xp,dread,20480,64862
 8x16x16,dw5_simd_xp,dwrite,1184,64862
 8x16x16,dw5_simd_xp,ifetch,35610,64862
-8x16x16,dw5_simd_xp,ev1,35631,64862
+8x16x16,dw5_simd_xp,ev1,35630,64862
 8x16x16,dw5_simd_xp,ev2,0,64862
 8x16x16,dw5_simd_xp,ev5,11840,64862
 8x16x16,dw5_simd_xp,ev9,95,64862
@@ -51,7 +51,7 @@ shape,kernel,event,value,chk
 16x16x16,dw5_C_O2,dread,115600,64854
 16x16x16,dw5_C_O2,dwrite,2704,64854
 16x16x16,dw5_C_O2,ifetch,489952,64854
-16x16x16,dw5_C_O2,ev1,515159,64854
+16x16x16,dw5_C_O2,ev1,515157,64854
 16x16x16,dw5_C_O2,ev2,0,64854
 16x16x16,dw5_C_O2,ev5,115600,64854
 16x16x16,dw5_C_O2,ev9,57983,64854
@@ -67,7 +67,7 @@ shape,kernel,event,value,chk
 16x16x16,dw5_asm_rv,dread,31680,64854
 16x16x16,dw5_asm_rv,dwrite,13824,64854
 16x16x16,dw5_asm_rv,ifetch,227618,64854
-16x16x16,dw5_asm_rv,ev1,275863,64854
+16x16x16,dw5_asm_rv,ev1,275864,64854
 16x16x16,dw5_asm_rv,ev2,11520,64854
 16x16x16,dw5_asm_rv,ev5,31680,64854
 16x16x16,dw5_asm_rv,ev9,13439,64854
@@ -75,7 +75,7 @@ shape,kernel,event,value,chk
 16x16x16,dw5_asm_xp,dread,31680,64854
 16x16x16,dw5_asm_xp,dwrite,13824,64854
 16x16x16,dw5_asm_xp,ifetch,232612,64854
-16x16x16,dw5_asm_xp,ev1,233225,64854
+16x16x16,dw5_asm_xp,ev1,233802,64854
 16x16x16,dw5_asm_xp,ev2,11520,64854
 16x16x16,dw5_asm_xp,ev5,31680,64854
 16x16x16,dw5_asm_xp,ev9,767,64854
@@ -83,7 +83,7 @@ shape,kernel,event,value,chk
 16x16x16,dw5_simd_rv,dread,40752,64854
 16x16x16,dw5_simd_rv,dwrite,2336,64854
 16x16x16,dw5_simd_rv,ifetch,79649,64854
-16x16x16,dw5_simd_rv,ev1,77717,64854
+16x16x16,dw5_simd_rv,ev1,77718,64854
 16x16x16,dw5_simd_rv,ev2,0,64854
 16x16x16,dw5_simd_rv,ev5,23472,64854
 16x16x16,dw5_simd_rv,ev9,2303,64854
@@ -91,7 +91,7 @@ shape,kernel,event,value,chk
 16x16x16,dw5_simd_xp,dread,40944,64854
 16x16x16,dw5_simd_xp,dwrite,2352,64854
 16x16x16,dw5_simd_xp,ifetch,71218,64854
-16x16x16,dw5_simd_xp,ev1,71398,64854
+16x16x16,dw5_simd_xp,ev1,71399,64854
 16x16x16,dw5_simd_xp,ev2,0,64854
 16x16x16,dw5_simd_xp,ev5,23664,64854
 16x16x16,dw5_simd_xp,ev9,191,64854
@@ -99,7 +99,7 @@ shape,kernel,event,value,chk
 8x32x32,dw5_C_O2,dread,313800,62512
 8x32x32,dw5_C_O2,dwrite,6472,62512
 8x32x32,dw5_C_O2,ifetch,1457652,62512
-8x32x32,dw5_C_O2,ev1,1394999,62512
+8x32x32,dw5_C_O2,ev1,1395000,62512
 8x32x32,dw5_C_O2,ev2,0,62512
 8x32x32,dw5_C_O2,ev5,313800,62512
 8x32x32,dw5_C_O2,ev9,156991,62512
@@ -107,7 +107,7 @@ shape,kernel,event,value,chk
 8x32x32,dw5_C_O3,dread,219056,62512
 8x32x32,dw5_C_O3,dwrite,20376,62512
 8x32x32,dw5_C_O3,ifetch,509715,62512
-8x32x32,dw5_C_O3,ev1,742973,62512
+8x32x32,dw5_C_O3,ev1,742976,62512
 8x32x32,dw5_C_O3,ev2,75656,62512
 8x32x32,dw5_C_O3,ev5,219056,62512
 8x32x32,dw5_C_O3,ev9,6463,62512
@@ -115,7 +115,7 @@ shape,kernel,event,value,chk
 8x32x32,dw5_asm_rv,dread,72816,62512
 8x32x32,dw5_asm_rv,dwrite,37641,62512
 8x32x32,dw5_asm_rv,ifetch,593451,62512
-8x32x32,dw5_asm_rv,ev1,723167,62512
+8x32x32,dw5_asm_rv,ev1,723169,62512
 8x32x32,dw5_asm_rv,ev2,31360,62512
 8x32x32,dw5_asm_rv,ev5,72816,62512
 8x32x32,dw5_asm_rv,ev9,37183,62512
@@ -123,7 +123,7 @@ shape,kernel,event,value,chk
 8x32x32,dw5_asm_xp,dread,72800,62512
 8x32x32,dw5_asm_xp,dwrite,37632,62512
 8x32x32,dw5_asm_xp,ifetch,609107,62512
-8x32x32,dw5_asm_xp,ev1,610032,62512
+8x32x32,dw5_asm_xp,ev1,610033,62512
 8x32x32,dw5_asm_xp,ev2,31360,62512
 8x32x32,dw5_asm_xp,ev5,72800,62512
 8x32x32,dw5_asm_xp,ev9,895,62512
@@ -131,7 +131,7 @@ shape,kernel,event,value,chk
 8x32x32,dw5_simd_rv,dread,109985,62512
 8x32x32,dw5_simd_rv,dwrite,6297,62512
 8x32x32,dw5_simd_rv,ifetch,214410,62512
-8x32x32,dw5_simd_rv,ev1,208232,62512
+8x32x32,dw5_simd_rv,ev1,208233,62512
 8x32x32,dw5_simd_rv,ev2,0,62512
 8x32x32,dw5_simd_rv,ev5,62945,62512
 8x32x32,dw5_simd_rv,ev9,6271,62512
@@ -139,7 +139,7 @@ shape,kernel,event,value,chk
 8x32x32,dw5_simd_xp,dread,110217,62512
 8x32x32,dw5_simd_xp,dwrite,6305,62512
 8x32x32,dw5_simd_xp,ifetch,190220,62512
-8x32x32,dw5_simd_xp,ev1,189881,62512
+8x32x32,dw5_simd_xp,ev1,189882,62512
 8x32x32,dw5_simd_xp,ev2,0,62512
 8x32x32,dw5_simd_xp,ev5,63177,62512
 8x32x32,dw5_simd_xp,ev9,223,62512
@@ -147,7 +147,7 @@ shape,kernel,event,value,chk
 32x8x8,dw5_C_O2,dread,26400,65080
 32x8x8,dw5_C_O2,dwrite,1312,65080
 32x8x8,dw5_C_O2,ifetch,122915,65080
-32x8x8,dw5_C_O2,ev1,119462,65080
+32x8x8,dw5_C_O2,ev1,119463,65080
 32x8x8,dw5_C_O2,ev2,0,65080
 32x8x8,dw5_C_O2,ev5,26400,65080
 32x8x8,dw5_C_O2,ev9,13567,65080
@@ -155,7 +155,7 @@ shape,kernel,event,value,chk
 32x8x8,dw5_C_O3,dread,21440,65080
 32x8x8,dw5_C_O3,dwrite,3808,65080
 32x8x8,dw5_C_O3,ifetch,50502,65080
-32x8x8,dw5_C_O3,ev1,69864,65080
+32x8x8,dw5_C_O3,ev1,69867,65080
 32x8x8,dw5_C_O3,ev2,4768,65080
 32x8x8,dw5_C_O3,ev5,21440,65080
 32x8x8,dw5_C_O3,ev9,1279,65080

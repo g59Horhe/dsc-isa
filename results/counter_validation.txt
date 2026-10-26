@@ -1,0 +1,24 @@
+harness event count minus CSR counter reading, same instrumented binary, per core and event (all kernels below)
+
+CV32E40P      ev1  10 kernels  difference min +4  max +4
+CV32E40P      ev2  10 kernels  difference min +0  max +0
+CV32E40P      ev5  10 kernels  difference min +0  max +0
+CV32E40P      ev9  10 kernels  difference min +0  max +0
+Ibex 2-stage  ev1   5 kernels  difference min +4  max +4
+Ibex 2-stage  ev2   5 kernels  difference min +1  max +1
+Ibex 2-stage  ev4   5 kernels  difference min +0  max +0
+Ibex 2-stage  ev5   5 kernels  difference min +0  max +0
+Ibex 2-stage  ev6   5 kernels  difference min +1  max +1
+Ibex 2-stage  ev8   5 kernels  difference min +0  max +0
+Ibex 2-stage  ev9   5 kernels  difference min +0  max +0
+Ibex 2-stage  ev10  5 kernels  difference min +2  max +2
+Ibex 3-stage  ev1   5 kernels  difference min +4  max +4
+Ibex 3-stage  ev2   5 kernels  difference min +0  max +0
+Ibex 3-stage  ev4   5 kernels  difference min +0  max +0
+Ibex 3-stage  ev5   5 kernels  difference min +0  max +0
+Ibex 3-stage  ev6   5 kernels  difference min +1  max +1
+Ibex 3-stage  ev8   5 kernels  difference min +0  max +0
+Ibex 3-stage  ev9   5 kernels  difference min +0  max +0
+Ibex 3-stage  ev10  5 kernels  difference min +2  max +2
+
+kernels: dwconv_opt.c -O2; dwconv_opt.c -O3; dwconv_asm.c -O2; dwconv_simd_al.c -O3; dwconv_simd_asm.c -O2 -DXPULP_CTRL=1 -DREQUANT_CLIP=1; dwconv_simd_al_asm.c -O2 -DXPULP_CTRL=1; dwconv5_os_asm.c -O2; dwconv5_simd_asm.c -O2 -DXPULP_CTRL=1 -DREQUANT_CLIP=1; pwconv.c -O3; pwconv_simd_asm.c -O2 -DXPULP_CTRL=1 -DREQUANT_CLIP=1
