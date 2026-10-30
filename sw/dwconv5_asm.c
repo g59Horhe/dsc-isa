@@ -116,6 +116,7 @@ static void dwconv5_asm(void) {
 #if XPULP_CTRL == 1
                 int cnt = OW;
             asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               
               HWLOOP0("%[cnt]", RQ_XS(2+RQ_N+1))   /* body: 2+RQ_N instructions */
@@ -131,6 +132,7 @@ static void dwconv5_asm(void) {
 #if XPULP_CTRL == 0
                 int *aend = accrow + OW;
             asm volatile (
+              RQ_INIT("%[u]")
               
               
               "1:\n"

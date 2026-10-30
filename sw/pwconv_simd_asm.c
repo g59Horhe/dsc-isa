@@ -26,6 +26,7 @@ static void pwconv_simd_asm(void) {
         unsigned int x0, x1;
         int cnt = CO;
         asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               "lw %[x0],0(%[xp])\n"
               "lw %[x1],4(%[xp])\n"
@@ -47,6 +48,7 @@ static void pwconv_simd_asm(void) {
         unsigned int x0, x1;
         const signed char *wend = wp + CO * CI;
         asm volatile (
+              RQ_INIT("%[u]")
               
               "lw %[x0],0(%[xp])\n"
               "lw %[x1],4(%[xp])\n"
@@ -68,6 +70,7 @@ static void pwconv_simd_asm(void) {
         unsigned int x0, x1, x2, x3;
         int cnt = CO;
         asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               "lw %[x0],0(%[xp])\n"
               "lw %[x1],4(%[xp])\n"
@@ -95,6 +98,7 @@ static void pwconv_simd_asm(void) {
         unsigned int x0, x1, x2, x3;
         const signed char *wend = wp + CO * CI;
         asm volatile (
+              RQ_INIT("%[u]")
               
               "lw %[x0],0(%[xp])\n"
               "lw %[x1],4(%[xp])\n"

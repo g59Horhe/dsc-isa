@@ -13,13 +13,14 @@ def load(fn):
         v['split'] = v['dread'] - v['loads']; v['pred'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['resid'] = v['cycles'] - v['pred']
     return d
 P = {p: load(f'wait0_block_pad{p}.csv') for p in (0, 1)}
-try:   # five-term model: the branch-target alignment term, measured per run by align_term.py
+try:   # the branch-target alignment term Ba and the jump term J, measured per run by align_term.py
     _A = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+    _J = {(r['shape'], r['kernel'], int(r['pad'])): int(r['jumps']) for r in csv.DictReader(open('wait0_align.csv'))}   # J: one cycle per jump
 except FileNotFoundError:
-    _A = {}
+    _A = {}; _J = {}
 for _p in (0, 1):
     for _k, _v in P[_p].items():   # runs are keyed by kernel only here
-        _v['ba'] = _A.get(('16x16x16', _k, _p), 0); _v['pred'] += _v['ba']; _v['resid'] = _v['cycles'] - _v['pred']
+        _v['ba'] = _A.get(('16x16x16', _k, _p), 0); _v['j'] = _J.get(('16x16x16', _k, _p), 0); _v['pred'] += _v['ba'] + _v['j']; _v['resid'] = _v['cycles'] - _v['pred']
 best = lambda k: min(P[0][k], P[1][k], key=lambda v: v['cycles'])
 names = {'blk_C_O3': 'C -O3, transform', 'blk_C_O3_fused': 'C -O3, fused store', 'blk_simd_rv': 'SIMD asm, RV32IMC ctrl, transform', 'blk_simd_rv_fused': 'SIMD asm, RV32IMC ctrl, fused',
          'blk_simd_xp': 'SIMD + hw loops, transform', 'blk_simd_xp_fused': 'SIMD + hw loops, fused', 'blk_full': 'full Xpulp (+ clip), transform', 'blk_full_fused': 'full Xpulp (+ clip), fused'}
@@ -40,4 +41,7 @@ print(f"| full Xpulp with transform vs C -O3 with transform | {c('blk_C_O3')/c('
 print(f"| datapath only (SIMD asm, RV32IMC ctrl, fused) vs C -O3 fused | {c('blk_C_O3_fused')/c('blk_simd_rv_fused'):.2f}x |")
 print(f"| + hardware loops | {c('blk_simd_rv_fused')/c('blk_simd_xp_fused'):.2f}x |")
 print(f"| + clip | {c('blk_simd_xp_fused')/c('blk_full_fused'):.2f}x |")
+print(f"| layout transform cost at a fixed alignment, pad 0 / pad 1: C -O3 | {P[0]['blk_C_O3']['cycles']-P[0]['blk_C_O3_fused']['cycles']:,} / {P[1]['blk_C_O3']['cycles']-P[1]['blk_C_O3_fused']['cycles']:,} |")
+print(f"| same, SIMD asm RV32IMC ctrl / SIMD + hw loops / full Xpulp | {P[0]['blk_simd_rv']['cycles']-P[0]['blk_simd_rv_fused']['cycles']:,} / {P[1]['blk_simd_rv']['cycles']-P[1]['blk_simd_rv_fused']['cycles']:,} ; {P[0]['blk_simd_xp']['cycles']-P[0]['blk_simd_xp_fused']['cycles']:,} / {P[1]['blk_simd_xp']['cycles']-P[1]['blk_simd_xp_fused']['cycles']:,} ; {P[0]['blk_full']['cycles']-P[0]['blk_full_fused']['cycles']:,} / {P[1]['blk_full']['cycles']-P[1]['blk_full_fused']['cycles']:,} |")
+print(f"| fusion's cost in the C -O3 block beyond the hardware-loop transform cost (better alignments) | {(c('blk_full')-c('blk_full_fused'))-(c('blk_C_O3')-c('blk_C_O3_fused')):,} cycles |")
 print(f"| fused full-Xpulp block vs sum of standalone stages (43,080 + 37,049) | {c('blk_full_fused') - 80129:+,} cycles |")

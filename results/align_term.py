@@ -15,7 +15,12 @@ evaluated against all runs (see flagged()); rule A above fits best and is
 written. Output: results/wait0_align.csv (shape,kernel,pad,cycles,redirects,
 ba,ba_rule_a,ba_rule_b,ba_rule_c) and the residuals with and without the
 term. Run from results/.
-cycles = I + 2 Bt + Slu + Asplit + Ba."""
+The same runs also give J, the jumps retired (the core's jump event, ev7, integrated by the harness): a jump
+costs one cycle beyond its instruction (sw/ubench_jump.c), and 56 of the 296 runs have them (C row tails and
+the row loops' back jumps). Written as the jumps column; ba_ambig counts the redirects into fetch words that
+hold two static targets of which only one satisfies rule A: the fetch histogram is per word, so those
+redirects cannot be split between the two targets, and Ba can be low by up to that count.
+cycles = I + 2 Bt + Slu + Asplit + Ba + J."""
 import csv, collections, os, re, subprocess, sys, tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 RISCV_BIN = os.environ.get('RISCV_BIN', '/opt/riscv/bin')   # directory of the riscv32-unknown-elf tools
@@ -100,16 +105,17 @@ for base, shapes, kernels in SETS + [(b, s, k) for b, s, k in EXTRA]:
                 subprocess.run([OBJCOPY, '-O', 'binary', elf, f'{tmp}/x.bin'], check=True)
                 with open(f'{tmp}/x.hex', 'w') as h: subprocess.run(['python3', 'sw/bin2hex.py', f'{tmp}/x.bin'], cwd=ROOT, check=True, stdout=h)
                 r = subprocess.run([SIM, '--hex', f'{tmp}/x.hex', '--cycles', '50000000', '--wait', '0', '--redir', f'{tmp}/redir.txt'], capture_output=True, text=True, check=True).stdout
-                cyc = int(re.search(r'MEASURED (\d+)', r)[1])
+                cyc = int(re.search(r'MEASURED (\d+)', r)[1]); jumps = int(re.search(r'\bev7=(\d+)', r)[1])
                 assert cyc == v['cycles'], (base, s, k, p, cyc, v['cycles'])   # the rebuilt binary must reproduce the committed count
                 ln, targets = disasm(elf)
-                nred = 0; ba = {r: 0 for r in RULES}
+                nred = 0; ba = {r: 0 for r in RULES}; ambig = 0
                 for l in open(f'{tmp}/redir.txt'):
                     w, n = l.split(); w = int(w, 16); n = int(n); nred += n; t = resolve(w, ln, targets)
                     for r in RULES:
                         if flagged(t, ln, r): ba[r] += n
-                rows.append(dict(base=base, extra=(base, k) in {(b, kk) for b, _, ks in EXTRA for kk in ks}, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
-def err(rs, col): return [abs(r['cycles'] - r['pred'] - r[col]) / r['cycles'] for r in rs]
+                    if w in targets and w + 2 in targets and flagged(w, ln, 'A') != flagged(w + 2, ln, 'A'): ambig += n
+                rows.append(dict(base=base, extra=(base, k) in {(b, kk) for b, _, ks in EXTRA for kk in ks}, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, jumps=jumps, ba_ambig=ambig, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
+def err(rs, col): return [abs(r['cycles'] - r['pred'] - r[col] - r['jumps']) / r['cycles'] for r in rs]
 # the equalised set's scalar_asm is the same source and flags as the decomposition set's scalar_asm_rv (identical binaries and
 # cycle counts), so the union has 8 fewer distinct runs than the sum
 core = [r for r in rows if not r['extra']]   # the hand-written and equalised sets: the paper's 296 distinct runs
@@ -122,15 +128,23 @@ BEST = min(RULES, key=lambda r: sum(err(distinct, f'ba_{r.lower()}')))
 for r in rows: r['ba'] = r[f'ba_{BEST.lower()}']
 print(f"rule {BEST} written as ba")
 with open('wait0_align.csv', 'w') as f:
-    f.write('shape,kernel,pad,cycles,redirects,ba,ba_rule_a,ba_rule_b,ba_rule_c\n')
-    for r in rows: f.write(f"{r['shape']},{r['kernel']},{r['pad']},{r['cycles']},{r['redirects']},{r['ba']},{r['ba_a']},{r['ba_b']},{r['ba_c']}\n")
+    f.write('shape,kernel,pad,cycles,redirects,ba,ba_rule_a,ba_rule_b,ba_rule_c,jumps,ba_ambig\n')
+    for r in rows: f.write(f"{r['shape']},{r['kernel']},{r['pad']},{r['cycles']},{r['redirects']},{r['ba']},{r['ba_a']},{r['ba_b']},{r['ba_c']},{r['jumps']},{r['ba_ambig']}\n")
 def stats(rs, label):
-    old = [abs(r['cycles'] - r['pred']) / r['cycles'] for r in rs]; new = [abs(r['cycles'] - r['pred'] - r['ba']) / r['cycles'] for r in rs]
-    print(f"{label}: {len(rs)} runs; four-term model mean |resid| {sum(old)/len(old):.2%} max {max(old):.2%}; with the alignment term mean {sum(new)/len(new):.2%} max {max(new):.2%}; "
-          f"runs over 1%: {sum(x > 0.01 for x in old)} -> {sum(x > 0.01 for x in new)}; runs with Ba > 0: {sum(r['ba'] > 0 for r in rs)}")
+    old = [abs(r['cycles'] - r['pred']) / r['cycles'] for r in rs]; mid = [abs(r['cycles'] - r['pred'] - r['ba']) / r['cycles'] for r in rs]
+    new = [abs(r['cycles'] - r['pred'] - r['ba'] - r['jumps']) / r['cycles'] for r in rs]
+    print(f"{label}: {len(rs)} runs; four-term model mean |resid| {sum(old)/len(old):.2%} max {max(old):.2%}; with Ba mean {sum(mid)/len(mid):.3%} max {max(mid):.2%}; "
+          f"with Ba and J mean {sum(new)/len(new):.3%} max {max(new):.2%}, exact {sum(r['cycles'] == r['pred'] + r['ba'] + r['jumps'] for r in rs)}; "
+          f"runs over 1%: {sum(x > 0.01 for x in old)} -> {sum(x > 0.01 for x in mid)} -> {sum(x > 0.01 for x in new)}; runs with Ba > 0: {sum(r['ba'] > 0 for r in rs)}; with J > 0: {sum(r['jumps'] > 0 for r in rs)}")
 hw = [r for r in core if r['base'] != 'wait0_eqrequant']; eq = [r for r in core if r['base'] == 'wait0_eqrequant']
 stats(eq, 'equalised 3x3 set (6 kernels x 4 shapes x 2 alignments)'); stats(hw, 'hand-written runs (three families, with and without clip)'); stats(distinct, 'all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once)')
 stats(extra, 'compiler-generated 5x5 and pointwise kernels and the block (not part of the 296)')
-print("\n| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | residual, four terms | residual, five terms |\n|---|---|---|---|---|---|---|---|---|---|")
-for r in sorted(rows, key=lambda r: -abs(r['cycles'] - r['pred']) / r['cycles'])[:12]:
-    print(f"| {r['kernel']} {r['shape']} pad{r['pad']} | {r['cycles']:,} | {r['instr']:,} | {2*r['brtaken']:,} | {r['ldstall']:,} | {r['split']:,} | {r['redirects']:,} | {r['ba']:,} | {(r['cycles']-r['pred'])/r['cycles']:+.2%} | {(r['cycles']-r['pred']-r['ba'])/r['cycles']:+.2%} |")
+print("\n| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | J | residual, four terms | with Ba | with Ba and J (cycles) | Ba ambiguity |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+for r in sorted(rows, key=lambda r: -abs(r['cycles'] - r['pred'] - r['ba'] - r['jumps']) / r['cycles'])[:12]:
+    res6 = r['cycles'] - r['pred'] - r['ba'] - r['jumps']
+    print(f"| {r['kernel']} {r['shape']} pad{r['pad']} | {r['cycles']:,} | {r['instr']:,} | {2*r['brtaken']:,} | {r['ldstall']:,} | {r['split']:,} | {r['redirects']:,} | {r['ba']:,} | {r['jumps']:,} | "
+          f"{(r['cycles']-r['pred'])/r['cycles']:+.2%} | {(r['cycles']-r['pred']-r['ba'])/r['cycles']:+.2%} | {res6/r['cycles']:+.3%} ({res6:+,}) | {r['ba_ambig']:,} |")
+res = [r for r in core if r['cycles'] != r['pred'] + r['ba'] + r['jumps']]
+inb = [r for r in res if 0 < r['cycles'] - r['pred'] - r['ba'] - r['jumps'] <= r['ba_ambig']]
+print(f"\nof the {len(distinct)} distinct runs, {len(distinct) - sum(1 for r in res if r in distinct)} are exact with Ba and J; of the {len(res)} hand-written or equalised runs that are not, "
+      f"{len(inb)} have a residual between 0 and their Ba ambiguity (two targets in one fetch word)")

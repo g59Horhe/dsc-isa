@@ -10,6 +10,8 @@ syn/ibex/ibex.v
 syn/ibex/wb0/
 syn/ibex/wb1/
 harness_ibex/obj_*/
+harness/obj_gate_*/
+harness/obj_fifo4/
 harness_ibex/*.log
 harness_ibex/sim_trace.cpp
 paper/

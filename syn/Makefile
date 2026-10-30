@@ -113,3 +113,43 @@ UTIL  ?= 45
 place-%:
 	mkdir -p build/place-$*
 	TLEF=$(TLEF) LEF=$(LEF) LIB=$(LIB) TRACKS=$(TRACKS) NETLIST=build/net-$*-area/netlist.v TOP=cv32e40p_core PERIOD_NS=$(PERIOD_NS) UTIL=$(UTIL) $(OPENROAD) -exit place.tcl > build/place-$*/openroad.txt 2>&1; grep -E "WORST_SLACK|Design area|ERROR" build/place-$*/openroad.txt | tail -6
+
+# Clock tree synthesis and routing (route.tcl), in OpenROAD 26Q2 with the
+# routable settings and calibrated RC that produced the published sweep
+# (build/sweep-or26rc-rep2). The routing netlist is the area-mapped one with
+# undriven bits tied to zero and constants on conb_1 tie cells, which the
+# detailed router needs; the area netlists are unchanged.
+#   make route-pulp PERIOD_NS=13          one target, through extraction
+#   make sweep                            the 32-target sweep, then its table
+#   make sweep SWEEP_STOP=grt             stop every target after global routing
+# RCX holds ORFS's sky130hd setRC.tcl and rcx_patterns.rules; RC_TCL= and
+# RCX_RULES= fall back to the tech LEF's RC and global-route parasitics.
+OPENROAD_ROUTE ?= /usr/bin/openroad
+THREADS ?= 16
+ROUTE_UTIL ?= 25
+DENSITY ?= 0.4
+GRT_ADJ ?= met1 0.6 met2 0.4 met3 0.2
+GRT_REPAIR ?= 1
+DRT_ITERS ?= 20
+RCX ?= $(HOME)/tools/openroad-26q2/rcx
+RC_TCL ?= $(RCX)/setRC.tcl
+RCX_RULES ?= $(RCX)/rcx_patterns.rules
+tie-%:
+	test -f build/net-$*-area/netlist.v || $(MAKE) net-$*-area
+	mkdir -p build/tie-$*
+	$(YOSYS) -q -p "read_liberty -lib $(LIB); read_verilog build/net-$*-area/netlist.v; hierarchy -top cv32e40p_core; setundef -zero; hilomap -singleton -hicell sky130_fd_sc_hd__conb_1 HI -locell sky130_fd_sc_hd__conb_1 LO; opt_clean -purge; write_verilog -noattr build/tie-$*/netlist.v"
+ROUTE_ENV = TLEF=$(TLEF) LEF=$(LEF) LIB=$(LIB) TRACKS=$(TRACKS) TOP=cv32e40p_core UTIL=$(ROUTE_UTIL) THREADS=$(THREADS) \
+  DENSITY=$(DENSITY) GRT_ADJ="$(GRT_ADJ)" GRT_REPAIR=$(GRT_REPAIR) DRT_ITERS=$(DRT_ITERS) \
+  $(if $(RC_TCL),RC_TCL=$(RC_TCL)) $(if $(RCX_RULES),RCX_RULES=$(RCX_RULES))
+route-%: tie-%
+	mkdir -p build/route-$*-$(PERIOD_NS)
+	$(ROUTE_ENV) NETLIST=build/tie-$*/netlist.v PERIOD_NS=$(PERIOD_NS) OUT=build/route-$*-$(PERIOD_NS) stdbuf -oL -eL $(OPENROAD_ROUTE) -exit route.tcl > build/route-$*-$(PERIOD_NS)/openroad.txt 2>&1; grep -E "WORST|TNS|DRC_V|Design area|ERROR" build/route-$*-$(PERIOD_NS)/openroad.txt
+SWEEP_base ?= 10 10.5 11 11.5 12 12.5 13 13.5 14 14.5 15 15.5 16 16.5 17
+SWEEP_pulp ?= 11 11.5 12 12.5 13 13.5 14 14.5 15 15.5 16 16.5 17 17.5 18 18.5 19
+SWEEP_JOBS ?= 4
+SWEEP_DIR ?= build/sweep-or26rc-rep2
+SWEEP_STOP ?=
+sweep: tie-base tie-pulp
+	printf '%s %s\n' $(foreach c,base pulp,$(foreach p,$(SWEEP_$(c)),$(c) $(p))) | \
+	  xargs -P $(SWEEP_JOBS) -n 2 sh -c 'mkdir -p $(SWEEP_DIR)/$$0-$$1 && $(ROUTE_ENV) THREADS=4 STOP=$(SWEEP_STOP) NETLIST=build/tie-$$0/netlist.v PERIOD_NS=$$1 OUT=$(SWEEP_DIR)/$$0-$$1 stdbuf -oL -eL $(OPENROAD_ROUTE) -exit route.tcl > $(SWEEP_DIR)/$$0-$$1/openroad.txt 2>&1; echo "$$0 $$1 done"'
+	python3 sweep_table.py $(SWEEP_DIR) --csv $(SWEEP_DIR)/sweep.csv --stats-csv $(SWEEP_DIR)/penalty.csv

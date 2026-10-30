@@ -27,11 +27,21 @@
 // evN numbering follows sw/bench.h PERF_EVENT; reading the CSR counter instead
 // needs a separately compiled, instrumented binary, whose code and layout can
 // differ from the measured one.
+//
+// Gate-level builds (-DGATE, make gate): the core is a flattened gate-level netlist
+// (syn/gate_netlist.sh), which has no internal RTL signals, so there is no EVENTS line.
+// With -DTRACE (make gate), --fst <file> records every net of the core's top module at both clock
+// edges of each cycle inside the measured window only, for switching-activity (power) analysis.
 
 #include <map>
 #include <verilated.h>
 #include "Vcv32e40p_core.h"
+#ifndef GATE
 #include "Vcv32e40p_core___024root.h"
+#endif
+#ifdef TRACE
+#include <verilated_fst_c.h>
+#endif
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -58,12 +68,17 @@ int main(int argc, char** argv) {
     // targets, by word address) while counting; results/align_term.py pairs it with the ELF to count
     // redirects whose target's first 32-bit instruction sits at an address 2 mod 4 (aligner penalty).
     const char* redir_file = nullptr; std::map<uint32_t, uint64_t> redirs; uint32_t last_ia = 0; bool last_ia_valid = false;
+    const char* fst_file = nullptr; uint64_t fst_hp = 1;   // --fst-hp: half clock period in ps, so trace times are real time (1 ps timescale)
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--hex")    && i + 1 < argc) hexfile = argv[++i];
         if (!strcmp(argv[i], "--cycles") && i + 1 < argc) max_cycles = strtoull(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--wait")   && i + 1 < argc) wait_states = (uint32_t)strtoul(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--iwait")  && i + 1 < argc) iwait = (uint32_t)strtoul(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--redir")  && i + 1 < argc) redir_file = argv[++i];
+#ifdef TRACE
+        if (!strcmp(argv[i], "--fst")    && i + 1 < argc) fst_file = argv[++i];
+        if (!strcmp(argv[i], "--fst-hp") && i + 1 < argc) fst_hp = strtoull(argv[++i], nullptr, 0);
+#endif
         if (!strcmp(argv[i], "--icache") && i + 2 < argc) { ic_size = (uint32_t)strtoul(argv[++i], nullptr, 0); ic_line = (uint32_t)strtoul(argv[++i], nullptr, 0); }
     }
     if (iwait == 0xFFFFFFFFu) iwait = wait_states;
@@ -85,6 +100,10 @@ int main(int argc, char** argv) {
     printf("loaded %u words at 0x%08x\n", idx - (BOOT_ADDR >> 2), BOOT_ADDR);
 
     Vcv32e40p_core* dut = new Vcv32e40p_core;
+#ifdef TRACE
+    VerilatedFstC* tfp = nullptr;
+    if (fst_file) { Verilated::traceEverOn(true); tfp = new VerilatedFstC; dut->trace(tfp, 2); tfp->open(fst_file); }   // depth 2: TOP and the core's nets, not the cell models' internals
+#endif
     dut->clk_i=0; dut->rst_ni=0; dut->pulp_clock_en_i=1; dut->scan_cg_en_i=0;
     dut->boot_addr_i=BOOT_ADDR; dut->mtvec_addr_i=0; dut->dm_halt_addr_i=0;
     dut->hart_id_i=0; dut->dm_exception_addr_i=0; dut->irq_i=0;
@@ -112,6 +131,9 @@ int main(int argc, char** argv) {
         dut->instr_gnt_i = dut->instr_req_o && (i_delay <= 0);
         dut->data_gnt_i  = dut->data_req_o  && (d_delay <= 0);
         dut->eval();
+#ifdef TRACE
+        if (tfp && counting) tfp->dump(2 * cycle * fst_hp);   // clock low
+#endif
 
         if (i_delay > 0) i_delay--; else i_delay = -1;
         if (d_delay > 0) d_delay--; else d_delay = -1;
@@ -156,6 +178,7 @@ int main(int argc, char** argv) {
             }
         }
 
+#ifndef GATE
         if (counting) {   // registered event outputs, sampled where the CSR counter would add them
             auto* q = dut->rootp;
             ev[1] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_minstret_o;
@@ -169,8 +192,12 @@ int main(int argc, char** argv) {
             ev[9] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_branch_taken_o;
             ev[10] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_compressed_o;
         }
+#endif
         dut->clk_i = 1;
         dut->eval();
+#ifdef TRACE
+        if (tfp && counting) tfp->dump((2 * cycle + 1) * fst_hp);   // clock high
+#endif
 
         cycle++;
         if (cycle == 5)  dut->rst_ni = 1;
@@ -178,6 +205,9 @@ int main(int argc, char** argv) {
     }
 
     if (redir_file) { FILE* rf = fopen(redir_file, "w"); if (rf) { for (auto& kv : redirs) fprintf(rf, "%08x %llu\n", kv.first, (unsigned long long)kv.second); fclose(rf); } }
+#ifdef TRACE
+    if (tfp) { tfp->close(); delete tfp; }
+#endif
     dut->final();
     delete dut;
 
@@ -190,7 +220,9 @@ int main(int argc, char** argv) {
         if (measured_valid)
             printf("MEASURED %llu cycles (wait_states=%u iwait=%u) dread=%llu dwrite=%llu ifetch=%llu\n",
                    (unsigned long long)measured, wait_states, iwait, (unsigned long long)n_dread, (unsigned long long)n_dwrite, (unsigned long long)n_ifetch);
+#ifndef GATE
         if (measured_valid) { printf("EVENTS"); for (int e = 1; e <= 10; e++) printf(" ev%d=%llu", e, (unsigned long long)ev[e]); printf("\n"); }
+#endif
         return 0;
     }
     printf("TIMEOUT after %llu cycles\n", (unsigned long long)cycle);

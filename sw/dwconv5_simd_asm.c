@@ -38,6 +38,7 @@ static void dwconv5_simd_asm(void) {
 #if XPULP_CTRL == 1
             int cnt = OW;
             asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               
               HWLOOP0("%[cnt]", RQ_XS(21+RQ_N+1))   /* body: 21+RQ_N instructions */
@@ -73,6 +74,7 @@ static void dwconv5_simd_asm(void) {
 #if XPULP_CTRL == 0
             const signed char *pend = p + OW;
             asm volatile (
+              RQ_INIT("%[u]")
               
               
               "1:\n"

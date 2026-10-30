@@ -15,7 +15,7 @@ def load(fn):
         v['split'] = v['dread'] - v['loads']; v['pred'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['resid'] = v['cycles'] - v['pred']
     return d
 try:   # branch-target alignment term Ba, measured per run by results/align_term.py
-    ALIGN = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+    ALIGN = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) + int(r['jumps']) for r in csv.DictReader(open('wait0_align.csv'))}   # Ba + J
 except FileNotFoundError:
     ALIGN = {}
 P = [collections.OrderedDict(), collections.OrderedDict()]

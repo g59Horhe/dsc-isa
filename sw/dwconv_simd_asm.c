@@ -73,6 +73,7 @@ static void dwconv_simd_asm(void) {
 #if XPULP_CTRL
             int cnt = OW;
             asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               HWLOOP0("%[cnt]", RQ_XS(10+RQ_N))   /* 3 loads + 3 dotsp + 2 add + requant + 1 store, + 1 */
               LW_INC("%[a]", "%[p]", "1")
@@ -86,6 +87,7 @@ static void dwconv_simd_asm(void) {
 #else
             const act_t *pend = p + OW;
             asm volatile (
+              RQ_INIT("%[u]")
               "1:\n"
               "lw %[a],0(%[p])\n lw %[b]," XS(W) "(%[p])\n lw %[c]," XS(2*W) "(%[p])\n"
               MAC3

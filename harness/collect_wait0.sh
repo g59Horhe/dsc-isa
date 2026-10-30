@@ -7,6 +7,7 @@
 # KERNELS env var overrides the kernel list: entries "name|source|cflags" separated by spaces;
 # write "+" for a space inside cflags, e.g. "-O2+-DXPULP_CTRL=1".
 export PATH=${RISCV_BIN:-/opt/riscv/bin}:$PATH   # riscv32-unknown-elf toolchain
+CROSS=${CROSS:-riscv32-unknown-elf-}             # e.g. CROSS=$HOME/tools/corev-gcc/bin/riscv32-corev-elf- for the CORE-V GCC
 cd "$(dirname "$0")/.."
 # REAL_HDR_PREFIX=real/dw3 (relative to sw/) adds -DREAL_DATA=1 -DREAL_HDR=<prefix>_<shape>.h
 OUT=$1; EVENTS=$2; EXTRA=$3
@@ -22,9 +23,9 @@ for shape in $SHAPES; do
  for spec in $KERNELS; do
   IFS='|' read -r name src opt <<< "$spec"; opt=${opt//+/ }   # "+" in cflags stands for a space
   arch=rv32imc
-  riscv32-unknown-elf-gcc -I sw -march=$arch -mabi=ilp32 -nostdlib -nostartfiles $opt $EXTRA $REALF $DEFS -T sw/link.ld sw/crt0.S $src -o $D/x.elf 2>/dev/null || { for e in plain $EVENTS; do echo "$shape,$name,$e,BUILDFAIL," >> $OUT; done; continue; }
+  ${CROSS}gcc -I sw -march=$arch -mabi=ilp32 -nostdlib -nostartfiles $opt $EXTRA $REALF $DEFS -T sw/link.ld sw/crt0.S $src -o $D/x.elf 2>/dev/null || { for e in plain $EVENTS; do echo "$shape,$name,$e,BUILDFAIL," >> $OUT; done; continue; }
   case "$opt" in *XPULP_CTRL=1*) python3 harness/check_hwloop.py $D/x.elf > /dev/null || { echo "$shape,$name,plain,HWLOOPFAIL," >> $OUT; continue; };; esac
-  riscv32-unknown-elf-objcopy -O binary $D/x.elf $D/x.bin && python3 sw/bin2hex.py $D/x.bin > $D/x.hex
+  ${CROSS}objcopy -O binary $D/x.elf $D/x.bin && python3 sw/bin2hex.py $D/x.bin > $D/x.hex
   r=$($SIM --hex $D/x.hex --cycles 50000000 --wait 0); chk=$(echo "$r" | grep -oP 'value = \K[0-9]+')
   m=$(echo "$r" | grep MEASURED); evl=$(echo "$r" | grep '^EVENTS')
   [ -n "$m" ] && [ -n "$evl" ] || { echo "$shape,$name,plain,RUNFAIL," >> $OUT; continue; }

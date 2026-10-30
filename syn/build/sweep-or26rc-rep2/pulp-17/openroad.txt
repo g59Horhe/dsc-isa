@@ -1,0 +1,2962 @@
+OpenROAD 26Q2-1164-g08f67ee5ec 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0227] LEF file: /home/georgedessa/tools/sky130/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: /home/georgedessa/tools/sky130/sky130_fd_sc_hd_merged.lef, created 441 library cells
+[INFO ORD-0030] Using 4 thread(s).
+[INFO IFP-0107] Defining die area using utilization: 25.00% and aspect ratio: 1.
+[WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
+[INFO IFP-0001] Added 373 rows of 2207 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 1019.590 1019.590 ) um
+[INFO IFP-0101] Core BBox: (  2.300  2.720 ) ( 1017.520 1017.280 ) um
+[INFO IFP-0102] Core area:                      1030001.603 um^2
+[INFO IFP-0103] Total instances area:            257856.054 um^2
+[INFO IFP-0104] Effective utilization:                0.250
+[INFO IFP-0105] Number of instances:                  33417
+[INFO TAP-0005] Inserted 13687 tapcells.
+[INFO PDN-0001] Inserting grid: core
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 3704
+[INFO PPL-0002] Number of I/O             537
+[INFO PPL-0003] Number of I/O w/sink      470
+[INFO PPL-0004] Number of I/O w/o sink    67
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 264752.75 um.
+[INFO RSZ-0042] Inserted 120 tie sky130_fd_sc_hd__conb_1 instances.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
+[INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 1017.520 1017.280 ) um
+[INFO GPL-0036] Movable instances area:     258302.733 um^2
+[INFO GPL-0037] Total instances area:       275427.907 um^2
+[INFO GPL-0035] Pin density area adjust:     34513.200 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:             47223
+[INFO GPL-0007] Movable instances:               33536
+[INFO GPL-0008] Fixed instances:                 13687
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                  33842
+[INFO GPL-0011] Number of pins:                 127057
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 1019.590 1019.590 ) um
+[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 1017.520 1017.280 ) um
+[INFO GPL-0016] Core area:                  1030001.603 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                1030001.603 um^2
+[INFO GPL-0017] Fixed instances area:        17125.174 um^2
+[INFO GPL-0018] Movable instances area:     292815.933 um^2
+[INFO GPL-0019] Utilization:                    28.909 %
+[INFO GPL-0020] Standard cells area:        292815.933 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 119	Core center = 33417	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00010942 HPWL: 476886165
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00002193 HPWL: 436462083
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00003353 HPWL: 434277334
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00003399 HPWL: 434559165
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00003342 HPWL: 433912595
+[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00003880 HPWL: 434663979
+[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00001497 HPWL: 434006498
+[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00004907 HPWL: 433750398
+[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00002864 HPWL: 432480461
+[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00002967 HPWL: 431727229
+[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00003011 HPWL: 430393457
+[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00005410 HPWL: 429126950
+[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00004898 HPWL: 427461726
+[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00002724 HPWL: 426419860
+[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00001026 HPWL: 424960199
+[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00004609 HPWL: 423040793
+[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00002346 HPWL: 422142840
+[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00006279 HPWL: 420912507
+[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00003701 HPWL: 420095769
+[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00004258 HPWL: 419081252
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.4000
+[INFO GPL-0024] Movable insts average area:      8.731 um^2
+[INFO GPL-0025] Ideal bin area:                 21.828 um^2
+[INFO GPL-0026] Ideal bin count:                 47186
+[INFO GPL-0027] Total bin area:             1030001.603 um^2
+[INFO GPL-0028] Bin count (X, Y):         128 ,    128
+[INFO GPL-0029] Bin size (W * H):       7.931 *  7.926 um
+[INFO GPL-0030] Number of bins:                  16384
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.9900 |  2.663083e+05 |   +0.00% |  3.14e-16 |      
+       10 |   0.9645 |  3.872328e+05 |  +45.41% |  5.05e-16 |      
+       20 |   0.9567 |  4.215518e+05 |   +8.86% |  8.19e-16 |      
+       30 |   0.9536 |  4.369808e+05 |   +3.66% |  1.33e-15 |      
+       40 |   0.9525 |  4.496677e+05 |   +2.90% |  2.17e-15 |      
+       50 |   0.9519 |  4.606123e+05 |   +2.43% |  3.52e-15 |      
+       60 |   0.9507 |  4.670446e+05 |   +1.40% |  5.73e-15 |      
+       70 |   0.9511 |  4.696532e+05 |   +0.56% |  9.34e-15 |      
+       80 |   0.9510 |  4.697917e+05 |   +0.03% |  1.52e-14 |      
+       90 |   0.9507 |  4.681004e+05 |   -0.36% |  2.48e-14 |      
+      100 |   0.9511 |  4.649780e+05 |   -0.67% |  4.03e-14 |      
+      110 |   0.9509 |  4.614271e+05 |   -0.76% |  6.57e-14 |      
+      120 |   0.9512 |  4.578525e+05 |   -0.77% |  1.07e-13 |      
+      130 |   0.9508 |  4.545545e+05 |   -0.72% |  1.74e-13 |      
+      140 |   0.9506 |  4.524019e+05 |   -0.47% |  2.84e-13 |      
+      150 |   0.9500 |  4.522758e+05 |   -0.03% |  4.63e-13 |      
+      160 |   0.9492 |  4.560054e+05 |   +0.82% |  7.53e-13 |      
+      170 |   0.9473 |  4.673154e+05 |   +2.48% |  1.23e-12 |      
+      180 |   0.9439 |  4.892072e+05 |   +4.68% |  1.99e-12 |      
+      190 |   0.9383 |  5.210982e+05 |   +6.52% |  3.23e-12 |      
+      200 |   0.9297 |  5.621958e+05 |   +7.89% |  5.24e-12 |      
+      210 |   0.9171 |  6.124425e+05 |   +8.94% |  8.50e-12 |      
+      220 |   0.9001 |  6.703960e+05 |   +9.46% |  1.38e-11 |      
+      230 |   0.8788 |  7.335555e+05 |   +9.42% |  2.22e-11 |      
+      240 |   0.8532 |  7.978326e+05 |   +8.76% |  3.60e-11 |      
+      250 |   0.8248 |  8.628913e+05 |   +8.15% |  5.82e-11 |      
+      260 |   0.7921 |  9.278156e+05 |   +7.52% |  9.41e-11 |      
+      270 |   0.7601 |  9.859194e+05 |   +6.26% |  1.52e-10 |      
+      280 |   0.7271 |  1.032925e+06 |   +4.77% |  2.47e-10 |      
+      290 |   0.6872 |  1.083970e+06 |   +4.94% |  4.00e-10 |      
+      300 |   0.6487 |  1.119507e+06 |   +3.28% |  6.49e-10 |      
+[INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
+[INFO GPL-0101]    Iter: 305, overflow: 0.632, keep resizer changes at: 1, HPWL: 1131571969
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |     33961
+    final |     +4.7% |     566 |     590 |           582 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 587 slew violations.
+[INFO RSZ-0036] Found 85 capacitance violations.
+[INFO RSZ-0039] Resized 566 instances.
+[INFO RSZ-0038] Inserted 590 buffers in 582 nets.
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |     33416
+     3300 |     +1.4% |      79 |      603 |     30116
+     6600 |     +2.0% |     110 |      873 |     26816
+     9900 |     +2.1% |     173 |     1031 |     23516
+    13200 |     +2.2% |     179 |     1086 |     20216
+    16500 |     +2.0% |     241 |     1196 |     16916
+    19800 |     +2.0% |     321 |     1373 |     13616
+    23100 |     +2.0% |     374 |     1479 |     10316
+    26400 |     +2.1% |     411 |     1575 |      7016
+    29700 |     +2.1% |     498 |     1762 |      3716
+    33000 |     +2.4% |     572 |     2078 |       416
+    final |     +2.6% |     577 |     2155 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack 0
+[INFO GPL-0107] Timing-driven: repair_design delta area: 19774.865 um^2 (+6.75%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 2168 (+6.46%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 2745, deleted: 577
+[INFO GPL-0110] Timing-driven: new target density: 0.41952348
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      310 |   0.5921 |  1.229447e+06 |   +9.82% |  1.04e-09 |      
+      320 |   0.5528 |  1.268815e+06 |   +3.20% |  1.69e-09 |      
+      330 |   0.5020 |  1.307483e+06 |   +3.05% |  2.75e-09 |      
+      340 |   0.4534 |  1.328166e+06 |   +1.58% |  4.46e-09 |      
+      350 |   0.4067 |  1.341938e+06 |   +1.04% |  7.26e-09 |      
+      360 |   0.3587 |  1.352746e+06 |   +0.81% |  1.18e-08 |      
+      370 |   0.3179 |  1.366615e+06 |   +1.03% |  1.81e-08 |      
+      380 |   0.2858 |  1.368702e+06 |   +0.15% |  2.66e-08 |      
+      390 |   0.2530 |  1.370584e+06 |   +0.14% |  3.92e-08 |      
+      400 |   0.2281 |  1.375261e+06 |   +0.34% |  5.78e-08 |      
+      410 |   0.1980 |  1.376922e+06 |   +0.12% |  8.51e-08 |      
+[INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
+[INFO GPL-0101]    Iter: 413, overflow: 0.193, keep resizer changes at: 1, HPWL: 1377193411
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |     36129
+    final |     +0.3% |      64 |      47 |            67 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 70 slew violations.
+[INFO RSZ-0036] Found 5 capacitance violations.
+[INFO RSZ-0039] Resized 64 instances.
+[INFO RSZ-0038] Inserted 47 buffers in 67 nets.
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |     33425
+     3300 |     -0.9% |     609 |      283 |     30125
+     6600 |     -1.3% |     883 |      420 |     26825
+     9900 |     -1.3% |    1052 |      607 |     23525
+    13200 |     -1.2% |    1107 |      697 |     20225
+    16500 |     -1.1% |    1217 |      842 |     16925
+    19800 |     -1.1% |    1402 |     1037 |     13625
+    23100 |     -1.0% |    1513 |     1194 |     10325
+    26400 |     -0.9% |    1609 |     1321 |      7025
+    29700 |     -0.9% |    1790 |     1521 |      3725
+    33000 |     -0.4% |    2112 |     2019 |       425
+    final |     -0.4% |    2189 |     2122 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack -8.536549e-11
+[INFO GPL-0107] Timing-driven: repair_design delta area: -356.959 um^2 (-0.11%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: -20 (-0.06%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 2169, deleted: 2189
+[INFO GPL-0110] Timing-driven: new target density: 0.41917107
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      420 |   0.1791 |  1.459237e+06 |   +5.98% |  1.24e-07 |      
+      430 |   0.1575 |  1.459178e+06 |   -0.00% |  1.83e-07 |      
+      440 |   0.1367 |  1.459232e+06 |   +0.00% |  2.70e-07 |      
+      450 |   0.1185 |  1.457964e+06 |   -0.09% |  3.97e-07 |      
+      460 |   0.1031 |  1.456307e+06 |   -0.11% |  5.85e-07 |      
+      463 |   0.0987 |  1.455804e+06 |          |  6.84e-07 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 463
+[INFO GPL-1002] Placed Cell Area            312233.8390
+[INFO GPL-1003] Available Free Area         1012876.4288
+[INFO GPL-1004] Minimum Feasible Density        0.2900 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.3425
+[INFO GPL-1008]     - For 80% usage of free space: 0.3853
+[INFO GPL-1009]     - For 50% usage of free space: 0.6165
+[INFO GPL-1011] Original area (um^2): 292815.93
+[INFO GPL-1013] Total timing-driven delta area: 19417.91 (+6.63%)
+[INFO GPL-1014] Final placement area: 312233.84 (+6.63%)
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |     36109
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO DPL-0006] Core area: 1030001.60 um^2, Instances area: 295530.94 um^2, Utilization: 28.7%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   35684
+Diamond Move Success:          35684 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement      66017.5 u
+average displacement        1.3 u
+max displacement            7.4 u
+original HPWL         1456552.3 u
+legalized HPWL        1507567.0 u
+delta HPWL                    4 %
+
+WORST_SLACK_PLACED -0.278
+[WARNING CTS-0132] -balance_levels is obsolete.
+[INFO CTS-0050] Root buffer is sky130_fd_sc_hd__clkbuf_16.
+[INFO CTS-0051] Sink buffer is sky130_fd_sc_hd__clkbuf_16.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    sky130_fd_sc_hd__clkbuf_4
+                    sky130_fd_sc_hd__clkbuf_8
+                    sky130_fd_sc_hd__clkbuf_16
+[INFO CTS-0049] Characterization buffer is sky130_fd_sc_hd__clkbuf_16.
+[INFO CTS-0007] Net "clk_i" found for clock "clk".
+[INFO CTS-0011]  Clock net "clk_i" for macros has 1 sinks.
+[INFO CTS-0011]  Clock net "clk_i_regs" for registers has 4 sinks.
+[INFO CTS-0010]  Clock net "clk" has 2484 sinks.
+[INFO CTS-0008] TritonCTS found 3 clock nets.
+[INFO CTS-0097] Characterization used 3 buffer(s) types.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk_i.
+[INFO CTS-0028]  Total number of sinks: 1.
+[INFO CTS-0060]  Macro  sinks will be clustered in groups of up to 4 and based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 13600  dbu (13 um).
+[INFO CTS-0023]  Original sink region: [(390142, 488450), (390142, 488450)].
+[INFO CTS-0024]  Normalized sink region: [(28.6869, 35.9154), (28.6869, 35.9154)].
+[INFO CTS-0025]     Width:  0.0000.
+[INFO CTS-0026]     Height: 0.0000.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 1
+    Sub-region size: 0.0000 X 0.0000
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 1.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk_i_regs.
+[INFO CTS-0028]  Total number of sinks: 4.
+[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 13600  dbu (13 um).
+[INFO CTS-0023]  Original sink region: [(334167, 338700), (418865, 539975)].
+[INFO CTS-0024]  Normalized sink region: [(24.5711, 24.9044), (30.7989, 39.704)].
+[INFO CTS-0025]     Width:  6.2278.
+[INFO CTS-0026]     Height: 14.7996.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 2
+    Sub-region size: 6.2278 X 7.3998
+[INFO CTS-0034]     Segment length (rounded): 4.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 4.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 2484.
+[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 13600  dbu (13 um).
+[INFO CTS-0206] Best clustering solution was found from max clustering size of 12 and max clustering diameter of 178.
+[INFO CTS-0019]  Total number of sinks after clustering: 283.
+[INFO CTS-0024]  Normalized sink region: [(0.658374, 1.13676), (56.1961, 69.144)].
+[INFO CTS-0025]     Width:  55.5378.
+[INFO CTS-0026]     Height: 68.0072.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 142
+    Sub-region size: 55.5378 X 34.0036
+[INFO CTS-0034]     Segment length (rounded): 18.
+ Level 2
+    Direction: Horizontal
+    Sinks per sub-region: 71
+    Sub-region size: 27.7689 X 34.0036
+[INFO CTS-0034]     Segment length (rounded): 14.
+ Level 3
+    Direction: Vertical
+    Sinks per sub-region: 36
+    Sub-region size: 27.7689 X 17.0018
+[INFO CTS-0034]     Segment length (rounded): 8.
+ Level 4
+    Direction: Horizontal
+    Sinks per sub-region: 18
+    Sub-region size: 13.8844 X 17.0018
+[INFO CTS-0034]     Segment length (rounded): 6.
+ Level 5
+    Direction: Vertical
+    Sinks per sub-region: 9
+    Sub-region size: 13.8844 X 8.5009
+[INFO CTS-0034]     Segment length (rounded): 4.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 283.
+[INFO CTS-0018]     Created 2 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 2 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:2..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0018]     Created 320 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 4.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 4.
+[INFO CTS-0015]     Created 320 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 3:2, 4:3, 5:9, 6:15, 7:29, 8:61, 9:84, 10:71, 11:28, 12:9, 13:3..
+[INFO CTS-0017]     Max level of the clock tree: 5.
+[INFO CTS-0124] Clock net "clk_i"
+[INFO CTS-0125]  Sinks 1
+[INFO CTS-0098] Clock net "clk_i_regs"
+[INFO CTS-0099]  Sinks 5
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 135.57 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Dummy loads inserted 1
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 2735
+[INFO CTS-0100]  Leaf buffers 283
+[INFO CTS-0101]  Average sink wire length 617.06 um
+[INFO CTS-0102]  Path depth 3 - 4
+[INFO CTS-0207]  Dummy loads inserted 251
+[INFO CTS-0033] Balancing latency for clock clk
+[INFO CTS-0036]  inserted 8 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 8
+[INFO RSZ-0058] Using max wire length 1912um.
+[INFO DPL-0006] Core area: 1030001.60 um^2, Instances area: 306931.87 um^2, Utilization: 29.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   36270
+Diamond Move Success:          36270 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement       3389.0 u
+average displacement        0.1 u
+max displacement            6.9 u
+original HPWL         1537698.3 u
+legalized HPWL        1539479.6 u
+delta HPWL                    0 %
+
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 15 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 15 out of 15 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.287 |      -13.0 |       -1.3 |     15 | _62488_/D
+      19* |       0 |       3 |        0 |      0 |     0 |    +0.0% |    0.235 |        0.0 |        0.0 |     15 | _62760_/D
+    final |       0 |       3 |        0 |      0 |     0 |    +0.0% |    0.235 |        0.0 |        0.0 |      0 | _62760_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 3 instances: 3 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0033] No hold violations found.
+[INFO DPL-0006] Core area: 1030001.60 um^2, Instances area: 306931.87 um^2, Utilization: 29.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   36270
+Diamond Move Success:          36270 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL         1539479.6 u
+legalized HPWL        1539479.6 u
+delta HPWL                    0 %
+
+WORST_SLACK_CTS 0.235
+Clock clk
+   1.39 source latency _62965_/CLK ^
+  -1.51 target latency _61985_/CLK ^
+  -0.00 CRPR
+--------------
+  -0.12 setup skew
+
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 41392
+[INFO GRT-0019] Found 336 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 214
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal     309419        109681          64.55%
+met2       Vertical       301344        177244          41.18%
+met3       Horizontal     211852        166326          21.49%
+met4       Vertical       149942        149942          0.00%
+met5       Horizontal      37384         37384          0.00%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0102] Start extra iteration 1/100
+[INFO GRT-0102] Start extra iteration 2/100
+[INFO GRT-0102] Start extra iteration 3/100
+[INFO GRT-0102] Start extra iteration 4/100
+[INFO GRT-0102] Start extra iteration 5/100
+[INFO GRT-0102] Start extra iteration 6/100
+[INFO GRT-0102] Start extra iteration 7/100
+[INFO GRT-0102] Start extra iteration 8/100
+[INFO GRT-0197] Via related to pin nodes: 239820
+[INFO GRT-0198] Via related Steiner nodes: 7499
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 323188
+[INFO GRT-0112] Final usage 3D: 1252184
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1            109681         58908           53.71%             0 /  0 /  0
+met2            177244         90786           51.22%             0 /  0 /  0
+met3            166326         67171           40.39%             0 /  0 /  0
+met4            149942         55369           36.93%             0 /  0 /  0
+met5             37384         10386           27.78%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           640577        282620           44.12%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 2698003 um
+[INFO GRT-0014] Routed nets: 36256
+[INFO GRT-0303] Global routing runtime = 00:00:10
+=== register to register, global-route parasitics ===
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _63643_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _62760_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout      Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------------
+                            0.000    0.000   clock clk (rise edge)
+                            1.447    1.447   clock network delay (propagated)
+                   0.055    0.000    1.447 ^ _63643_/CLK (sky130_fd_sc_hd__dfrtp_1)
+     2    0.008    0.061    0.383    1.830 v _63643_/Q (sky130_fd_sc_hd__dfrtp_1)
+     8    0.037    0.222    0.552    2.382 v _37537_/X (sky130_fd_sc_hd__or3b_1)
+     3    0.015    0.295    0.345    2.727 ^ _45470_/Y (sky130_fd_sc_hd__nor3_2)
+     3    0.017    0.234    0.283    3.010 v _47637_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.012    0.108    0.453    3.463 v _47681_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.014    0.118    0.432    3.895 v _47703_/X (sky130_fd_sc_hd__maj3_1)
+     3    0.017    0.133    0.449    4.345 v _47725_/X (sky130_fd_sc_hd__maj3_1)
+     3    0.014    0.117    0.236    4.580 v _51403_/X (sky130_fd_sc_hd__xor2_1)
+     2    0.012    0.110    0.407    4.988 v _51558_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.014    0.121    0.435    5.422 v _51580_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.011    0.104    0.421    5.843 v _51602_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.012    0.110    0.421    6.264 v _51613_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.027    0.128    0.290    6.555 v _51625_/X (sky130_fd_sc_hd__a21o_1)
+     2    0.013    0.074    0.228    6.783 v _51647_/X (sky130_fd_sc_hd__a21o_1)
+     3    0.016    0.128    0.432    7.215 v _51658_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.007    0.065    0.339    7.553 v _51680_/X (sky130_fd_sc_hd__a211o_1)
+     2    0.008    0.078    0.382    7.935 v _51713_/X (sky130_fd_sc_hd__a311o_1)
+     2    0.007    0.099    0.119    8.055 ^ _51736_/Y (sky130_fd_sc_hd__nand3_1)
+     2    0.007    0.102    0.127    8.182 v _51769_/Y (sky130_fd_sc_hd__a311oi_1)
+     3    0.013    0.403    0.365    8.547 ^ _51780_/Y (sky130_fd_sc_hd__o21ai_0)
+     3    0.010    0.171    0.242    8.789 v _51802_/Y (sky130_fd_sc_hd__a21boi_0)
+     3    0.012    0.391    0.385    9.174 ^ _51813_/Y (sky130_fd_sc_hd__o21ai_0)
+     4    0.015    0.140    0.251    9.425 ^ _51824_/X (sky130_fd_sc_hd__a21o_1)
+     4    0.024    0.245    0.250    9.675 v _51859_/Y (sky130_fd_sc_hd__a311oi_1)
+     5    0.019    0.674    0.649   10.325 ^ _51892_/Y (sky130_fd_sc_hd__o311ai_1)
+     4    0.013    0.205    0.289   10.614 v _51914_/Y (sky130_fd_sc_hd__a311oi_1)
+     2    0.007    0.471    0.516   11.130 ^ _52558_/Y (sky130_fd_sc_hd__o311ai_0)
+     3    0.009    0.126    0.186   11.316 v _52858_/Y (sky130_fd_sc_hd__a21oi_1)
+     3    0.013    0.401    0.374   11.690 ^ _53170_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.008    0.079    0.207   11.897 ^ _53370_/X (sky130_fd_sc_hd__a21o_1)
+     4    0.017    0.273    0.188   12.085 v _53392_/Y (sky130_fd_sc_hd__a311oi_1)
+     1    0.007    0.166    0.223   12.308 ^ _53526_/Y (sky130_fd_sc_hd__o21ai_2)
+    49    0.197    0.537    0.478   12.786 ^ place3248/X (sky130_fd_sc_hd__buf_4)
+     2    0.008    0.106    0.318   13.104 ^ _54769_/X (sky130_fd_sc_hd__and3_1)
+     2    0.009    0.258    0.158   13.262 v _54774_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.011    0.267    0.330   13.591 ^ _55055_/Y (sky130_fd_sc_hd__a21oi_1)
+     1    0.006    0.177    0.106   13.698 v _55367_/Y (sky130_fd_sc_hd__a211oi_1)
+     1    0.028    1.374    1.150   14.847 ^ _55369_/Y (sky130_fd_sc_hd__o311ai_0)
+     2    0.008    0.066    0.272   15.119 ^ place3216/X (sky130_fd_sc_hd__buf_4)
+     2    0.012    0.114    0.100   15.219 v _55379_/Y (sky130_fd_sc_hd__nand2_1)
+     2    0.009    0.258    0.268   15.488 ^ _55382_/Y (sky130_fd_sc_hd__o211ai_1)
+     1    0.004    0.126    0.140   15.627 v _55426_/Y (sky130_fd_sc_hd__o211ai_1)
+     1    0.012    0.484    0.460   16.087 ^ _55428_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.013    0.117    0.153   16.240 v _55485_/Y (sky130_fd_sc_hd__a221oi_4)
+    32    0.181    0.103    0.210   16.450 v place3165/X (sky130_fd_sc_hd__buf_12)
+     1    0.004    0.205    0.233   16.683 ^ _39209_/Y (sky130_fd_sc_hd__a211oi_1)
+     1    0.005    0.198    0.142   16.825 v _39270_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.016    0.040    0.216   17.041 v place3148/X (sky130_fd_sc_hd__buf_4)
+     1    0.013    0.290    0.273   17.314 ^ _39271_/Y (sky130_fd_sc_hd__a21oi_1)
+     5    0.020    0.119    0.253   17.567 ^ _39295_/X (sky130_fd_sc_hd__o31a_2)
+     3    0.013    0.242    0.203   17.770 v _45449_/Y (sky130_fd_sc_hd__o221ai_1)
+     1    0.007    0.068    0.266   18.036 v _45450_/X (sky130_fd_sc_hd__and2_0)
+     1    0.031    0.970    0.830   18.865 ^ _45546_/Y (sky130_fd_sc_hd__o31ai_1)
+     1    0.011    0.063    0.256   19.122 ^ place2988/X (sky130_fd_sc_hd__buf_4)
+     1    0.012    0.124    0.090   19.211 v _45547_/Y (sky130_fd_sc_hd__o31ai_2)
+     3    0.026    0.031    0.165   19.376 v place2937/X (sky130_fd_sc_hd__buf_12)
+     1    0.002    0.053    0.283   19.659 v _47871_/X (sky130_fd_sc_hd__mux2_1)
+                   0.053    0.000   19.659 v _62760_/D (sky130_fd_sc_hd__dfrtp_1)
+                                    19.659   data arrival time
+
+                           17.000   17.000   clock clk (rise edge)
+                            1.433   18.433   clock network delay (propagated)
+                            0.000   18.433   clock reconvergence pessimism
+                                    18.433 ^ _62760_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                           -0.114   18.320   library setup time
+                                    18.320   data required time
+---------------------------------------------------------------------------------
+                                    18.320   data required time
+                                   -19.659   data arrival time
+---------------------------------------------------------------------------------
+                                    -1.340   slack (VIOLATED)
+
+
+Clock clk
+   1.52 source latency _63255_/CLK ^
+  -1.40 target latency _62965_/CLK ^
+  -0.00 CRPR
+--------------
+   0.12 setup skew
+
+WORST_SLACK_GRT -1.340
+WORST_HOLD_GRT 0.493
+TNS_GRT -183.372
+Design area 306932 um^2 30% utilization.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |     36695
+[WARNING RSZ-0104] Net pulp_clock_en_i only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[7] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[6] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[5] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[4] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[3] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[2] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net mtvec_addr_i[0] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[9] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[8] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[6] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[5] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[4] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[2] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[15] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[14] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[13] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[12] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[10] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net irq_i[0] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net dm_halt_addr_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net dm_halt_addr_i[0] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net dm_exception_addr_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net dm_exception_addr_i[0] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net boot_addr_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net boot_addr_i[0] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_rvalid_i only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[9] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[8] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[7] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[6] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[5] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[4] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[3] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[31] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[30] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[2] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[29] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[28] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[27] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[26] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[25] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[24] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[23] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[22] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[21] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[20] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[19] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[18] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[17] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[16] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[15] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[14] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[13] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[12] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[11] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[10] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_result_i[0] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_gnt_i only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_flags_i[4] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_flags_i[3] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_flags_i[2] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_flags_i[1] only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net apu_flags_i[0] only has one pin. Check if it is intended to be dangling.
+    final |     +0.0% |       8 |       5 |             9 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 9 slew violations.
+[INFO RSZ-0039] Resized 8 instances.
+[INFO RSZ-0038] Inserted 5 buffers in 9 nets.
+[INFO DPL-0006] Core area: 1030001.60 um^2, Instances area: 307033.22 um^2, Utilization: 29.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   36275
+Diamond Move Success:          36275 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement         25.6 u
+average displacement        0.0 u
+max displacement            5.0 u
+original HPWL         1540208.6 u
+legalized HPWL        1540209.7 u
+delta HPWL                    0 %
+
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 41397
+[INFO GRT-0019] Found 336 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 214
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal     309418        109681          64.55%
+met2       Vertical       301344        177244          41.18%
+met3       Horizontal     211852        166326          21.49%
+met4       Vertical       149942        149942          0.00%
+met5       Horizontal      37384         37384          0.00%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0102] Start extra iteration 1/100
+[INFO GRT-0102] Start extra iteration 2/100
+[INFO GRT-0102] Start extra iteration 3/100
+[WARNING EST-0026] Missing route to pin _61727_/D in net _00001_.
+[WARNING EST-0026] Missing route to pin _42400_/B2 in net _00001_.
+[WARNING EST-0026] Missing route to pin _42399_/Y in net _00001_.
+[WARNING EST-0026] Missing route to pin _61726_/D in net _00002_.
+[WARNING EST-0026] Missing route to pin _53971_/X in net _00002_.
+[WARNING EST-0026] Missing route to pin _61724_/D in net _00004_.
+[WARNING EST-0026] Missing route to pin _53968_/X in net _00004_.
+[WARNING EST-0026] Missing route to pin _61728_/D in net _00005_.
+[WARNING EST-0026] Missing route to pin _53969_/Y in net _00005_.
+[WARNING EST-0026] Missing route to pin _61722_/D in net _00006_.
+[WARNING EST-0026] Missing route to pin _45657_/X in net _00006_.
+[WARNING EST-0026] Missing route to pin _61730_/D in net _00007_.
+[WARNING EST-0026] Missing route to pin _38101_/Y in net _00007_.
+[WARNING EST-0026] Missing route to pin _61729_/D in net _00008_.
+[WARNING EST-0026] Missing route to pin _51193_/Y in net _00008_.
+[WARNING EST-0026] Missing route to pin _61713_/D in net _00009_.
+[WARNING EST-0026] Missing route to pin _53974_/X in net _00009_.
+[WARNING EST-0026] Missing route to pin _61705_/D in net _00013_.
+[WARNING EST-0026] Missing route to pin _49300_/Y in net _00013_.
+[WARNING EST-0026] Missing route to pin _62427_/D in net _00014_.
+[WARNING EST-0026] Missing route to pin _53719_/X in net _00014_.
+[WARNING EST-0026] Missing route to pin _62426_/D in net _00015_.
+[WARNING EST-0026] Missing route to pin _53718_/Y in net _00015_.
+[WARNING EST-0026] Missing route to pin _62425_/D in net _00016_.
+[WARNING EST-0026] Missing route to pin _53716_/X in net _00016_.
+[WARNING EST-0026] Missing route to pin _62422_/D in net _00019_.
+[WARNING EST-0026] Missing route to pin _53712_/Y in net _00019_.
+[WARNING EST-0026] Missing route to pin _62417_/D in net _00024_.
+[WARNING EST-0026] Missing route to pin _53704_/X in net _00024_.
+[WARNING EST-0026] Missing route to pin _62416_/D in net _00025_.
+[WARNING EST-0026] Missing route to pin _53702_/X in net _00025_.
+[WARNING EST-0026] Missing route to pin _62415_/D in net _00026_.
+[WARNING EST-0026] Missing route to pin _53701_/X in net _00026_.
+[WARNING EST-0026] Missing route to pin _62414_/D in net _00027_.
+[WARNING EST-0026] Missing route to pin _53700_/X in net _00027_.
+[WARNING EST-0026] Missing route to pin _62413_/D in net _00028_.
+[WARNING EST-0026] Missing route to pin _53699_/X in net _00028_.
+[WARNING EST-0026] Missing route to pin _62412_/D in net _00029_.
+[WARNING EST-0026] Missing route to pin _53698_/X in net _00029_.
+[WARNING EST-0026] Missing route to pin _62411_/D in net _00030_.
+[WARNING EST-0026] Missing route to pin _53697_/Y in net _00030_.
+[WARNING EST-0026] Missing route to pin _62410_/D in net _00031_.
+[WARNING EST-0026] Missing route to pin _53695_/Y in net _00031_.
+[WARNING EST-0026] Missing route to pin _62406_/D in net _00034_.
+[WARNING EST-0026] Missing route to pin _53685_/Y in net _00034_.
+[WARNING EST-0026] Missing route to pin _62404_/D in net _00036_.
+[WARNING EST-0026] Missing route to pin _53677_/Y in net _00036_.
+[WARNING EST-0026] Missing route to pin _62400_/D in net _00040_.
+[WARNING EST-0026] Missing route to pin _53661_/Y in net _00040_.
+[WARNING EST-0026] Missing route to pin _62399_/D in net _00041_.
+[WARNING EST-0026] Missing route to pin _53657_/Y in net _00041_.
+[WARNING EST-0026] Missing route to pin _62396_/D in net _00044_.
+[WARNING EST-0026] Missing route to pin _53644_/Y in net _00044_.
+[WARNING EST-0026] Missing route to pin _62395_/D in net _00045_.
+[WARNING EST-0026] Missing route to pin _53640_/X in net _00045_.
+[WARNING EST-0026] Missing route to pin _62394_/D in net _00046_.
+[WARNING EST-0026] Missing route to pin _53636_/Y in net _00046_.
+[WARNING EST-0026] Missing route to pin _62393_/D in net _00047_.
+[WARNING EST-0026] Missing route to pin _53631_/Y in net _00047_.
+[WARNING EST-0026] Missing route to pin _62390_/D in net _00050_.
+[WARNING EST-0026] Missing route to pin _53615_/Y in net _00050_.
+[WARNING EST-0026] Missing route to pin _62385_/D in net _00055_.
+[WARNING EST-0026] Missing route to pin _53590_/X in net _00055_.
+[WARNING EST-0026] Missing route to pin _62384_/D in net _00056_.
+[WARNING EST-0026] Missing route to pin _53586_/Y in net _00056_.
+[WARNING EST-0026] Missing route to pin _62381_/D in net _00059_.
+[WARNING EST-0026] Missing route to pin _53573_/Y in net _00059_.
+[WARNING EST-0026] Missing route to pin _62375_/D in net _00064_.
+[WARNING EST-0026] Missing route to pin _53549_/Y in net _00064_.
+[WARNING EST-0026] Missing route to pin _62374_/D in net _00065_.
+[WARNING EST-0026] Missing route to pin _53544_/Y in net _00065_.
+[WARNING EST-0026] Missing route to pin _62373_/D in net _00066_.
+[WARNING EST-0026] Missing route to pin _53539_/Y in net _00066_.
+[WARNING EST-0026] Missing route to pin _62372_/D in net _00067_.
+[WARNING EST-0026] Missing route to pin _53533_/Y in net _00067_.
+[WARNING EST-0026] Missing route to pin _62370_/D in net _00069_.
+[WARNING EST-0026] Missing route to pin _53522_/Y in net _00069_.
+[WARNING EST-0026] Missing route to pin _62369_/D in net _00070_.
+[WARNING EST-0026] Missing route to pin _53518_/Y in net _00070_.
+[WARNING EST-0026] Missing route to pin _62367_/D in net _00072_.
+[WARNING EST-0026] Missing route to pin _53506_/X in net _00072_.
+[WARNING EST-0026] Missing route to pin _62364_/D in net _00075_.
+[WARNING EST-0026] Missing route to pin _53490_/Y in net _00075_.
+[WARNING EST-0026] Missing route to pin _62362_/D in net _00077_.
+[WARNING EST-0026] Missing route to pin _53480_/Y in net _00077_.
+[WARNING EST-0026] Missing route to pin _62361_/D in net _00078_.
+[WARNING EST-0026] Missing route to pin _53473_/X in net _00078_.
+[WARNING EST-0026] Missing route to pin _62360_/D in net _00079_.
+[WARNING EST-0026] Missing route to pin _53467_/Y in net _00079_.
+[WARNING EST-0026] Missing route to pin _62359_/D in net _00080_.
+[WARNING EST-0026] Missing route to pin _53462_/Y in net _00080_.
+[WARNING EST-0026] Missing route to pin _62357_/D in net _00082_.
+[WARNING EST-0026] Missing route to pin _53452_/Y in net _00082_.
+[WARNING EST-0026] Missing route to pin _62355_/D in net _00084_.
+[WARNING EST-0026] Missing route to pin _53439_/Y in net _00084_.
+[WARNING EST-0026] Missing route to pin _62353_/D in net _00086_.
+[WARNING EST-0026] Missing route to pin _53424_/X in net _00086_.
+[WARNING EST-0026] Missing route to pin _62352_/D in net _00087_.
+[WARNING EST-0026] Missing route to pin _53418_/Y in net _00087_.
+[WARNING EST-0026] Missing route to pin _62351_/D in net _00088_.
+[WARNING EST-0026] Missing route to pin _53411_/Y in net _00088_.
+[WARNING EST-0026] Missing route to pin _62350_/D in net _00089_.
+[WARNING EST-0026] Missing route to pin _53407_/Y in net _00089_.
+[WARNING EST-0026] Missing route to pin _62349_/D in net _00090_.
+[WARNING EST-0026] Missing route to pin _53399_/Y in net _00090_.
+[WARNING EST-0026] Missing route to pin _62348_/D in net _00091_.
+[WARNING EST-0026] Missing route to pin _53394_/Y in net _00091_.
+[WARNING EST-0026] Missing route to pin _62346_/D in net _00093_.
+[WARNING EST-0026] Missing route to pin _53383_/Y in net _00093_.
+[WARNING EST-0026] Missing route to pin _62344_/D in net _00094_.
+[WARNING EST-0026] Missing route to pin _53373_/X in net _00094_.
+[WARNING EST-0026] Missing route to pin _62343_/D in net _00095_.
+[WARNING EST-0026] Missing route to pin _53372_/X in net _00095_.
+[WARNING EST-0026] Missing route to pin _62340_/D in net _00098_.
+[WARNING EST-0026] Missing route to pin _53367_/X in net _00098_.
+[WARNING EST-0026] Missing route to pin _62339_/D in net _00099_.
+[WARNING EST-0026] Missing route to pin _53366_/X in net _00099_.
+[WARNING EST-0026] Missing route to pin _62334_/D in net _00104_.
+[WARNING EST-0026] Missing route to pin _53358_/X in net _00104_.
+[WARNING EST-0026] Missing route to pin _62332_/D in net _00106_.
+[WARNING EST-0026] Missing route to pin _53355_/X in net _00106_.
+[WARNING EST-0026] Missing route to pin _62329_/D in net _00109_.
+[WARNING EST-0026] Missing route to pin _53350_/Y in net _00109_.
+[WARNING EST-0026] Missing route to pin _62327_/D in net _00111_.
+[WARNING EST-0026] Missing route to pin _53346_/X in net _00111_.
+[WARNING EST-0026] Missing route to pin _62326_/D in net _00112_.
+[WARNING EST-0026] Missing route to pin _53345_/Y in net _00112_.
+[WARNING EST-0026] Missing route to pin _62325_/D in net _00113_.
+[WARNING EST-0026] Missing route to pin _53343_/Y in net _00113_.
+[WARNING EST-0026] Missing route to pin _62324_/D in net _00114_.
+[WARNING EST-0026] Missing route to pin _53341_/Y in net _00114_.
+[WARNING EST-0026] Missing route to pin _62321_/D in net _00117_.
+[WARNING EST-0026] Missing route to pin _53335_/X in net _00117_.
+[WARNING EST-0026] Missing route to pin _62320_/D in net _00118_.
+[WARNING EST-0026] Missing route to pin _53334_/Y in net _00118_.
+[WARNING EST-0026] Missing route to pin _62319_/D in net _00119_.
+[WARNING EST-0026] Missing route to pin _53332_/Y in net _00119_.
+[WARNING EST-0026] Missing route to pin _62318_/D in net _00120_.
+[WARNING EST-0026] Missing route to pin _53330_/Y in net _00120_.
+[WARNING EST-0026] Missing route to pin _62317_/D in net _00121_.
+[WARNING EST-0026] Missing route to pin _53328_/Y in net _00121_.
+[WARNING EST-0026] Missing route to pin _62316_/D in net _00122_.
+[WARNING EST-0026] Missing route to pin _53325_/Y in net _00122_.
+[WARNING EST-0026] Missing route to pin _62313_/D in net _00125_.
+[WARNING EST-0026] Missing route to pin _53319_/X in net _00125_.
+[WARNING EST-0026] Missing route to pin _62312_/D in net _00126_.
+[WARNING EST-0026] Missing route to pin _53316_/X in net _00126_.
+[WARNING EST-0026] Missing route to pin _62311_/D in net _00127_.
+[WARNING EST-0026] Missing route to pin _53312_/Y in net _00127_.
+[WARNING EST-0026] Missing route to pin _62309_/D in net _00129_.
+[WARNING EST-0026] Missing route to pin _53305_/X in net _00129_.
+[WARNING EST-0026] Missing route to pin _62307_/D in net _00131_.
+[WARNING EST-0026] Missing route to pin _53298_/Y in net _00131_.
+[WARNING EST-0026] Missing route to pin _62306_/D in net _00132_.
+[WARNING EST-0026] Missing route to pin _53294_/X in net _00132_.
+[WARNING EST-0026] Missing route to pin _62305_/D in net _00133_.
+[WARNING EST-0026] Missing route to pin _53289_/Y in net _00133_.
+[WARNING EST-0026] Missing route to pin _62303_/D in net _00135_.
+[WARNING EST-0026] Missing route to pin _53282_/Y in net _00135_.
+[WARNING EST-0026] Missing route to pin _62301_/D in net _00137_.
+[WARNING EST-0026] Missing route to pin _53274_/Y in net _00137_.
+[WARNING EST-0026] Missing route to pin _62300_/D in net _00138_.
+[WARNING EST-0026] Missing route to pin _53269_/Y in net _00138_.
+[WARNING EST-0026] Missing route to pin _62299_/D in net _00139_.
+[WARNING EST-0026] Missing route to pin _53265_/Y in net _00139_.
+[WARNING EST-0026] Missing route to pin _62298_/D in net _00140_.
+[WARNING EST-0026] Missing route to pin _53261_/X in net _00140_.
+[WARNING EST-0026] Missing route to pin _62295_/D in net _00143_.
+[WARNING EST-0026] Missing route to pin _53250_/Y in net _00143_.
+[WARNING EST-0026] Missing route to pin _62294_/D in net _00144_.
+[WARNING EST-0026] Missing route to pin _53245_/Y in net _00144_.
+[WARNING EST-0026] Missing route to pin _62292_/D in net _00146_.
+[WARNING EST-0026] Missing route to pin _53238_/Y in net _00146_.
+[WARNING EST-0026] Missing route to pin _62290_/D in net _00148_.
+[WARNING EST-0026] Missing route to pin _53230_/Y in net _00148_.
+[WARNING EST-0026] Missing route to pin _62289_/D in net _00149_.
+[WARNING EST-0026] Missing route to pin _53225_/Y in net _00149_.
+[WARNING EST-0026] Missing route to pin _62286_/D in net _00152_.
+[WARNING EST-0026] Missing route to pin _53212_/Y in net _00152_.
+[WARNING EST-0026] Missing route to pin _62282_/D in net _00153_.
+[WARNING EST-0026] Missing route to pin _53207_/Y in net _00153_.
+[WARNING EST-0026] Missing route to pin _62281_/D in net _00154_.
+[WARNING EST-0026] Missing route to pin _53197_/Y in net _00154_.
+[WARNING EST-0026] Missing route to pin _62280_/D in net _00155_.
+[WARNING EST-0026] Missing route to pin _53191_/Y in net _00155_.
+[WARNING EST-0026] Missing route to pin _62279_/D in net _00156_.
+[WARNING EST-0026] Missing route to pin _53185_/Y in net _00156_.
+[WARNING EST-0026] Missing route to pin _62278_/D in net _00157_.
+[WARNING EST-0026] Missing route to pin _53174_/Y in net _00157_.
+[WARNING EST-0026] Missing route to pin _62277_/D in net _00158_.
+[WARNING EST-0026] Missing route to pin _53162_/Y in net _00158_.
+[WARNING EST-0026] Missing route to pin _62276_/D in net _00159_.
+[WARNING EST-0026] Missing route to pin _53152_/Y in net _00159_.
+[WARNING EST-0026] Missing route to pin _62274_/D in net _00161_.
+[WARNING EST-0026] Missing route to pin _53133_/Y in net _00161_.
+[WARNING EST-0026] Missing route to pin _62273_/D in net _00162_.
+[WARNING EST-0026] Missing route to pin _53127_/Y in net _00162_.
+[WARNING EST-0026] Missing route to pin _62271_/D in net _00164_.
+[WARNING EST-0026] Missing route to pin _53109_/Y in net _00164_.
+[WARNING EST-0026] Missing route to pin _62270_/D in net _00165_.
+[WARNING EST-0026] Missing route to pin _53102_/Y in net _00165_.
+[WARNING EST-0026] Missing route to pin _62269_/D in net _00166_.
+[WARNING EST-0026] Missing route to pin _53097_/Y in net _00166_.
+[WARNING EST-0026] Missing route to pin _62268_/D in net _00167_.
+[WARNING EST-0026] Missing route to pin _53088_/Y in net _00167_.
+[WARNING EST-0026] Missing route to pin _62267_/D in net _00168_.
+[WARNING EST-0026] Missing route to pin _53078_/Y in net _00168_.
+[WARNING EST-0026] Missing route to pin _62265_/D in net _00170_.
+[WARNING EST-0026] Missing route to pin _53061_/Y in net _00170_.
+[WARNING EST-0026] Missing route to pin _62264_/D in net _00171_.
+[WARNING EST-0026] Missing route to pin _53054_/Y in net _00171_.
+[WARNING EST-0026] Missing route to pin _62263_/D in net _00172_.
+[WARNING EST-0026] Missing route to pin _53044_/Y in net _00172_.
+[WARNING EST-0026] Missing route to pin _62262_/D in net _00173_.
+[WARNING EST-0026] Missing route to pin _53039_/Y in net _00173_.
+[WARNING EST-0026] Missing route to pin _62260_/D in net _00175_.
+[WARNING EST-0026] Missing route to pin _53024_/Y in net _00175_.
+[WARNING EST-0026] Missing route to pin _62259_/D in net _00176_.
+[WARNING EST-0026] Missing route to pin _53019_/Y in net _00176_.
+[WARNING EST-0026] Missing route to pin _62257_/D in net _00178_.
+[WARNING EST-0026] Missing route to pin _53007_/Y in net _00178_.
+[WARNING EST-0026] Missing route to pin _62255_/D in net _00180_.
+[WARNING EST-0026] Missing route to pin _52994_/X in net _00180_.
+[WARNING EST-0026] Missing route to pin _62250_/D in net _00183_.
+[WARNING EST-0026] Missing route to pin _52955_/Y in net _00183_.
+[WARNING EST-0026] Missing route to pin _62248_/D in net _00185_.
+[WARNING EST-0026] Missing route to pin _52951_/Y in net _00185_.
+[WARNING EST-0026] Missing route to pin _62245_/D in net _00188_.
+[WARNING EST-0026] Missing route to pin _52944_/X in net _00188_.
+[WARNING EST-0026] Missing route to pin _62242_/D in net _00191_.
+[WARNING EST-0026] Missing route to pin _52939_/Y in net _00191_.
+[WARNING EST-0026] Missing route to pin _62239_/D in net _00194_.
+[WARNING EST-0026] Missing route to pin _52933_/Y in net _00194_.
+[WARNING EST-0026] Missing route to pin _62238_/D in net _00195_.
+[WARNING EST-0026] Missing route to pin _52931_/Y in net _00195_.
+[WARNING EST-0026] Missing route to pin _62237_/D in net _00196_.
+[WARNING EST-0026] Missing route to pin _52929_/X in net _00196_.
+[WARNING EST-0026] Missing route to pin _62236_/D in net _00197_.
+[WARNING EST-0026] Missing route to pin _52928_/Y in net _00197_.
+[WARNING EST-0026] Missing route to pin _62234_/D in net _00199_.
+[WARNING EST-0026] Missing route to pin _52923_/Y in net _00199_.
+[WARNING EST-0026] Missing route to pin _62230_/D in net _00203_.
+[WARNING EST-0026] Missing route to pin _52915_/Y in net _00203_.
+[WARNING EST-0026] Missing route to pin _62229_/D in net _00204_.
+[WARNING EST-0026] Missing route to pin _52912_/Y in net _00204_.
+[WARNING EST-0026] Missing route to pin _62226_/D in net _00207_.
+[WARNING EST-0026] Missing route to pin _52907_/Y in net _00207_.
+[WARNING EST-0026] Missing route to pin _62225_/D in net _00208_.
+[WARNING EST-0026] Missing route to pin _52905_/Y in net _00208_.
+[WARNING EST-0026] Missing route to pin _62223_/D in net _00210_.
+[WARNING EST-0026] Missing route to pin _52900_/Y in net _00210_.
+[WARNING EST-0026] Missing route to pin _62220_/D in net _00213_.
+[WARNING EST-0026] Missing route to pin _52894_/Y in net _00213_.
+[WARNING EST-0026] Missing route to pin _62217_/D in net _00215_.
+[WARNING EST-0026] Missing route to pin _52890_/X in net _00215_.
+[WARNING EST-0026] Missing route to pin _62216_/D in net _00216_.
+[WARNING EST-0026] Missing route to pin _52889_/X in net _00216_.
+[WARNING EST-0026] Missing route to pin _62210_/D in net _00222_.
+[WARNING EST-0026] Missing route to pin _52883_/X in net _00222_.
+[WARNING EST-0026] Missing route to pin _62208_/D in net _00224_.
+[WARNING EST-0026] Missing route to pin _52881_/X in net _00224_.
+[WARNING EST-0026] Missing route to pin _62207_/D in net _00225_.
+[WARNING EST-0026] Missing route to pin _52879_/X in net _00225_.
+[WARNING EST-0026] Missing route to pin _62205_/D in net _00227_.
+[WARNING EST-0026] Missing route to pin _52877_/X in net _00227_.
+[WARNING EST-0026] Missing route to pin _62204_/D in net _00228_.
+[WARNING EST-0026] Missing route to pin _52876_/X in net _00228_.
+[WARNING EST-0026] Missing route to pin _62202_/D in net _00230_.
+[WARNING EST-0026] Missing route to pin _52874_/X in net _00230_.
+[WARNING EST-0026] Missing route to pin _62201_/D in net _00231_.
+[WARNING EST-0026] Missing route to pin _52873_/X in net _00231_.
+[WARNING EST-0026] Missing route to pin _62200_/D in net _00232_.
+[WARNING EST-0026] Missing route to pin _52872_/X in net _00232_.
+[WARNING EST-0026] Missing route to pin _62199_/D in net _00233_.
+[WARNING EST-0026] Missing route to pin _52871_/X in net _00233_.
+[WARNING EST-0026] Missing route to pin _62196_/D in net _00236_.
+[WARNING EST-0026] Missing route to pin _52867_/X in net _00236_.
+[WARNING EST-0026] Missing route to pin _62194_/D in net _00238_.
+[WARNING EST-0026] Missing route to pin _52865_/X in net _00238_.
+[WARNING EST-0026] Missing route to pin _62193_/D in net _00239_.
+[WARNING EST-0026] Missing route to pin _52864_/X in net _00239_.
+[WARNING EST-0026] Missing route to pin _62191_/D in net _00241_.
+[WARNING EST-0026] Missing route to pin _52862_/X in net _00241_.
+[WARNING EST-0026] Missing route to pin _62190_/D in net _00242_.
+[WARNING EST-0026] Missing route to pin _52861_/X in net _00242_.
+[WARNING EST-0026] Missing route to pin _62188_/D in net _00244_.
+[WARNING EST-0026] Missing route to pin _52859_/X in net _00244_.
+[WARNING EST-0026] Missing route to pin _62186_/D in net _00245_.
+[WARNING EST-0026] Missing route to pin _52857_/Y in net _00245_.
+[WARNING EST-0026] Missing route to pin _62185_/D in net _00246_.
+[WARNING EST-0026] Missing route to pin _52855_/X in net _00246_.
+[WARNING EST-0026] Missing route to pin _62184_/D in net _00247_.
+[WARNING EST-0026] Missing route to pin _52853_/Y in net _00247_.
+[WARNING EST-0026] Missing route to pin _62182_/D in net _00249_.
+[WARNING EST-0026] Missing route to pin _52849_/X in net _00249_.
+[WARNING EST-0026] Missing route to pin _62181_/D in net _00250_.
+[WARNING EST-0026] Missing route to pin _52845_/X in net _00250_.
+[WARNING EST-0026] Missing route to pin _62180_/D in net _00251_.
+[WARNING EST-0026] Missing route to pin _52843_/Y in net _00251_.
+[WARNING EST-0026] Missing route to pin _62179_/D in net _00252_.
+[WARNING EST-0026] Missing route to pin _52841_/X in net _00252_.
+[WARNING EST-0026] Missing route to pin _62178_/D in net _00253_.
+[WARNING EST-0026] Missing route to pin _52839_/Y in net _00253_.
+[WARNING EST-0026] Missing route to pin _62173_/D in net _00258_.
+[WARNING EST-0026] Missing route to pin _52828_/X in net _00258_.
+[WARNING EST-0026] Missing route to pin _62171_/D in net _00260_.
+[WARNING EST-0026] Missing route to pin _52823_/Y in net _00260_.
+[WARNING EST-0026] Missing route to pin _62170_/D in net _00261_.
+[WARNING EST-0026] Missing route to pin _52821_/Y in net _00261_.
+[WARNING EST-0026] Missing route to pin _62169_/D in net _00262_.
+[WARNING EST-0026] Missing route to pin _52819_/Y in net _00262_.
+[WARNING EST-0026] Missing route to pin _62168_/D in net _00263_.
+[WARNING EST-0026] Missing route to pin _52817_/X in net _00263_.
+[WARNING EST-0026] Missing route to pin _62167_/D in net _00264_.
+[WARNING EST-0026] Missing route to pin _52815_/Y in net _00264_.
+[WARNING EST-0026] Missing route to pin _62166_/D in net _00265_.
+[WARNING EST-0026] Missing route to pin _52812_/Y in net _00265_.
+[WARNING EST-0026] Missing route to pin _62165_/D in net _00266_.
+[WARNING EST-0026] Missing route to pin _52810_/Y in net _00266_.
+[WARNING EST-0026] Missing route to pin _62164_/D in net _00267_.
+[WARNING EST-0026] Missing route to pin _52808_/X in net _00267_.
+[WARNING EST-0026] Missing route to pin _62158_/D in net _00273_.
+[WARNING EST-0026] Missing route to pin _52795_/Y in net _00273_.
+[WARNING EST-0026] Missing route to pin _62154_/D in net _00276_.
+[WARNING EST-0026] Missing route to pin _52788_/X in net _00276_.
+[WARNING EST-0026] Missing route to pin _62151_/D in net _00277_.
+[WARNING EST-0026] Missing route to pin _52786_/X in net _00277_.
+[WARNING EST-0026] Missing route to pin _62149_/D in net _00279_.
+[WARNING EST-0026] Missing route to pin _52784_/X in net _00279_.
+[WARNING EST-0026] Missing route to pin _62148_/D in net _00280_.
+[WARNING EST-0026] Missing route to pin _52783_/X in net _00280_.
+[WARNING EST-0026] Missing route to pin _62146_/D in net _00282_.
+[WARNING EST-0026] Missing route to pin _52781_/X in net _00282_.
+[WARNING EST-0026] Missing route to pin _62145_/D in net _00283_.
+[WARNING EST-0026] Missing route to pin _52779_/X in net _00283_.
+[WARNING EST-0026] Missing route to pin _62144_/D in net _00284_.
+[WARNING EST-0026] Missing route to pin _52778_/X in net _00284_.
+[WARNING EST-0026] Missing route to pin _62143_/D in net _00285_.
+[WARNING EST-0026] Missing route to pin _52777_/X in net _00285_.
+[WARNING EST-0026] Missing route to pin _62140_/D in net _00288_.
+[WARNING EST-0026] Missing route to pin _52774_/X in net _00288_.
+[WARNING EST-0026] Missing route to pin _62139_/D in net _00289_.
+[WARNING EST-0026] Missing route to pin _52773_/X in net _00289_.
+[WARNING EST-0026] Missing route to pin _62138_/D in net _00290_.
+[WARNING EST-0026] Missing route to pin _52772_/X in net _00290_.
+[WARNING EST-0026] Missing route to pin _62137_/D in net _00291_.
+[WARNING EST-0026] Missing route to pin _52771_/X in net _00291_.
+[WARNING EST-0026] Missing route to pin _62135_/D in net _00293_.
+[WARNING EST-0026] Missing route to pin _52768_/X in net _00293_.
+[WARNING EST-0026] Missing route to pin _62134_/D in net _00294_.
+[WARNING EST-0026] Missing route to pin _52767_/X in net _00294_.
+[WARNING EST-0026] Missing route to pin _62132_/D in net _00296_.
+[WARNING EST-0026] Missing route to pin _52765_/X in net _00296_.
+[WARNING EST-0026] Missing route to pin _62131_/D in net _00297_.
+[WARNING EST-0026] Missing route to pin _52764_/X in net _00297_.
+[WARNING EST-0026] Missing route to pin _62129_/D in net _00299_.
+[WARNING EST-0026] Missing route to pin _52762_/X in net _00299_.
+[WARNING EST-0026] Missing route to pin _62128_/D in net _00300_.
+[WARNING EST-0026] Missing route to pin _52761_/X in net _00300_.
+[WARNING EST-0026] Missing route to pin _62127_/D in net _00301_.
+[WARNING EST-0026] Missing route to pin _52760_/X in net _00301_.
+[WARNING EST-0026] Missing route to pin _62126_/D in net _00302_.
+[WARNING EST-0026] Missing route to pin _52759_/X in net _00302_.
+[WARNING EST-0026] Missing route to pin _62125_/D in net _00303_.
+[WARNING EST-0026] Missing route to pin _52757_/X in net _00303_.
+[WARNING EST-0026] Missing route to pin _62123_/D in net _00305_.
+[WARNING EST-0026] Missing route to pin _52755_/X in net _00305_.
+[WARNING EST-0026] Missing route to pin _62122_/D in net _00306_.
+[WARNING EST-0026] Missing route to pin _52754_/X in net _00306_.
+[WARNING EST-0026] Missing route to pin _62121_/D in net _00307_.
+[WARNING EST-0026] Missing route to pin _52753_/X in net _00307_.
+[WARNING EST-0026] Missing route to pin _62120_/D in net _00308_.
+[WARNING EST-0026] Missing route to pin _52752_/X in net _00308_.
+[WARNING EST-0026] Missing route to pin _62118_/D in net _00310_.
+[WARNING EST-0026] Missing route to pin _52750_/X in net _00310_.
+[WARNING EST-0026] Missing route to pin _62117_/D in net _00311_.
+[WARNING EST-0026] Missing route to pin _52749_/X in net _00311_.
+[WARNING EST-0026] Missing route to pin _62116_/D in net _00312_.
+[WARNING EST-0026] Missing route to pin _52748_/X in net _00312_.
+[WARNING EST-0026] Missing route to pin _62115_/D in net _00313_.
+[WARNING EST-0026] Missing route to pin _52746_/X in net _00313_.
+[WARNING EST-0026] Missing route to pin _62114_/D in net _00314_.
+[WARNING EST-0026] Missing route to pin _52745_/X in net _00314_.
+[WARNING EST-0026] Missing route to pin _62113_/D in net _00315_.
+[WARNING EST-0026] Missing route to pin _52744_/X in net _00315_.
+[WARNING EST-0026] Missing route to pin _62112_/D in net _00316_.
+[WARNING EST-0026] Missing route to pin _52743_/X in net _00316_.
+[WARNING EST-0026] Missing route to pin _62111_/D in net _00317_.
+[WARNING EST-0026] Missing route to pin _52742_/X in net _00317_.
+[WARNING EST-0026] Missing route to pin _62110_/D in net _00318_.
+[WARNING EST-0026] Missing route to pin _52741_/X in net _00318_.
+[WARNING EST-0026] Missing route to pin _62109_/D in net _00319_.
+[WARNING EST-0026] Missing route to pin _52740_/X in net _00319_.
+[WARNING EST-0026] Missing route to pin _62108_/D in net _00320_.
+[WARNING EST-0026] Missing route to pin _52739_/X in net _00320_.
+[WARNING EST-0026] Missing route to pin _62107_/D in net _00321_.
+[WARNING EST-0026] Missing route to pin _52738_/X in net _00321_.
+[WARNING EST-0026] Missing route to pin _62105_/D in net _00323_.
+[WARNING EST-0026] Missing route to pin _52734_/X in net _00323_.
+[WARNING EST-0026] Missing route to pin _62102_/D in net _00326_.
+[WARNING EST-0026] Missing route to pin _52731_/X in net _00326_.
+[WARNING EST-0026] Missing route to pin _62101_/D in net _00327_.
+[WARNING EST-0026] Missing route to pin _52730_/X in net _00327_.
+[WARNING EST-0026] Missing route to pin _62099_/D in net _00329_.
+[WARNING EST-0026] Missing route to pin _52728_/X in net _00329_.
+[WARNING EST-0026] Missing route to pin _62098_/D in net _00330_.
+[WARNING EST-0026] Missing route to pin _52727_/X in net _00330_.
+[WARNING EST-0026] Missing route to pin _62097_/D in net _00331_.
+[WARNING EST-0026] Missing route to pin _52726_/X in net _00331_.
+[WARNING EST-0026] Missing route to pin _62096_/D in net _00332_.
+[WARNING EST-0026] Missing route to pin _52725_/X in net _00332_.
+[WARNING EST-0026] Missing route to pin _62095_/D in net _00333_.
+[WARNING EST-0026] Missing route to pin _52723_/X in net _00333_.
+[WARNING EST-0026] Missing route to pin _62094_/D in net _00334_.
+[WARNING EST-0026] Missing route to pin _52722_/X in net _00334_.
+[WARNING EST-0026] Missing route to pin _62093_/D in net _00335_.
+[WARNING EST-0026] Missing route to pin _52721_/X in net _00335_.
+[WARNING EST-0026] Missing route to pin _62092_/D in net _00336_.
+[WARNING EST-0026] Missing route to pin _52720_/X in net _00336_.
+[WARNING EST-0026] Missing route to pin _62091_/D in net _00337_.
+[WARNING EST-0026] Missing route to pin _52719_/X in net _00337_.
+[WARNING EST-0026] Missing route to pin _62090_/D in net _00338_.
+[WARNING EST-0026] Missing route to pin _52718_/X in net _00338_.
+[WARNING EST-0026] Missing route to pin _62085_/D in net _00341_.
+[WARNING EST-0026] Missing route to pin _52712_/X in net _00341_.
+[WARNING EST-0026] Missing route to pin _62084_/D in net _00342_.
+[WARNING EST-0026] Missing route to pin _52710_/Y in net _00342_.
+[WARNING EST-0026] Missing route to pin _62081_/D in net _00345_.
+[WARNING EST-0026] Missing route to pin _52704_/X in net _00345_.
+[WARNING EST-0026] Missing route to pin _62080_/D in net _00346_.
+[WARNING EST-0026] Missing route to pin _52701_/Y in net _00346_.
+[WARNING EST-0026] Missing route to pin _62078_/D in net _00348_.
+[WARNING EST-0026] Missing route to pin _52697_/Y in net _00348_.
+[WARNING EST-0026] Missing route to pin _62077_/D in net _00349_.
+[WARNING EST-0026] Missing route to pin _52695_/X in net _00349_.
+[WARNING EST-0026] Missing route to pin _62074_/D in net _00352_.
+[WARNING EST-0026] Missing route to pin _52688_/Y in net _00352_.
+[WARNING EST-0026] Missing route to pin _62072_/D in net _00354_.
+[WARNING EST-0026] Missing route to pin _52684_/X in net _00354_.
+[WARNING EST-0026] Missing route to pin _62071_/D in net _00355_.
+[WARNING EST-0026] Missing route to pin _52682_/Y in net _00355_.
+[WARNING EST-0026] Missing route to pin _62070_/D in net _00356_.
+[WARNING EST-0026] Missing route to pin _52679_/Y in net _00356_.
+[WARNING EST-0026] Missing route to pin _62069_/D in net _00357_.
+[WARNING EST-0026] Missing route to pin _52677_/Y in net _00357_.
+[WARNING EST-0026] Missing route to pin _62065_/D in net _00361_.
+[WARNING EST-0026] Missing route to pin _52668_/Y in net _00361_.
+[WARNING EST-0026] Missing route to pin _62064_/D in net _00362_.
+[WARNING EST-0026] Missing route to pin _52666_/X in net _00362_.
+[WARNING EST-0026] Missing route to pin _62060_/D in net _00366_.
+[WARNING EST-0026] Missing route to pin _52657_/Y in net _00366_.
+[WARNING EST-0026] Missing route to pin _62059_/D in net _00367_.
+[WARNING EST-0026] Missing route to pin _52655_/Y in net _00367_.
+[WARNING EST-0026] Missing route to pin _62058_/D in net _00368_.
+[WARNING EST-0026] Missing route to pin _52653_/Y in net _00368_.
+[WARNING EST-0026] Missing route to pin _62057_/D in net _00369_.
+[WARNING EST-0026] Missing route to pin _52651_/Y in net _00369_.
+[WARNING EST-0026] Missing route to pin _62056_/D in net _00370_.
+[WARNING EST-0026] Missing route to pin _52649_/Y in net _00370_.
+[WARNING EST-0026] Missing route to pin _62051_/D in net _00374_.
+[WARNING EST-0026] Missing route to pin _52635_/X in net _00374_.
+[WARNING EST-0026] Missing route to pin _62049_/D in net _00376_.
+[WARNING EST-0026] Missing route to pin _52629_/Y in net _00376_.
+[WARNING EST-0026] Missing route to pin _62047_/D in net _00378_.
+[WARNING EST-0026] Missing route to pin _52620_/Y in net _00378_.
+[WARNING EST-0026] Missing route to pin _62043_/D in net _00382_.
+[WARNING EST-0026] Missing route to pin _52606_/Y in net _00382_.
+[WARNING EST-0026] Missing route to pin _62042_/D in net _00383_.
+[WARNING EST-0026] Missing route to pin _52601_/X in net _00383_.
+[WARNING EST-0026] Missing route to pin _62040_/D in net _00385_.
+[WARNING EST-0026] Missing route to pin _52596_/Y in net _00385_.
+[WARNING EST-0026] Missing route to pin _62038_/D in net _00387_.
+[WARNING EST-0026] Missing route to pin _52588_/X in net _00387_.
+[WARNING EST-0026] Missing route to pin _62037_/D in net _00388_.
+[WARNING EST-0026] Missing route to pin _52585_/X in net _00388_.
+[WARNING EST-0026] Missing route to pin _62026_/D in net _00399_.
+[WARNING EST-0026] Missing route to pin _52545_/X in net _00399_.
+[WARNING EST-0026] Missing route to pin _62015_/D in net _00405_.
+[WARNING EST-0026] Missing route to pin _52524_/Y in net _00405_.
+[WARNING EST-0026] Missing route to pin _62014_/D in net _00406_.
+[WARNING EST-0026] Missing route to pin _52522_/Y in net _00406_.
+[WARNING EST-0026] Missing route to pin _62013_/D in net _00407_.
+[WARNING EST-0026] Missing route to pin _52520_/Y in net _00407_.
+[WARNING EST-0026] Missing route to pin _62012_/D in net _00408_.
+[WARNING EST-0026] Missing route to pin _52518_/Y in net _00408_.
+[WARNING EST-0026] Missing route to pin _62010_/D in net _00410_.
+[WARNING EST-0026] Missing route to pin _52512_/Y in net _00410_.
+[WARNING EST-0026] Missing route to pin _62008_/D in net _00412_.
+[WARNING EST-0026] Missing route to pin _52508_/Y in net _00412_.
+[WARNING EST-0026] Missing route to pin _62007_/D in net _00413_.
+[WARNING EST-0026] Missing route to pin _52506_/Y in net _00413_.
+[WARNING EST-0026] Missing route to pin _62002_/D in net _00418_.
+[WARNING EST-0026] Missing route to pin _52495_/Y in net _00418_.
+[WARNING EST-0026] Missing route to pin _62001_/D in net _00419_.
+[WARNING EST-0026] Missing route to pin _52493_/Y in net _00419_.
+[WARNING EST-0026] Missing route to pin _62000_/D in net _00420_.
+[WARNING EST-0026] Missing route to pin _52490_/Y in net _00420_.
+[WARNING EST-0026] Missing route to pin _61998_/D in net _00422_.
+[WARNING EST-0026] Missing route to pin _52486_/Y in net _00422_.
+[WARNING EST-0026] Missing route to pin _61997_/D in net _00423_.
+[WARNING EST-0026] Missing route to pin _52484_/Y in net _00423_.
+[WARNING EST-0026] Missing route to pin _61992_/D in net _00428_.
+[WARNING EST-0026] Missing route to pin _52474_/Y in net _00428_.
+[WARNING EST-0026] Missing route to pin _61989_/D in net _00431_.
+[WARNING EST-0026] Missing route to pin _52467_/Y in net _00431_.
+[WARNING EST-0026] Missing route to pin _61987_/D in net _00433_.
+[WARNING EST-0026] Missing route to pin _52463_/Y in net _00433_.
+[WARNING EST-0026] Missing route to pin _61980_/D in net _00439_.
+[WARNING EST-0026] Missing route to pin _52449_/Y in net _00439_.
+[WARNING EST-0026] Missing route to pin _61977_/D in net _00442_.
+[WARNING EST-0026] Missing route to pin _52439_/Y in net _00442_.
+[WARNING EST-0026] Missing route to pin _61975_/D in net _00444_.
+[WARNING EST-0026] Missing route to pin _52432_/Y in net _00444_.
+[WARNING EST-0026] Missing route to pin _61974_/D in net _00445_.
+[WARNING EST-0026] Missing route to pin _52429_/Y in net _00445_.
+[WARNING EST-0026] Missing route to pin _61972_/D in net _00447_.
+[WARNING EST-0026] Missing route to pin _52422_/Y in net _00447_.
+[WARNING EST-0026] Missing route to pin _61971_/D in net _00448_.
+[WARNING EST-0026] Missing route to pin _52419_/Y in net _00448_.
+[WARNING EST-0026] Missing route to pin _61967_/D in net _00451_.
+[WARNING EST-0026] Missing route to pin _52410_/Y in net _00451_.
+[WARNING EST-0026] Missing route to pin _61963_/D in net _00455_.
+[WARNING EST-0026] Missing route to pin _52400_/X in net _00455_.
+[WARNING EST-0026] Missing route to pin _61962_/D in net _00456_.
+[WARNING EST-0026] Missing route to pin _52398_/X in net _00456_.
+[WARNING EST-0026] Missing route to pin _61960_/D in net _00458_.
+[WARNING EST-0026] Missing route to pin _52394_/X in net _00458_.
+[WARNING EST-0026] Missing route to pin _61958_/D in net _00460_.
+[WARNING EST-0026] Missing route to pin _52389_/X in net _00460_.
+[WARNING EST-0026] Missing route to pin _61957_/D in net _00461_.
+[WARNING EST-0026] Missing route to pin _52387_/X in net _00461_.
+[WARNING EST-0026] Missing route to pin _61954_/D in net _00464_.
+[WARNING EST-0026] Missing route to pin _52381_/X in net _00464_.
+[WARNING EST-0026] Missing route to pin _61951_/D in net _00467_.
+[WARNING EST-0026] Missing route to pin _52374_/Y in net _00467_.
+[WARNING EST-0026] Missing route to pin _61948_/D in net _00470_.
+[WARNING EST-0026] Missing route to pin _52367_/Y in net _00470_.
+[WARNING EST-0026] Missing route to pin _61947_/D in net _00471_.
+[WARNING EST-0026] Missing route to pin _52365_/Y in net _00471_.
+[WARNING EST-0026] Missing route to pin _61945_/D in net _00473_.
+[WARNING EST-0026] Missing route to pin _52361_/X in net _00473_.
+[WARNING EST-0026] Missing route to pin _61943_/D in net _00475_.
+[WARNING EST-0026] Missing route to pin _52356_/Y in net _00475_.
+[WARNING EST-0026] Missing route to pin _61941_/D in net _00477_.
+[WARNING EST-0026] Missing route to pin _52352_/Y in net _00477_.
+[WARNING EST-0026] Missing route to pin _61935_/D in net _00482_.
+[WARNING EST-0026] Missing route to pin _52341_/Y in net _00482_.
+[WARNING EST-0026] Missing route to pin _61934_/D in net _00483_.
+[WARNING EST-0026] Missing route to pin _52339_/X in net _00483_.
+[WARNING EST-0026] Missing route to pin _61933_/D in net _00484_.
+[WARNING EST-0026] Missing route to pin _52337_/Y in net _00484_.
+[WARNING EST-0026] Missing route to pin _61932_/D in net _00485_.
+[WARNING EST-0026] Missing route to pin _52334_/X in net _00485_.
+[WARNING EST-0026] Missing route to pin _61931_/D in net _00486_.
+[WARNING EST-0026] Missing route to pin _52332_/X in net _00486_.
+[WARNING EST-0026] Missing route to pin _61930_/D in net _00487_.
+[WARNING EST-0026] Missing route to pin _52330_/X in net _00487_.
+[WARNING EST-0026] Missing route to pin _61929_/D in net _00488_.
+[WARNING EST-0026] Missing route to pin _52328_/Y in net _00488_.
+[WARNING EST-0026] Missing route to pin _61928_/D in net _00489_.
+[WARNING EST-0026] Missing route to pin _52326_/X in net _00489_.
+[WARNING EST-0026] Missing route to pin _61927_/D in net _00490_.
+[WARNING EST-0026] Missing route to pin _52323_/Y in net _00490_.
+[WARNING EST-0026] Missing route to pin _61926_/D in net _00491_.
+[WARNING EST-0026] Missing route to pin _52321_/X in net _00491_.
+[WARNING EST-0026] Missing route to pin _61923_/D in net _00494_.
+[WARNING EST-0026] Missing route to pin _52315_/Y in net _00494_.
+[WARNING EST-0026] Missing route to pin _61922_/D in net _00495_.
+[WARNING EST-0026] Missing route to pin _52312_/X in net _00495_.
+[WARNING EST-0026] Missing route to pin _61921_/D in net _00496_.
+[WARNING EST-0026] Missing route to pin _52310_/X in net _00496_.
+[WARNING EST-0026] Missing route to pin _61920_/D in net _00497_.
+[WARNING EST-0026] Missing route to pin _52308_/Y in net _00497_.
+[WARNING EST-0026] Missing route to pin _61919_/D in net _00498_.
+[WARNING EST-0026] Missing route to pin _52306_/Y in net _00498_.
+[WARNING EST-0026] Missing route to pin _61918_/D in net _00499_.
+[WARNING EST-0026] Missing route to pin _52304_/Y in net _00499_.
+[WARNING EST-0026] Missing route to pin _61917_/D in net _00500_.
+[WARNING EST-0026] Missing route to pin _52301_/X in net _00500_.
+[WARNING EST-0026] Missing route to pin _61915_/D in net _00502_.
+[WARNING EST-0026] Missing route to pin _52297_/Y in net _00502_.
+[WARNING EST-0026] Missing route to pin _61913_/D in net _00504_.
+[WARNING EST-0026] Missing route to pin _52293_/X in net _00504_.
+[WARNING EST-0026] Missing route to pin _61911_/D in net _00506_.
+[WARNING EST-0026] Missing route to pin _52287_/Y in net _00506_.
+[WARNING EST-0026] Missing route to pin _61910_/D in net _00507_.
+[WARNING EST-0026] Missing route to pin _52285_/Y in net _00507_.
+[WARNING EST-0026] Missing route to pin _61907_/D in net _00510_.
+[WARNING EST-0026] Missing route to pin _52278_/Y in net _00510_.
+[WARNING EST-0026] Missing route to pin _61906_/D in net _00511_.
+[WARNING EST-0026] Missing route to pin _52276_/Y in net _00511_.
+[WARNING EST-0026] Missing route to pin _61905_/D in net _00512_.
+[WARNING EST-0026] Missing route to pin _52274_/Y in net _00512_.
+[WARNING EST-0026] Missing route to pin _63114_/D in net _00513_.
+[WARNING EST-0026] Missing route to pin _52272_/Y in net _00513_.
+[WARNING EST-0026] Missing route to pin _62841_/D in net _00515_.
+[WARNING EST-0026] Missing route to pin _52266_/Y in net _00515_.
+[WARNING EST-0026] Missing route to pin _61899_/D in net _00520_.
+[WARNING EST-0026] Missing route to pin _52249_/Y in net _00520_.
+[WARNING EST-0026] Missing route to pin _61896_/D in net _00523_.
+[WARNING EST-0026] Missing route to pin _52238_/Y in net _00523_.
+[WARNING EST-0026] Missing route to pin _61891_/D in net _00528_.
+[WARNING EST-0026] Missing route to pin _52218_/X in net _00528_.
+[WARNING EST-0026] Missing route to pin _61890_/D in net _00529_.
+[WARNING EST-0026] Missing route to pin _52215_/Y in net _00529_.
+[WARNING EST-0026] Missing route to pin _61889_/D in net _00530_.
+[WARNING EST-0026] Missing route to pin _52210_/Y in net _00530_.
+[WARNING EST-0026] Missing route to pin _61888_/D in net _00531_.
+[WARNING EST-0026] Missing route to pin _52207_/Y in net _00531_.
+[WARNING EST-0026] Missing route to pin _61885_/D in net _00534_.
+[WARNING EST-0026] Missing route to pin _52196_/Y in net _00534_.
+[WARNING EST-0026] Missing route to pin _61883_/D in net _00536_.
+[WARNING EST-0026] Missing route to pin _52189_/Y in net _00536_.
+[WARNING EST-0026] Missing route to pin _61879_/D in net _00540_.
+[WARNING EST-0026] Missing route to pin _52174_/X in net _00540_.
+[WARNING EST-0026] Missing route to pin place2912/A in net _00541_.
+[WARNING EST-0026] Missing route to pin _52171_/Y in net _00541_.
+[WARNING EST-0026] Missing route to pin _61876_/D in net _00543_.
+[WARNING EST-0026] Missing route to pin _52163_/X in net _00543_.
+[WARNING EST-0026] Missing route to pin _61874_/D in net _00545_.
+[WARNING EST-0026] Missing route to pin _52156_/Y in net _00545_.
+[WARNING EST-0026] Missing route to pin place2913/A in net _00546_.
+[WARNING EST-0026] Missing route to pin _52153_/Y in net _00546_.
+[WARNING EST-0026] Missing route to pin _61869_/D in net _00547_.
+[WARNING EST-0026] Missing route to pin _52149_/Y in net _00547_.
+[WARNING EST-0026] Missing route to pin _61868_/D in net _00548_.
+[WARNING EST-0026] Missing route to pin _52145_/Y in net _00548_.
+[WARNING EST-0026] Missing route to pin _61867_/D in net _00549_.
+[WARNING EST-0026] Missing route to pin _52142_/Y in net _00549_.
+[WARNING EST-0026] Missing route to pin _61865_/D in net _00551_.
+[WARNING EST-0026] Missing route to pin _52137_/Y in net _00551_.
+[WARNING EST-0026] Missing route to pin _61863_/D in net _00553_.
+[WARNING EST-0026] Missing route to pin _52130_/Y in net _00553_.
+[WARNING EST-0026] Missing route to pin _61862_/D in net _00554_.
+[WARNING EST-0026] Missing route to pin _52127_/Y in net _00554_.
+[WARNING EST-0026] Missing route to pin _61859_/D in net _00557_.
+[WARNING EST-0026] Missing route to pin _52116_/X in net _00557_.
+[WARNING EST-0026] Missing route to pin _61858_/D in net _00558_.
+[WARNING EST-0026] Missing route to pin _52113_/Y in net _00558_.
+[WARNING EST-0026] Missing route to pin _61856_/D in net _00560_.
+[WARNING EST-0026] Missing route to pin _52107_/Y in net _00560_.
+[WARNING EST-0026] Missing route to pin _61855_/D in net _00561_.
+[WARNING EST-0026] Missing route to pin _52104_/Y in net _00561_.
+[WARNING EST-0026] Missing route to pin _61853_/D in net _00563_.
+[WARNING EST-0026] Missing route to pin _52097_/Y in net _00563_.
+[WARNING EST-0026] Missing route to pin _61852_/D in net _00564_.
+[WARNING EST-0026] Missing route to pin _52094_/Y in net _00564_.
+[WARNING EST-0026] Missing route to pin _61851_/D in net _00565_.
+[WARNING EST-0026] Missing route to pin _52090_/Y in net _00565_.
+[WARNING EST-0026] Missing route to pin _61850_/D in net _00566_.
+[WARNING EST-0026] Missing route to pin _52087_/Y in net _00566_.
+[WARNING EST-0026] Missing route to pin _61848_/D in net _00568_.
+[WARNING EST-0026] Missing route to pin _52079_/Y in net _00568_.
+[WARNING EST-0026] Missing route to pin _61847_/D in net _00569_.
+[WARNING EST-0026] Missing route to pin _52076_/Y in net _00569_.
+[WARNING EST-0026] Missing route to pin _61846_/D in net _00570_.
+[WARNING EST-0026] Missing route to pin _52073_/X in net _00570_.
+[WARNING EST-0026] Missing route to pin _61845_/D in net _00571_.
+[WARNING EST-0026] Missing route to pin _52068_/Y in net _00571_.
+[WARNING EST-0026] Missing route to pin _61844_/D in net _00572_.
+[WARNING EST-0026] Missing route to pin _52064_/Y in net _00572_.
+[WARNING EST-0026] Missing route to pin _61842_/D in net _00574_.
+[WARNING EST-0026] Missing route to pin _52059_/X in net _00574_.
+[WARNING EST-0026] Missing route to pin _61841_/D in net _00575_.
+[WARNING EST-0026] Missing route to pin _52055_/Y in net _00575_.
+[WARNING EST-0026] Missing route to pin _61840_/D in net _00576_.
+[WARNING EST-0026] Missing route to pin _52052_/Y in net _00576_.
+[WARNING EST-0026] Missing route to pin _61839_/D in net _00577_.
+[WARNING EST-0026] Missing route to pin _52049_/X in net _00577_.
+[WARNING EST-0026] Missing route to pin _61836_/D in net _00579_.
+[WARNING EST-0026] Missing route to pin _52043_/Y in net _00579_.
+[WARNING EST-0026] Missing route to pin _61835_/D in net _00580_.
+[WARNING EST-0026] Missing route to pin _52041_/Y in net _00580_.
+[WARNING EST-0026] Missing route to pin _61833_/D in net _00582_.
+[WARNING EST-0026] Missing route to pin _52035_/Y in net _00582_.
+[WARNING EST-0026] Missing route to pin _61832_/D in net _00583_.
+[WARNING EST-0026] Missing route to pin _52032_/Y in net _00583_.
+[WARNING EST-0026] Missing route to pin _61831_/D in net _00584_.
+[WARNING EST-0026] Missing route to pin _52030_/Y in net _00584_.
+[WARNING EST-0026] Missing route to pin _61829_/D in net _00586_.
+[WARNING EST-0026] Missing route to pin _52024_/Y in net _00586_.
+[WARNING EST-0026] Missing route to pin _61828_/D in net _00587_.
+[WARNING EST-0026] Missing route to pin _52022_/Y in net _00587_.
+[WARNING EST-0026] Missing route to pin _61826_/D in net _00589_.
+[WARNING EST-0026] Missing route to pin _52016_/Y in net _00589_.
+[WARNING EST-0026] Missing route to pin _61824_/D in net _00591_.
+[WARNING EST-0026] Missing route to pin _52010_/Y in net _00591_.
+[WARNING EST-0026] Missing route to pin _61823_/D in net _00592_.
+[WARNING EST-0026] Missing route to pin _52007_/Y in net _00592_.
+[WARNING EST-0026] Missing route to pin _61822_/D in net _00593_.
+[WARNING EST-0026] Missing route to pin _52004_/Y in net _00593_.
+[WARNING EST-0026] Missing route to pin _61821_/D in net _00594_.
+[WARNING EST-0026] Missing route to pin _52000_/Y in net _00594_.
+[WARNING EST-0026] Missing route to pin _61819_/D in net _00596_.
+[WARNING EST-0026] Missing route to pin _51996_/Y in net _00596_.
+[WARNING EST-0026] Missing route to pin _61818_/D in net _00597_.
+[WARNING EST-0026] Missing route to pin _51990_/Y in net _00597_.
+[WARNING EST-0026] Missing route to pin _61817_/D in net _00598_.
+[WARNING EST-0026] Missing route to pin _51987_/Y in net _00598_.
+[WARNING EST-0026] Missing route to pin _61816_/D in net _00599_.
+[WARNING EST-0026] Missing route to pin _51984_/Y in net _00599_.
+[WARNING EST-0026] Missing route to pin _61815_/D in net _00600_.
+[WARNING EST-0026] Missing route to pin _51982_/Y in net _00600_.
+[WARNING EST-0026] Missing route to pin _61812_/D in net _00603_.
+[WARNING EST-0026] Missing route to pin _51974_/Y in net _00603_.
+[WARNING EST-0026] Missing route to pin _61811_/D in net _00604_.
+[WARNING EST-0026] Missing route to pin _51971_/Y in net _00604_.
+[WARNING EST-0026] Missing route to pin _61805_/D in net _00609_.
+[WARNING EST-0026] Missing route to pin _51957_/Y in net _00609_.
+[WARNING EST-0026] Missing route to pin _63879_/D in net _00611_.
+[WARNING EST-0026] Missing route to pin _51953_/X in net _00611_.
+[WARNING EST-0026] Missing route to pin _63713_/D in net _00618_.
+[WARNING EST-0026] Missing route to pin _51940_/X in net _00618_.
+[WARNING EST-0026] Missing route to pin _63712_/D in net _00620_.
+[WARNING EST-0026] Missing route to pin _51938_/X in net _00620_.
+[WARNING EST-0026] Missing route to pin _63915_/D in net _00629_.
+[WARNING EST-0026] Missing route to pin _51911_/Y in net _00629_.
+[WARNING EST-0026] Missing route to pin _63807_/D in net _00630_.
+[WARNING EST-0026] Missing route to pin _51907_/Y in net _00630_.
+[WARNING EST-0026] Missing route to pin _64014_/D in net _00631_.
+[WARNING EST-0026] Missing route to pin _51904_/Y in net _00631_.
+[WARNING EST-0026] Missing route to pin _62847_/D in net _00634_.
+[WARNING EST-0026] Missing route to pin _51890_/Y in net _00634_.
+[WARNING EST-0026] Missing route to pin _63992_/D in net _00635_.
+[WARNING EST-0026] Missing route to pin _51886_/Y in net _00635_.
+[WARNING EST-0026] Missing route to pin _64094_/D in net _00637_.
+[WARNING EST-0026] Missing route to pin _51882_/Y in net _00637_.
+[WARNING EST-0026] Missing route to pin _63587_/D in net _00638_.
+[WARNING EST-0026] Missing route to pin _51879_/X in net _00638_.
+[WARNING EST-0026] Missing route to pin _63914_/D in net _00641_.
+[WARNING EST-0026] Missing route to pin _51856_/Y in net _00641_.
+[WARNING EST-0026] Missing route to pin _63913_/D in net _00643_.
+[WARNING EST-0026] Missing route to pin _51845_/Y in net _00643_.
+[WARNING EST-0026] Missing route to pin _63808_/D in net _00644_.
+[WARNING EST-0026] Missing route to pin _51841_/Y in net _00644_.
+[WARNING EST-0026] Missing route to pin _63811_/D in net _00645_.
+[WARNING EST-0026] Missing route to pin _51839_/Y in net _00645_.
+[WARNING EST-0026] Missing route to pin _63809_/D in net _00647_.
+[WARNING EST-0026] Missing route to pin _51833_/X in net _00647_.
+[WARNING EST-0026] Missing route to pin _63903_/D in net _00649_.
+[WARNING EST-0026] Missing route to pin _51829_/Y in net _00649_.
+[WARNING EST-0026] Missing route to pin _63904_/D in net _00650_.
+[WARNING EST-0026] Missing route to pin _51825_/Y in net _00650_.
+[WARNING EST-0026] Missing route to pin _63901_/D in net _00651_.
+[WARNING EST-0026] Missing route to pin _51820_/Y in net _00651_.
+[WARNING EST-0026] Missing route to pin _63902_/D in net _00652_.
+[WARNING EST-0026] Missing route to pin _51816_/Y in net _00652_.
+[WARNING EST-0026] Missing route to pin _63891_/D in net _00653_.
+[WARNING EST-0026] Missing route to pin _51811_/Y in net _00653_.
+[WARNING EST-0026] Missing route to pin _63892_/D in net _00654_.
+[WARNING EST-0026] Missing route to pin _51807_/Y in net _00654_.
+[WARNING EST-0026] Missing route to pin _63895_/D in net _00657_.
+[WARNING EST-0026] Missing route to pin _51794_/Y in net _00657_.
+[WARNING EST-0026] Missing route to pin _63893_/D in net _00659_.
+[WARNING EST-0026] Missing route to pin _51785_/Y in net _00659_.
+[WARNING EST-0026] Missing route to pin _63894_/D in net _00660_.
+[WARNING EST-0026] Missing route to pin _51781_/Y in net _00660_.
+[WARNING EST-0026] Missing route to pin _63897_/D in net _00661_.
+[WARNING EST-0026] Missing route to pin _51776_/Y in net _00661_.
+[WARNING EST-0026] Missing route to pin _63823_/D in net _00663_.
+[WARNING EST-0026] Missing route to pin _51767_/Y in net _00663_.
+[WARNING EST-0026] Missing route to pin _63822_/D in net _00666_.
+[WARNING EST-0026] Missing route to pin _51761_/Y in net _00666_.
+[WARNING EST-0026] Missing route to pin _63827_/D in net _00667_.
+[WARNING EST-0026] Missing route to pin _51759_/Y in net _00667_.
+[WARNING EST-0026] Missing route to pin _63828_/D in net _00668_.
+[WARNING EST-0026] Missing route to pin _51756_/Y in net _00668_.
+[WARNING EST-0026] Missing route to pin _63848_/D in net _00672_.
+[WARNING EST-0026] Missing route to pin _51748_/X in net _00672_.
+[WARNING EST-0026] Missing route to pin _63846_/D in net _00674_.
+[WARNING EST-0026] Missing route to pin _51743_/Y in net _00674_.
+[WARNING EST-0026] Missing route to pin _63852_/D in net _00676_.
+[WARNING EST-0026] Missing route to pin _51739_/Y in net _00676_.
+[WARNING EST-0026] Missing route to pin _63850_/D in net _00678_.
+[WARNING EST-0026] Missing route to pin _51733_/Y in net _00678_.
+[WARNING EST-0026] Missing route to pin _63840_/D in net _00680_.
+[WARNING EST-0026] Missing route to pin _51729_/Y in net _00680_.
+[WARNING EST-0026] Missing route to pin _63838_/D in net _00682_.
+[WARNING EST-0026] Missing route to pin _51725_/X in net _00682_.
+[WARNING EST-0026] Missing route to pin _63843_/D in net _00683_.
+[WARNING EST-0026] Missing route to pin _51722_/X in net _00683_.
+[WARNING EST-0026] Missing route to pin _63844_/D in net _00684_.
+[WARNING EST-0026] Missing route to pin _51720_/Y in net _00684_.
+[WARNING EST-0026] Missing route to pin _63841_/D in net _00685_.
+[WARNING EST-0026] Missing route to pin _51718_/X in net _00685_.
+[WARNING EST-0026] Missing route to pin _63842_/D in net _00686_.
+[WARNING EST-0026] Missing route to pin _51716_/X in net _00686_.
+[WARNING EST-0026] Missing route to pin _63899_/D in net _00687_.
+[WARNING EST-0026] Missing route to pin _51714_/Y in net _00687_.
+[WARNING EST-0026] Missing route to pin _63900_/D in net _00688_.
+[WARNING EST-0026] Missing route to pin _51709_/Y in net _00688_.
+[WARNING EST-0026] Missing route to pin _63835_/D in net _00689_.
+[WARNING EST-0026] Missing route to pin _51705_/Y in net _00689_.
+[WARNING EST-0026] Missing route to pin _63833_/D in net _00691_.
+[WARNING EST-0026] Missing route to pin _51700_/Y in net _00691_.
+[WARNING EST-0026] Missing route to pin _63772_/D in net _00693_.
+[WARNING EST-0026] Missing route to pin _51696_/Y in net _00693_.
+[WARNING EST-0026] Missing route to pin _63771_/D in net _00696_.
+[WARNING EST-0026] Missing route to pin _51689_/X in net _00696_.
+[WARNING EST-0026] Missing route to pin _63776_/D in net _00697_.
+[WARNING EST-0026] Missing route to pin _51687_/Y in net _00697_.
+[WARNING EST-0026] Missing route to pin _63777_/D in net _00698_.
+[WARNING EST-0026] Missing route to pin _51685_/X in net _00698_.
+[WARNING EST-0026] Missing route to pin _63762_/D in net _00703_.
+[WARNING EST-0026] Missing route to pin _51674_/X in net _00703_.
+[WARNING EST-0026] Missing route to pin _63763_/D in net _00704_.
+[WARNING EST-0026] Missing route to pin _51672_/Y in net _00704_.
+[WARNING EST-0026] Missing route to pin _63768_/D in net _00705_.
+[WARNING EST-0026] Missing route to pin _51670_/Y in net _00705_.
+[WARNING EST-0026] Missing route to pin _63769_/D in net _00706_.
+[WARNING EST-0026] Missing route to pin _51667_/Y in net _00706_.
+[WARNING EST-0026] Missing route to pin _63766_/D in net _00707_.
+[WARNING EST-0026] Missing route to pin _51665_/X in net _00707_.
+[WARNING EST-0026] Missing route to pin _63767_/D in net _00708_.
+[WARNING EST-0026] Missing route to pin _51663_/Y in net _00708_.
+[WARNING EST-0026] Missing route to pin _63727_/D in net _00711_.
+[WARNING EST-0026] Missing route to pin _51653_/Y in net _00711_.
+[WARNING EST-0026] Missing route to pin _63734_/D in net _00714_.
+[WARNING EST-0026] Missing route to pin _51641_/Y in net _00714_.
+[WARNING EST-0026] Missing route to pin _63732_/D in net _00716_.
+[WARNING EST-0026] Missing route to pin _51633_/Y in net _00716_.
+[WARNING EST-0026] Missing route to pin _63721_/D in net _00717_.
+[WARNING EST-0026] Missing route to pin _51630_/Y in net _00717_.
+[WARNING EST-0026] Missing route to pin _63719_/D in net _00719_.
+[WARNING EST-0026] Missing route to pin _51622_/Y in net _00719_.
+[WARNING EST-0026] Missing route to pin _63720_/D in net _00720_.
+[WARNING EST-0026] Missing route to pin _51619_/Y in net _00720_.
+[WARNING EST-0026] Missing route to pin _63725_/D in net _00721_.
+[WARNING EST-0026] Missing route to pin _51616_/Y in net _00721_.
+[WARNING EST-0026] Missing route to pin _63726_/D in net _00722_.
+[WARNING EST-0026] Missing route to pin _51612_/Y in net _00722_.
+[WARNING EST-0026] Missing route to pin _63724_/D in net _00724_.
+[WARNING EST-0026] Missing route to pin _51605_/Y in net _00724_.
+[WARNING EST-0026] Missing route to pin _63746_/D in net _00726_.
+[WARNING EST-0026] Missing route to pin _51598_/Y in net _00726_.
+[WARNING EST-0026] Missing route to pin _63743_/D in net _00727_.
+[WARNING EST-0026] Missing route to pin _51595_/Y in net _00727_.
+[WARNING EST-0026] Missing route to pin _63750_/D in net _00729_.
+[WARNING EST-0026] Missing route to pin _51587_/Y in net _00729_.
+[WARNING EST-0026] Missing route to pin _63751_/D in net _00730_.
+[WARNING EST-0026] Missing route to pin _51584_/Y in net _00730_.
+[WARNING EST-0026] Missing route to pin _63748_/D in net _00731_.
+[WARNING EST-0026] Missing route to pin _51582_/Y in net _00731_.
+[WARNING EST-0026] Missing route to pin _63738_/D in net _00734_.
+[WARNING EST-0026] Missing route to pin _51571_/Y in net _00734_.
+[WARNING EST-0026] Missing route to pin _63741_/D in net _00737_.
+[WARNING EST-0026] Missing route to pin _51559_/Y in net _00737_.
+[WARNING EST-0026] Missing route to pin _63742_/D in net _00738_.
+[WARNING EST-0026] Missing route to pin _51554_/X in net _00738_.
+[WARNING EST-0026] Missing route to pin _63740_/D in net _00740_.
+[WARNING EST-0026] Missing route to pin _51548_/Y in net _00740_.
+[WARNING EST-0026] Missing route to pin _63075_/D in net _00741_.
+[WARNING EST-0026] Missing route to pin _51544_/X in net _00741_.
+[WARNING EST-0026] Missing route to pin place2943/A in net _00744_.
+[WARNING EST-0026] Missing route to pin _51535_/Y in net _00744_.
+[WARNING EST-0026] Missing route to pin place2944/A in net _00745_.
+[WARNING EST-0026] Missing route to pin _51531_/Y in net _00745_.
+[WARNING EST-0026] Missing route to pin _63649_/D in net _00746_.
+[WARNING EST-0026] Missing route to pin _51527_/Y in net _00746_.
+[WARNING EST-0026] Missing route to pin _63639_/D in net _00747_.
+[WARNING EST-0026] Missing route to pin _51522_/X in net _00747_.
+[WARNING EST-0026] Missing route to pin _63640_/D in net _00748_.
+[WARNING EST-0026] Missing route to pin _51521_/Y in net _00748_.
+[WARNING EST-0026] Missing route to pin _63637_/D in net _00749_.
+[WARNING EST-0026] Missing route to pin _51519_/Y in net _00749_.
+[WARNING EST-0026] Missing route to pin _63638_/D in net _00750_.
+[WARNING EST-0026] Missing route to pin _51487_/X in net _00750_.
+[WARNING EST-0026] Missing route to pin _63650_/D in net _00752_.
+[WARNING EST-0026] Missing route to pin _51482_/Y in net _00752_.
+[WARNING EST-0026] Missing route to pin _63206_/D in net _00754_.
+[WARNING EST-0026] Missing route to pin _51476_/Y in net _00754_.
+[WARNING EST-0026] Missing route to pin _62844_/D in net _00755_.
+[WARNING EST-0026] Missing route to pin _51473_/Y in net _00755_.
+[WARNING EST-0026] Missing route to pin _61702_/D in net _00760_.
+[WARNING EST-0026] Missing route to pin _51456_/Y in net _00760_.
+[WARNING EST-0026] Missing route to pin _61699_/D in net _00763_.
+[WARNING EST-0026] Missing route to pin _51446_/Y in net _00763_.
+[WARNING EST-0026] Missing route to pin _61692_/D in net _00770_.
+[WARNING EST-0026] Missing route to pin _51423_/Y in net _00770_.
+[WARNING EST-0026] Missing route to pin _61689_/D in net _00773_.
+[WARNING EST-0026] Missing route to pin _51413_/Y in net _00773_.
+[WARNING EST-0026] Missing route to pin _61688_/D in net _00774_.
+[WARNING EST-0026] Missing route to pin _51410_/Y in net _00774_.
+[WARNING EST-0026] Missing route to pin _61683_/D in net _00779_.
+[WARNING EST-0026] Missing route to pin _51393_/Y in net _00779_.
+[WARNING EST-0026] Missing route to pin _63285_/D in net _00782_.
+[WARNING EST-0026] Missing route to pin _51375_/Y in net _00782_.
+[WARNING EST-0026] Missing route to pin _62996_/D in net _00783_.
+[WARNING EST-0026] Missing route to pin _51373_/X in net _00783_.
+[WARNING EST-0026] Missing route to pin _63173_/D in net _00784_.
+[WARNING EST-0026] Missing route to pin _51371_/Y in net _00784_.
+[WARNING EST-0026] Missing route to pin _62949_/D in net _00785_.
+[WARNING EST-0026] Missing route to pin _51368_/Y in net _00785_.
+[WARNING EST-0026] Missing route to pin _62896_/D in net _00787_.
+[WARNING EST-0026] Missing route to pin _51364_/Y in net _00787_.
+[WARNING EST-0026] Missing route to pin _62810_/D in net _00790_.
+[WARNING EST-0026] Missing route to pin _51357_/Y in net _00790_.
+[WARNING EST-0026] Missing route to pin _62824_/D in net _00791_.
+[WARNING EST-0026] Missing route to pin _51355_/X in net _00791_.
+[WARNING EST-0026] Missing route to pin _62839_/D in net _00792_.
+[WARNING EST-0026] Missing route to pin _51353_/Y in net _00792_.
+[WARNING EST-0026] Missing route to pin _62853_/D in net _00793_.
+[WARNING EST-0026] Missing route to pin _51346_/Y in net _00793_.
+[WARNING EST-0026] Missing route to pin _63076_/D in net _00794_.
+[WARNING EST-0026] Missing route to pin _51342_/Y in net _00794_.
+[WARNING EST-0026] Missing route to pin _62821_/D in net _00800_.
+[WARNING EST-0026] Missing route to pin _51327_/Y in net _00800_.
+[WARNING EST-0026] Missing route to pin _62737_/D in net _00803_.
+[WARNING EST-0026] Missing route to pin _51318_/X in net _00803_.
+[WARNING EST-0026] Missing route to pin _62743_/D in net _00806_.
+[WARNING EST-0026] Missing route to pin _51310_/X in net _00806_.
+[WARNING EST-0026] Missing route to pin _62888_/D in net _00807_.
+[WARNING EST-0026] Missing route to pin _51309_/Y in net _00807_.
+[WARNING EST-0026] Missing route to pin _62451_/D in net _00808_.
+[WARNING EST-0026] Missing route to pin _51307_/Y in net _00808_.
+[WARNING EST-0026] Missing route to pin _62864_/D in net _00809_.
+[WARNING EST-0026] Missing route to pin _51289_/X in net _00809_.
+[WARNING EST-0026] Missing route to pin _62784_/D in net _00811_.
+[WARNING EST-0026] Missing route to pin _51285_/X in net _00811_.
+[WARNING EST-0026] Missing route to pin _62719_/D in net _00812_.
+[WARNING EST-0026] Missing route to pin _51283_/Y in net _00812_.
+[WARNING EST-0026] Missing route to pin _63152_/D in net _00815_.
+[WARNING EST-0026] Missing route to pin _51274_/Y in net _00815_.
+[WARNING EST-0026] Missing route to pin _62869_/D in net _00817_.
+[WARNING EST-0026] Missing route to pin _51267_/Y in net _00817_.
+[WARNING EST-0026] Missing route to pin _62800_/D in net _00818_.
+[WARNING EST-0026] Missing route to pin _51265_/Y in net _00818_.
+[WARNING EST-0026] Missing route to pin _62825_/D in net _00820_.
+[WARNING EST-0026] Missing route to pin _51261_/Y in net _00820_.
+[WARNING EST-0026] Missing route to pin _62840_/D in net _00821_.
+[WARNING EST-0026] Missing route to pin _51259_/Y in net _00821_.
+[WARNING EST-0026] Missing route to pin _62820_/D in net _00823_.
+[WARNING EST-0026] Missing route to pin _51248_/X in net _00823_.
+[WARNING EST-0026] Missing route to pin _62591_/D in net _00824_.
+[WARNING EST-0026] Missing route to pin _51245_/Y in net _00824_.
+[WARNING EST-0026] Missing route to pin _62752_/D in net _00825_.
+[WARNING EST-0026] Missing route to pin _51242_/Y in net _00825_.
+[WARNING EST-0026] Missing route to pin _62956_/D in net _00826_.
+[WARNING EST-0026] Missing route to pin _51240_/Y in net _00826_.
+[WARNING EST-0026] Missing route to pin _62449_/D in net _00829_.
+[WARNING EST-0026] Missing route to pin _51233_/X in net _00829_.
+[WARNING EST-0026] Missing route to pin _62464_/D in net _00831_.
+[WARNING EST-0026] Missing route to pin _51226_/Y in net _00831_.
+[WARNING EST-0026] Missing route to pin _62693_/D in net _00832_.
+[WARNING EST-0026] Missing route to pin _51223_/X in net _00832_.
+[WARNING EST-0026] Missing route to pin _62688_/D in net _00833_.
+[WARNING EST-0026] Missing route to pin _51220_/X in net _00833_.
+[WARNING EST-0026] Missing route to pin _62682_/D in net _00834_.
+[WARNING EST-0026] Missing route to pin _51217_/Y in net _00834_.
+[WARNING EST-0026] Missing route to pin _62676_/D in net _00835_.
+[WARNING EST-0026] Missing route to pin _51212_/Y in net _00835_.
+[WARNING EST-0026] Missing route to pin _63175_/D in net _00840_.
+[WARNING EST-0026] Missing route to pin _51191_/X in net _00840_.
+[WARNING EST-0026] Missing route to pin _63517_/D in net _00843_.
+[WARNING EST-0026] Missing route to pin _51184_/Y in net _00843_.
+[WARNING EST-0026] Missing route to pin _62972_/D in net _00845_.
+[WARNING EST-0026] Missing route to pin _51176_/Y in net _00845_.
+[WARNING EST-0026] Missing route to pin _62487_/D in net _00849_.
+[WARNING EST-0026] Missing route to pin _51166_/Y in net _00849_.
+[WARNING EST-0026] Missing route to pin _63264_/D in net _00852_.
+[WARNING EST-0026] Missing route to pin _51156_/X in net _00852_.
+[WARNING EST-0026] Missing route to pin _62495_/D in net _00853_.
+[WARNING EST-0026] Missing route to pin _51151_/Y in net _00853_.
+[WARNING EST-0026] Missing route to pin _61678_/D in net _00857_.
+[WARNING EST-0026] Missing route to pin _51141_/Y in net _00857_.
+[WARNING EST-0026] Missing route to pin _62467_/D in net _00858_.
+[WARNING EST-0026] Missing route to pin _51139_/Y in net _00858_.
+[WARNING EST-0026] Missing route to pin _61677_/D in net _00860_.
+[WARNING EST-0026] Missing route to pin _51133_/Y in net _00860_.
+[WARNING EST-0026] Missing route to pin _62939_/D in net _00861_.
+[WARNING EST-0026] Missing route to pin _51131_/Y in net _00861_.
+[WARNING EST-0026] Missing route to pin _62849_/D in net _00862_.
+[WARNING EST-0026] Missing route to pin _51129_/Y in net _00862_.
+[WARNING EST-0026] Missing route to pin _62726_/D in net _00864_.
+[WARNING EST-0026] Missing route to pin _51122_/X in net _00864_.
+[WARNING EST-0026] Missing route to pin _62775_/D in net _00865_.
+[WARNING EST-0026] Missing route to pin _51119_/Y in net _00865_.
+[WARNING EST-0026] Missing route to pin _62758_/D in net _00871_.
+[WARNING EST-0026] Missing route to pin _51104_/X in net _00871_.
+[WARNING EST-0026] Missing route to pin _62903_/D in net _00873_.
+[WARNING EST-0026] Missing route to pin _51099_/Y in net _00873_.
+[WARNING EST-0026] Missing route to pin _63085_/D in net _00874_.
+[WARNING EST-0026] Missing route to pin _51097_/Y in net _00874_.
+[WARNING EST-0026] Missing route to pin _63597_/D in net _00875_.
+[WARNING EST-0026] Missing route to pin _51095_/Y in net _00875_.
+[WARNING EST-0026] Missing route to pin _63237_/D in net _00877_.
+[WARNING EST-0026] Missing route to pin _51090_/Y in net _00877_.
+[WARNING EST-0026] Missing route to pin _63503_/D in net _00881_.
+[WARNING EST-0026] Missing route to pin _51082_/X in net _00881_.
+[WARNING EST-0026] Missing route to pin _63227_/D in net _00883_.
+[WARNING EST-0026] Missing route to pin _51077_/Y in net _00883_.
+[WARNING EST-0026] Missing route to pin _63017_/D in net _00884_.
+[WARNING EST-0026] Missing route to pin _51075_/Y in net _00884_.
+[WARNING EST-0026] Missing route to pin _62509_/D in net _00885_.
+[WARNING EST-0026] Missing route to pin _51073_/Y in net _00885_.
+[WARNING EST-0026] Missing route to pin _63016_/D in net _00886_.
+[WARNING EST-0026] Missing route to pin _51071_/X in net _00886_.
+[WARNING EST-0026] Missing route to pin _62959_/D in net _00888_.
+[WARNING EST-0026] Missing route to pin _51064_/Y in net _00888_.
+[WARNING EST-0026] Missing route to pin _62475_/D in net _00890_.
+[WARNING EST-0026] message limit (1000) reached. This message will no longer print.
+[INFO GRT-0102] Start extra iteration 4/100
+[INFO GRT-0102] Start extra iteration 5/100
+[INFO GRT-0102] Start extra iteration 6/100
+[INFO GRT-0102] Start extra iteration 7/100
+[INFO GRT-0102] Start extra iteration 8/100
+[INFO GRT-0197] Via related to pin nodes: 239927
+[INFO GRT-0198] Via related Steiner nodes: 7707
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 323396
+[INFO GRT-0112] Final usage 3D: 1253024
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1            109681         58921           53.72%             0 /  0 /  0
+met2            177244         90562           51.09%             0 /  0 /  0
+met3            166326         67395           40.52%             0 /  0 /  0
+met4            149942         55452           36.98%             0 /  0 /  0
+met5             37384         10506           28.10%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           640577        282836           44.15%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 2698969 um
+[INFO GRT-0014] Routed nets: 36261
+[INFO GRT-0303] Global routing runtime = 00:00:08
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 511 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 511 out of 511 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.277 |      -34.6 |     -137.0 |    511 | _62760_/D
+     543* |       0 |      26 |        2 |      0 |     4 |    +0.0% |    0.017 |        0.0 |        0.0 |    511 | _62744_/D
+    final |       0 |      26 |        2 |      0 |     4 |    +0.0% |    0.017 |        0.0 |        0.0 |      0 | _62744_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 2 buffers.
+[INFO RSZ-0051] Resized 26 instances: 26 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 4 instances.
+[INFO RSZ-0033] No hold violations found.
+[INFO DPL-0006] Core area: 1030001.60 um^2, Instances area: 307174.60 um^2, Utilization: 29.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   36277
+Diamond Move Success:          36277 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement         22.9 u
+average displacement        0.0 u
+max displacement            3.2 u
+original HPWL         1540256.0 u
+legalized HPWL        1540269.4 u
+delta HPWL                    0 %
+
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 41397
+[INFO GRT-0019] Found 336 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 214
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal     309418        109681          64.55%
+met2       Vertical       301344        177244          41.18%
+met3       Horizontal     211852        166326          21.49%
+met4       Vertical       149942        149942          0.00%
+met5       Horizontal      37384         37384          0.00%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0102] Start extra iteration 1/100
+[INFO GRT-0102] Start extra iteration 2/100
+[INFO GRT-0102] Start extra iteration 3/100
+[INFO GRT-0102] Start extra iteration 4/100
+[INFO GRT-0102] Start extra iteration 5/100
+[INFO GRT-0102] Start extra iteration 6/100
+[INFO GRT-0102] Start extra iteration 7/100
+[INFO GRT-0197] Via related to pin nodes: 239847
+[INFO GRT-0198] Via related Steiner nodes: 7605
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 323189
+[INFO GRT-0112] Final usage 3D: 1252303
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1            109681         59052           53.84%             0 /  0 /  0
+met2            177244         90607           51.12%             0 /  0 /  0
+met3            166326         66967           40.26%             0 /  0 /  0
+met4            149942         55514           37.02%             0 /  0 /  0
+met5             37384         10596           28.34%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           640577        282736           44.14%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 2698134 um
+[INFO GRT-0014] Routed nets: 36263
+[INFO GRT-0303] Global routing runtime = 00:00:07
+WORST_SLACK_GRTREP1 -0.022
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 4 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.022 |      -11.9 |       -0.0 |      4 | _62744_/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.022 |      -11.9 |       -0.0 |      4 | _62744_/D
+       5* |       0 |       1 |        0 |      0 |     0 |    +0.0% |    0.004 |      -11.8 |        0.0 |      4 | _62754_/D
+    final |       0 |       1 |        0 |      0 |     0 |    +0.0% |    0.004 |      -11.8 |        0.0 |      1 | _62754_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0033] No hold violations found.
+[INFO DPL-0006] Core area: 1030001.60 um^2, Instances area: 307174.60 um^2, Utilization: 29.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   36277
+Diamond Move Success:          36277 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL         1540269.4 u
+legalized HPWL        1540269.4 u
+delta HPWL                    0 %
+
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 41397
+[INFO GRT-0019] Found 336 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 214
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal     309418        109681          64.55%
+met2       Vertical       301344        177244          41.18%
+met3       Horizontal     211852        166326          21.49%
+met4       Vertical       149942        149942          0.00%
+met5       Horizontal      37384         37384          0.00%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0102] Start extra iteration 1/100
+[INFO GRT-0102] Start extra iteration 2/100
+[INFO GRT-0102] Start extra iteration 3/100
+[INFO GRT-0102] Start extra iteration 4/100
+[INFO GRT-0102] Start extra iteration 5/100
+[INFO GRT-0102] Start extra iteration 6/100
+[INFO GRT-0102] Start extra iteration 7/100
+[INFO GRT-0197] Via related to pin nodes: 239847
+[INFO GRT-0198] Via related Steiner nodes: 7605
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 323189
+[INFO GRT-0112] Final usage 3D: 1252303
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1            109681         59052           53.84%             0 /  0 /  0
+met2            177244         90607           51.12%             0 /  0 /  0
+met3            166326         66967           40.26%             0 /  0 /  0
+met4            149942         55514           37.02%             0 /  0 /  0
+met5             37384         10596           28.34%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           640577        282736           44.14%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 2698134 um
+[INFO GRT-0014] Routed nets: 36263
+[INFO GRT-0303] Global routing runtime = 00:00:09
+=== register to register, global-route parasitics after repair ===
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _63643_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _62754_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout      Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------------
+                            0.000    0.000   clock clk (rise edge)
+                            1.449    1.449   clock network delay (propagated)
+                   0.055    0.000    1.449 ^ _63643_/CLK (sky130_fd_sc_hd__dfrtp_1)
+     2    0.008    0.061    0.383    1.832 v _63643_/Q (sky130_fd_sc_hd__dfrtp_1)
+     8    0.037    0.222    0.552    2.385 v _37537_/X (sky130_fd_sc_hd__or3b_1)
+     3    0.014    0.278    0.332    2.717 ^ _45470_/Y (sky130_fd_sc_hd__nor3_2)
+     3    0.017    0.233    0.278    2.995 v _47637_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.012    0.108    0.452    3.448 v _47681_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.014    0.118    0.432    3.880 v _47703_/X (sky130_fd_sc_hd__maj3_1)
+     3    0.017    0.133    0.449    4.329 v _47725_/X (sky130_fd_sc_hd__maj3_1)
+     3    0.019    0.426    0.418    4.747 ^ _47770_/Y (sky130_fd_sc_hd__o211ai_1)
+     2    0.010    0.151    0.217    4.964 v _47803_/Y (sky130_fd_sc_hd__a311oi_1)
+     1    0.005    0.327    0.385    5.349 ^ _47936_/Y (sky130_fd_sc_hd__o41ai_1)
+     3    0.033    0.102    0.233    5.581 ^ place3656/X (sky130_fd_sc_hd__buf_4)
+     3    0.013    0.138    0.134    5.715 v _47970_/Y (sky130_fd_sc_hd__a211oi_1)
+     2    0.008    0.502    0.480    6.195 ^ _48003_/Y (sky130_fd_sc_hd__o311ai_0)
+     2    0.006    0.135    0.201    6.395 v _48036_/Y (sky130_fd_sc_hd__a311oi_1)
+     2    0.011    0.413    0.396    6.791 ^ _48058_/Y (sky130_fd_sc_hd__o31ai_1)
+     2    0.011    0.108    0.240    7.031 ^ _48158_/X (sky130_fd_sc_hd__a211o_1)
+     3    0.012    0.205    0.158    7.189 v _48181_/Y (sky130_fd_sc_hd__a31oi_1)
+     3    0.015    0.362    0.387    7.576 ^ _48203_/Y (sky130_fd_sc_hd__o211ai_1)
+     2    0.011    0.189    0.218    7.794 v _48236_/Y (sky130_fd_sc_hd__a311oi_1)
+     2    0.009    0.388    0.407    8.200 ^ _48303_/Y (sky130_fd_sc_hd__o311ai_1)
+     2    0.010    0.235    0.242    8.442 v _48425_/Y (sky130_fd_sc_hd__a41oi_1)
+     2    0.009    0.096    0.456    8.898 v _48447_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.010    0.066    0.218    9.115 v _48458_/X (sky130_fd_sc_hd__o21a_1)
+     2    0.016    0.131    0.432    9.547 v _52025_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.011    0.251    0.263    9.809 ^ _52502_/Y (sky130_fd_sc_hd__a21oi_1)
+     2    0.012    0.132    0.283   10.093 ^ _52736_/X (sky130_fd_sc_hd__maj3_1)
+     4    0.035    0.754    0.368   10.460 ^ _52824_/Y (sky130_fd_sc_hd__xnor2_1)
+     2    0.008    0.194    0.255   10.716 ^ _52847_/X (sky130_fd_sc_hd__xor2_1)
+     3    0.009    0.109    0.098   10.814 v _52858_/Y (sky130_fd_sc_hd__a21oi_1)
+     3    0.013    0.401    0.367   11.181 ^ _53170_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.010    0.096    0.220   11.401 ^ _53370_/X (sky130_fd_sc_hd__a21o_1)
+     4    0.016    0.232    0.159   11.560 v _53392_/Y (sky130_fd_sc_hd__a311oi_2)
+     1    0.009    0.153    0.224   11.784 ^ _53526_/Y (sky130_fd_sc_hd__o21ai_2)
+    49    0.196    0.386    0.354   12.138 ^ place3248/X (sky130_fd_sc_hd__buf_6)
+     3    0.011    0.229    0.249   12.387 v _53997_/Y (sky130_fd_sc_hd__nand3_1)
+     3    0.014    0.079    0.287   12.674 v _54001_/X (sky130_fd_sc_hd__a21o_1)
+     2    0.012    0.458    0.465   13.139 ^ _54792_/Y (sky130_fd_sc_hd__a311oi_1)
+     1    0.007    0.182    0.221   13.360 v _55327_/Y (sky130_fd_sc_hd__o21ai_0)
+     3    0.018    0.414    0.461   13.821 ^ _55338_/Y (sky130_fd_sc_hd__a311oi_2)
+     2    0.008    0.171    0.152   13.973 v _55353_/Y (sky130_fd_sc_hd__nand2_1)
+     1    0.007    0.216    0.289   14.262 ^ _55425_/Y (sky130_fd_sc_hd__a32oi_1)
+     1    0.004    0.110    0.133   14.395 v _55426_/Y (sky130_fd_sc_hd__o211ai_1)
+     1    0.012    0.483    0.454   14.850 ^ _55428_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.013    0.115    0.153   15.002 v _55485_/Y (sky130_fd_sc_hd__a221oi_4)
+    32    0.181    0.103    0.211   15.214 v place3165/X (sky130_fd_sc_hd__buf_12)
+     1    0.006    0.216    0.254   15.468 ^ _44219_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.072    0.677    0.622   16.090 ^ _44255_/X (sky130_fd_sc_hd__a31o_1)
+     1    0.014    0.193    0.274   16.364 v _44274_/Y (sky130_fd_sc_hd__a211oi_1)
+     5    0.029    0.203    0.235   16.600 ^ _44275_/Y (sky130_fd_sc_hd__nor2_4)
+     2    0.006    0.185    0.166   16.766 v _47233_/Y (sky130_fd_sc_hd__o221ai_1)
+     2    0.008    0.078    0.424   17.189 v _47265_/X (sky130_fd_sc_hd__a221o_1)
+     2    0.007    0.051    0.181   17.371 v _47266_/X (sky130_fd_sc_hd__a21o_1)
+     3    0.059    0.298    0.517   17.887 v _48575_/X (sky130_fd_sc_hd__mux2_1)
+     1    0.005    0.067    0.415   18.303 v _49365_/X (sky130_fd_sc_hd__mux2_1)
+                   0.067    0.000   18.303 v _62754_/D (sky130_fd_sc_hd__dfrtp_1)
+                                    18.303   data arrival time
+
+                           17.000   17.000   clock clk (rise edge)
+                            1.427   18.427   clock network delay (propagated)
+                            0.000   18.427   clock reconvergence pessimism
+                                    18.427 ^ _62754_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                           -0.121   18.307   library setup time
+                                    18.307   data required time
+---------------------------------------------------------------------------------
+                                    18.307   data required time
+                                   -18.303   data arrival time
+---------------------------------------------------------------------------------
+                                     0.004   slack (MET)
+
+
+WORST_SLACK_GRTREP 0.004
+WORST_HOLD_GRTREP 0.493
+TNS_GRTREP 0.000
+Design area 307175 um^2 30% utilization.
+[INFO DRT-0149] Reading tech and libs.
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
+
+Units:                1000
+Number of layers:     13
+Number of macros:     441
+Number of vias:       29
+Number of viarulegen: 25
+
+[INFO DRT-0150] Reading design.
+[WARNING DRT-0120] Large net net699 has 193 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net700 has 194 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net701 has 176 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net702 has 167 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net703 has 214 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net704 has 161 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net705 has 213 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net707 has 204 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net708 has 189 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net2908 has 144 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net2909 has 135 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net2911 has 106 pins which may impact routing performance. Consider optimization.
+[WARNING DRT-0120] Large net net5038 has 106 pins which may impact routing performance. Consider optimization.
+
+Design:                   cv32e40p_core
+Die area:                 ( 0 0 ) ( 1019590 1019590 )
+Number of track patterns: 12
+Number of DEF vias:       0
+Number of components:     49964
+Number of terminals:      537
+Number of snets:          2
+Number of nets:           36331
+
+[INFO DRT-0167] List of default vias:
+  Layer via
+    default via: M1M2_PR
+  Layer via2
+    default via: M2M3_PR
+  Layer via3
+    default via: M3M4_PR
+  Layer via4
+    default via: M4M5_PR
+[INFO DRT-0162] Library cell analysis.
+[INFO DRT-0163] Instance analysis.
+[INFO DRT-0164] Number of unique instances = 305.
+[INFO DRT-0168] Init region query.
+[INFO DRT-0024]   Complete FR_MASTERSLICE.
+[INFO DRT-0024]   Complete Fr_VIA.
+[INFO DRT-0024]   Complete li1.
+[INFO DRT-0024]   Complete mcon.
+[INFO DRT-0024]   Complete met1.
+[INFO DRT-0024]   Complete via.
+[INFO DRT-0024]   Complete met2.
+[INFO DRT-0024]   Complete via2.
+[INFO DRT-0024]   Complete met3.
+[INFO DRT-0024]   Complete via3.
+[INFO DRT-0024]   Complete met4.
+[INFO DRT-0024]   Complete via4.
+[INFO DRT-0024]   Complete met5.
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
+[INFO DRT-0033] FR_VIA shape region query size = 0.
+[INFO DRT-0033] li1 shape region query size = 979149.
+[INFO DRT-0033] mcon shape region query size = 516246.
+[INFO DRT-0033] met1 shape region query size = 146385.
+[INFO DRT-0033] via shape region query size = 34595.
+[INFO DRT-0033] met2 shape region query size = 21224.
+[INFO DRT-0033] via2 shape region query size = 27676.
+[INFO DRT-0033] met3 shape region query size = 20827.
+[INFO DRT-0033] via3 shape region query size = 27676.
+[INFO DRT-0033] met4 shape region query size = 7641.
+[INFO DRT-0033] via4 shape region query size = 685.
+[INFO DRT-0033] met5 shape region query size = 722.
+[INFO DRT-0165] Start pin access.
+[INFO DRT-0076]   Complete 1000 pins.
+[INFO DRT-0076]   Complete 2000 pins.
+[INFO DRT-0078]   Complete 2514 pins.
+[INFO DRT-0079]   Complete 100 unique inst patterns.
+[INFO DRT-0079]   Complete 200 unique inst patterns.
+[INFO DRT-0079]   Complete 300 unique inst patterns.
+[INFO DRT-0081]   Complete 305 unique inst patterns.
+[INFO DRT-0082]   Complete 10000 groups.
+[INFO DRT-0082]   Complete 20000 groups.
+[INFO DRT-0084]   Complete 24006 groups.
+#scanned instances     = 49964
+#unique  instances     = 305
+#stdCellGenAp          = 10116
+#stdCellValidPlanarAp  = 118
+#stdCellValidViaAp     = 7431
+#stdCellPinNoAp        = 0
+#stdCellPinCnt         = 131750
+#instTermValidViaApCnt = 0
+#macroGenAp            = 0
+#macroValidPlanarAp    = 0
+#macroValidViaAp       = 0
+#macroNoAp             = 0
+[INFO DRT-0166] Complete pin access.
+[INFO DRT-0267] cpu time = 00:07:47, elapsed time = 00:02:05, memory = 1201.02 (MB), peak = 1214.27 (MB)
+[INFO DRT-0156] guideIn read 100000 guides.
+[INFO DRT-0156] guideIn read 200000 guides.
+[INFO DRT-0156] guideIn read 300000 guides.
+
+[INFO DRT-0157] Number of guides:     347449
+
+[INFO DRT-0169] Post process guides.
+[INFO DRT-0176] GCELLGRID X 0 DO 147 STEP 6900 ;
+[INFO DRT-0177] GCELLGRID Y 0 DO 147 STEP 6900 ;
+[INFO DRT-0026]   Complete 100000 origin guides.
+[INFO DRT-0026]   Complete 200000 origin guides.
+[INFO DRT-0026]   Complete 300000 origin guides.
+[INFO DRT-0028]   Complete FR_MASTERSLICE.
+[INFO DRT-0028]   Complete Fr_VIA.
+[INFO DRT-0028]   Complete li1.
+[INFO DRT-0028]   Complete mcon.
+[INFO DRT-0028]   Complete met1.
+[INFO DRT-0028]   Complete via.
+[INFO DRT-0028]   Complete met2.
+[INFO DRT-0028]   Complete via2.
+[INFO DRT-0028]   Complete met3.
+[INFO DRT-0028]   Complete via3.
+[INFO DRT-0028]   Complete met4.
+[INFO DRT-0028]   Complete via4.
+[INFO DRT-0028]   Complete met5.
+[INFO DRT-0178] Init guide query.
+[INFO DRT-0035]   Complete FR_MASTERSLICE (guide).
+[INFO DRT-0035]   Complete Fr_VIA (guide).
+[INFO DRT-0035]   Complete li1 (guide).
+[INFO DRT-0035]   Complete mcon (guide).
+[INFO DRT-0035]   Complete met1 (guide).
+[INFO DRT-0035]   Complete via (guide).
+[INFO DRT-0035]   Complete met2 (guide).
+[INFO DRT-0035]   Complete via2 (guide).
+[INFO DRT-0035]   Complete met3 (guide).
+[INFO DRT-0035]   Complete via3 (guide).
+[INFO DRT-0035]   Complete met4 (guide).
+[INFO DRT-0035]   Complete via4 (guide).
+[INFO DRT-0035]   Complete met5 (guide).
+[INFO DRT-0036] FR_MASTERSLICE guide region query size = 0.
+[INFO DRT-0036] FR_VIA guide region query size = 0.
+[INFO DRT-0036] li1 guide region query size = 104771.
+[INFO DRT-0036] mcon guide region query size = 0.
+[INFO DRT-0036] met1 guide region query size = 92289.
+[INFO DRT-0036] via guide region query size = 0.
+[INFO DRT-0036] met2 guide region query size = 57499.
+[INFO DRT-0036] via2 guide region query size = 0.
+[INFO DRT-0036] met3 guide region query size = 18264.
+[INFO DRT-0036] via3 guide region query size = 0.
+[INFO DRT-0036] met4 guide region query size = 6636.
+[INFO DRT-0036] via4 guide region query size = 0.
+[INFO DRT-0036] met5 guide region query size = 835.
+[INFO DRT-0179] Init gr pin query.
+[INFO DRT-0267] cpu time = 00:00:01, elapsed time = 00:00:01, memory = 1320.31 (MB), peak = 1318.88 (MB)
+[INFO DRT-0245] skipped writing guide updates to database.
+[INFO DRT-0181] Start track assignment.
+[INFO DRT-0184] Done with 168906 vertical wires in 3 frboxes and 111388 horizontal wires in 3 frboxes.
+[INFO DRT-0186] Done with 23451 vertical wires in 3 frboxes and 30341 horizontal wires in 3 frboxes.
+[INFO DRT-0182] Complete track assignment.
+[INFO DRT-0267] cpu time = 00:00:14, elapsed time = 00:00:06, memory = 1742.92 (MB), peak = 1794.33 (MB)
+[INFO DRT-0187] Start routing data preparation.
+[INFO DRT-0267] cpu time = 00:00:00, elapsed time = 00:00:00, memory = 1742.98 (MB), peak = 1794.33 (MB)
+[INFO DRT-0194] Start detail routing.
+[INFO DRT-0195] Start 0th optimization iteration.
+    Completing 10% with 0 violations.
+    elapsed time = 00:00:23, memory = 1964.49 (MB).
+    Completing 20% with 0 violations.
+    elapsed time = 00:01:03, memory = 2438.91 (MB).
+    Completing 30% with 4680 violations.
+    elapsed time = 00:01:13, memory = 2711.18 (MB).
+    Completing 40% with 4680 violations.
+    elapsed time = 00:01:51, memory = 2767.92 (MB).
+    Completing 50% with 4680 violations.
+    elapsed time = 00:02:09, memory = 2750.62 (MB).
+    Completing 60% with 9020 violations.
+    elapsed time = 00:02:27, memory = 2834.55 (MB).
+    Completing 70% with 9020 violations.
+    elapsed time = 00:03:05, memory = 2763.20 (MB).
+    Completing 80% with 13680 violations.
+    elapsed time = 00:03:15, memory = 2857.11 (MB).
+    Completing 90% with 13680 violations.
+    elapsed time = 00:04:15, memory = 2878.75 (MB).
+    Completing 100% with 18144 violations.
+    elapsed time = 00:04:31, memory = 2837.82 (MB).
+[INFO DRT-0199]   Number of violations = 21687.
+Viol/Layer         li1   mcon   met1    via   met2   met3   via3   met4   via4   met5
+Cut Spacing          0     51      0      0      0      0      2      0     10      0
+Metal Spacing        0      0   3526      0    537    390      0    752      0    168
+Min Hole             0      0     22      0      1      0      0      0      0      0
+NS Metal             0      0      3      0      0      0      0      0      0      0
+Recheck             23      0   1350      0    872    449      0    707      0    142
+Short                0     12   7473     12   1399   1251      7   2268     41    219
+[INFO DRT-0267] cpu time = 00:17:39, elapsed time = 00:04:32, memory = 2874.15 (MB), peak = 2955.77 (MB)
+Total wire length = 2021455 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 471385 um.
+Total wire length on LAYER met2 = 653691 um.
+Total wire length on LAYER met3 = 462190 um.
+Total wire length on LAYER met4 = 369175 um.
+Total wire length on LAYER met5 = 65011 um.
+Total number of vias = 310562.
+Up-via summary (total 310562):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130792
+           met1    138978
+           met2     27485
+           met3     11992
+           met4      1315
+-------------------------
+               310562
+
+
+[INFO DRT-0195] Start 1st optimization iteration.
+    Completing 10% with 21687 violations.
+    elapsed time = 00:00:24, memory = 2960.61 (MB).
+    Completing 20% with 21687 violations.
+    elapsed time = 00:00:52, memory = 2972.37 (MB).
+    Completing 30% with 18838 violations.
+    elapsed time = 00:01:06, memory = 3017.32 (MB).
+    Completing 40% with 18838 violations.
+    elapsed time = 00:01:46, memory = 3027.78 (MB).
+    Completing 50% with 18838 violations.
+    elapsed time = 00:01:56, memory = 2966.82 (MB).
+    Completing 60% with 16358 violations.
+    elapsed time = 00:02:30, memory = 3037.07 (MB).
+    Completing 70% with 16358 violations.
+    elapsed time = 00:02:54, memory = 3074.48 (MB).
+    Completing 80% with 13250 violations.
+    elapsed time = 00:03:09, memory = 3045.92 (MB).
+    Completing 90% with 13250 violations.
+    elapsed time = 00:03:49, memory = 3052.49 (MB).
+    Completing 100% with 10127 violations.
+    elapsed time = 00:03:56, memory = 2953.08 (MB).
+[INFO DRT-0199]   Number of violations = 10127.
+Viol/Layer        mcon   met1   met2   via2   met3   met4   met5
+Cut Spacing         38      0      0      1      0      0      0
+Metal Spacing        0   2425    269      0    168    133     34
+Short                0   5758    561      0    227    471     42
+[INFO DRT-0267] cpu time = 00:15:24, elapsed time = 00:03:58, memory = 2963.90 (MB), peak = 3128.98 (MB)
+Total wire length = 2010753 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 470361 um.
+Total wire length on LAYER met2 = 653631 um.
+Total wire length on LAYER met3 = 460237 um.
+Total wire length on LAYER met4 = 364399 um.
+Total wire length on LAYER met5 = 62124 um.
+Total number of vias = 308569.
+Up-via summary (total 308569):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130807
+           met1    137551
+           met2     27117
+           met3     11974
+           met4      1120
+-------------------------
+               308569
+
+
+[INFO DRT-0195] Start 2nd optimization iteration.
+    Completing 10% with 10127 violations.
+    elapsed time = 00:00:22, memory = 3019.91 (MB).
+    Completing 20% with 10127 violations.
+    elapsed time = 00:00:59, memory = 3025.94 (MB).
+    Completing 30% with 10069 violations.
+    elapsed time = 00:01:10, memory = 3027.00 (MB).
+    Completing 40% with 10069 violations.
+    elapsed time = 00:01:56, memory = 3026.84 (MB).
+    Completing 50% with 10069 violations.
+    elapsed time = 00:02:07, memory = 2935.03 (MB).
+    Completing 60% with 10000 violations.
+    elapsed time = 00:02:35, memory = 3018.46 (MB).
+    Completing 70% with 10000 violations.
+    elapsed time = 00:03:05, memory = 3035.71 (MB).
+    Completing 80% with 9416 violations.
+    elapsed time = 00:03:19, memory = 3003.58 (MB).
+    Completing 90% with 9416 violations.
+    elapsed time = 00:04:07, memory = 3041.47 (MB).
+    Completing 100% with 9006 violations.
+    elapsed time = 00:04:16, memory = 2957.90 (MB).
+[INFO DRT-0199]   Number of violations = 9006.
+Viol/Layer        mcon   met1    via   met2   met3   met4   met5
+Cut Spacing         30      0      0      0      0      0      0
+Metal Spacing        0   2114      0    197    146     89      4
+Min Hole             0      0      0      1      0      0      0
+Short                0   5289      1    442    208    468     17
+[INFO DRT-0267] cpu time = 00:15:48, elapsed time = 00:04:17, memory = 2976.99 (MB), peak = 3128.98 (MB)
+Total wire length = 2006885 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 471014 um.
+Total wire length on LAYER met2 = 652628 um.
+Total wire length on LAYER met3 = 458943 um.
+Total wire length on LAYER met4 = 363379 um.
+Total wire length on LAYER met5 = 60921 um.
+Total number of vias = 307443.
+Up-via summary (total 307443):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130797
+           met1    137038
+           met2     26713
+           met3     11848
+           met4      1047
+-------------------------
+               307443
+
+
+[INFO DRT-0195] Start 3rd optimization iteration.
+    Completing 10% with 9006 violations.
+    elapsed time = 00:00:22, memory = 3076.17 (MB).
+    Completing 20% with 9006 violations.
+    elapsed time = 00:00:50, memory = 3107.05 (MB).
+    Completing 30% with 7192 violations.
+    elapsed time = 00:00:59, memory = 3212.00 (MB).
+    Completing 40% with 7192 violations.
+    elapsed time = 00:01:33, memory = 3190.28 (MB).
+    Completing 50% with 7192 violations.
+    elapsed time = 00:01:50, memory = 3163.23 (MB).
+    Completing 60% with 5345 violations.
+    elapsed time = 00:02:17, memory = 3185.77 (MB).
+    Completing 70% with 5345 violations.
+    elapsed time = 00:02:50, memory = 3148.68 (MB).
+    Completing 80% with 3714 violations.
+    elapsed time = 00:03:00, memory = 3186.85 (MB).
+    Completing 90% with 3714 violations.
+    elapsed time = 00:03:40, memory = 3168.56 (MB).
+    Completing 100% with 1839 violations.
+    elapsed time = 00:03:49, memory = 3062.29 (MB).
+[INFO DRT-0199]   Number of violations = 1839.
+Viol/Layer        mcon   met1    via   met2   met3   met4   met5
+Cut Spacing         14      0      1      0      0      0      0
+Metal Spacing        0    659      0     86     32      6     12
+Min Hole             0      1      0      0      0      0      0
+Short                0    897      0     77     23     15     16
+[INFO DRT-0267] cpu time = 00:14:39, elapsed time = 00:03:50, memory = 3083.16 (MB), peak = 3270.16 (MB)
+Total wire length = 2008621 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 476946 um.
+Total wire length on LAYER met2 = 660487 um.
+Total wire length on LAYER met3 = 453200 um.
+Total wire length on LAYER met4 = 357842 um.
+Total wire length on LAYER met5 = 60144 um.
+Total number of vias = 311453.
+Up-via summary (total 311453):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130781
+           met1    140609
+           met2     27237
+           met3     11789
+           met4      1037
+-------------------------
+               311453
+
+
+[INFO DRT-0195] Start 4th optimization iteration.
+    Completing 10% with 1839 violations.
+    elapsed time = 00:00:14, memory = 3163.67 (MB).
+    Completing 20% with 1839 violations.
+    elapsed time = 00:00:22, memory = 3166.10 (MB).
+    Completing 30% with 1515 violations.
+    elapsed time = 00:00:36, memory = 3195.09 (MB).
+    Completing 40% with 1515 violations.
+    elapsed time = 00:00:49, memory = 3130.67 (MB).
+    Completing 50% with 1515 violations.
+    elapsed time = 00:01:04, memory = 3083.70 (MB).
+    Completing 60% with 1203 violations.
+    elapsed time = 00:01:18, memory = 3105.66 (MB).
+    Completing 70% with 1203 violations.
+    elapsed time = 00:01:29, memory = 3171.92 (MB).
+    Completing 80% with 758 violations.
+    elapsed time = 00:01:38, memory = 3166.15 (MB).
+    Completing 90% with 758 violations.
+    elapsed time = 00:01:54, memory = 3169.02 (MB).
+    Completing 100% with 417 violations.
+    elapsed time = 00:01:58, memory = 3050.28 (MB).
+[INFO DRT-0199]   Number of violations = 417.
+Viol/Layer        mcon   met1   met2   met3
+Cut Spacing          2      0      0      0
+Metal Spacing        0    200     23      7
+Short                0    162     18      5
+[INFO DRT-0267] cpu time = 00:04:51, elapsed time = 00:01:59, memory = 3083.16 (MB), peak = 3270.16 (MB)
+Total wire length = 2008742 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477682 um.
+Total wire length on LAYER met2 = 661010 um.
+Total wire length on LAYER met3 = 452504 um.
+Total wire length on LAYER met4 = 357421 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311508.
+Up-via summary (total 311508):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130782
+           met1    140754
+           met2     27191
+           met3     11746
+           met4      1035
+-------------------------
+               311508
+
+
+[INFO DRT-0195] Start 5th optimization iteration.
+    Completing 10% with 417 violations.
+    elapsed time = 00:00:04, memory = 3122.89 (MB).
+    Completing 20% with 417 violations.
+    elapsed time = 00:00:06, memory = 3083.16 (MB).
+    Completing 30% with 357 violations.
+    elapsed time = 00:00:12, memory = 3118.54 (MB).
+    Completing 40% with 357 violations.
+    elapsed time = 00:00:16, memory = 3168.01 (MB).
+    Completing 50% with 357 violations.
+    elapsed time = 00:00:17, memory = 3083.16 (MB).
+    Completing 60% with 234 violations.
+    elapsed time = 00:00:19, memory = 3131.14 (MB).
+    Completing 70% with 234 violations.
+    elapsed time = 00:00:23, memory = 3140.21 (MB).
+    Completing 80% with 176 violations.
+    elapsed time = 00:00:37, memory = 3096.43 (MB).
+    Completing 90% with 176 violations.
+    elapsed time = 00:00:39, memory = 3188.84 (MB).
+    Completing 100% with 98 violations.
+    elapsed time = 00:00:49, memory = 3050.28 (MB).
+[INFO DRT-0199]   Number of violations = 98.
+Viol/Layer        met1   met2
+Metal Spacing       65      3
+Short               30      0
+[INFO DRT-0267] cpu time = 00:01:43, elapsed time = 00:00:49, memory = 3083.16 (MB), peak = 3270.16 (MB)
+Total wire length = 2008846 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477853 um.
+Total wire length on LAYER met2 = 661143 um.
+Total wire length on LAYER met3 = 452386 um.
+Total wire length on LAYER met4 = 357338 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311520.
+Up-via summary (total 311520):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140778
+           met2     27195
+           met3     11729
+           met4      1035
+-------------------------
+               311520
+
+
+[INFO DRT-0195] Start 6th guides tiles iteration.
+    Completing 10% with 98 violations.
+    elapsed time = 00:00:00, memory = 3127.11 (MB).
+    Completing 20% with 98 violations.
+    elapsed time = 00:00:01, memory = 3127.11 (MB).
+    Completing 30% with 98 violations.
+    elapsed time = 00:00:01, memory = 3127.11 (MB).
+    Completing 40% with 98 violations.
+    elapsed time = 00:00:01, memory = 3127.11 (MB).
+    Completing 50% with 98 violations.
+    elapsed time = 00:00:17, memory = 3083.16 (MB).
+    Completing 60% with 58 violations.
+    elapsed time = 00:00:18, memory = 3083.16 (MB).
+    Completing 70% with 58 violations.
+    elapsed time = 00:00:18, memory = 3083.16 (MB).
+    Completing 80% with 58 violations.
+    elapsed time = 00:00:18, memory = 3083.16 (MB).
+    Completing 90% with 58 violations.
+    elapsed time = 00:00:19, memory = 3083.16 (MB).
+    Completing 100% with 46 violations.
+    elapsed time = 00:00:22, memory = 3083.44 (MB).
+[INFO DRT-0199]   Number of violations = 46.
+Viol/Layer        met1
+Metal Spacing       35
+Short               11
+[INFO DRT-0267] cpu time = 00:00:29, elapsed time = 00:00:22, memory = 3083.44 (MB), peak = 3270.16 (MB)
+Total wire length = 2008872 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477869 um.
+Total wire length on LAYER met2 = 661147 um.
+Total wire length on LAYER met3 = 452398 um.
+Total wire length on LAYER met4 = 357333 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311509.
+Up-via summary (total 311509):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140772
+           met2     27193
+           met3     11726
+           met4      1035
+-------------------------
+               311509
+
+
+[INFO DRT-0195] Start 7th guides tiles iteration.
+    Completing 10% with 46 violations.
+    elapsed time = 00:00:00, memory = 3083.44 (MB).
+    Completing 20% with 46 violations.
+    elapsed time = 00:00:00, memory = 3083.44 (MB).
+    Completing 40% with 46 violations.
+    elapsed time = 00:00:16, memory = 3083.44 (MB).
+    Completing 50% with 46 violations.
+    elapsed time = 00:00:16, memory = 3083.44 (MB).
+    Completing 70% with 46 violations.
+    elapsed time = 00:00:17, memory = 3084.09 (MB).
+    Completing 80% with 46 violations.
+    elapsed time = 00:00:19, memory = 3084.48 (MB).
+    Completing 100% with 46 violations.
+    elapsed time = 00:00:20, memory = 3084.48 (MB).
+[INFO DRT-0199]   Number of violations = 46.
+Viol/Layer        met1
+Metal Spacing       35
+Short               11
+[INFO DRT-0267] cpu time = 00:00:23, elapsed time = 00:00:20, memory = 3084.48 (MB), peak = 3270.16 (MB)
+Total wire length = 2008872 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477869 um.
+Total wire length on LAYER met2 = 661147 um.
+Total wire length on LAYER met3 = 452398 um.
+Total wire length on LAYER met4 = 357333 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311509.
+Up-via summary (total 311509):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140772
+           met2     27193
+           met3     11726
+           met4      1035
+-------------------------
+               311509
+
+
+[INFO DRT-0195] Start 8th stubborn tiles iteration.
+    Completing 10% with 46 violations.
+    elapsed time = 00:01:27, memory = 3157.89 (MB).
+    Completing 20% with 46 violations.
+    elapsed time = 00:03:27, memory = 3159.42 (MB).
+    Completing 30% with 46 violations.
+    elapsed time = 00:03:56, memory = 3125.71 (MB).
+    Completing 40% with 46 violations.
+    elapsed time = 00:04:10, memory = 3134.63 (MB).
+    Completing 50% with 46 violations.
+    elapsed time = 00:04:23, memory = 3151.71 (MB).
+    Completing 60% with 46 violations.
+    elapsed time = 00:04:30, memory = 3177.55 (MB).
+    Completing 70% with 46 violations.
+    elapsed time = 00:04:33, memory = 3393.03 (MB).
+    Completing 80% with 24 violations.
+    elapsed time = 00:04:52, memory = 3434.87 (MB).
+    Completing 90% with 24 violations.
+    elapsed time = 00:05:16, memory = 3504.54 (MB).
+    Completing 100% with 6 violations.
+    elapsed time = 00:05:46, memory = 3474.41 (MB).
+[INFO DRT-0199]   Number of violations = 6.
+Viol/Layer        met1
+Metal Spacing        6
+[INFO DRT-0267] cpu time = 00:19:20, elapsed time = 00:05:46, memory = 3474.41 (MB), peak = 3552.65 (MB)
+Total wire length = 2008870 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477865 um.
+Total wire length on LAYER met2 = 661164 um.
+Total wire length on LAYER met3 = 452395 um.
+Total wire length on LAYER met4 = 357319 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311510.
+Up-via summary (total 311510):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140771
+           met2     27195
+           met3     11726
+           met4      1035
+-------------------------
+               311510
+
+
+[INFO DRT-0195] Start 9th guides tiles iteration.
+    Completing 50% with 6 violations.
+    elapsed time = 00:00:01, memory = 3474.41 (MB).
+    Completing 100% with 6 violations.
+    elapsed time = 00:00:01, memory = 3474.41 (MB).
+[INFO DRT-0199]   Number of violations = 6.
+Viol/Layer        met1
+Metal Spacing        6
+[INFO DRT-0267] cpu time = 00:00:02, elapsed time = 00:00:02, memory = 3474.41 (MB), peak = 3552.65 (MB)
+Total wire length = 2008875 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477862 um.
+Total wire length on LAYER met2 = 661176 um.
+Total wire length on LAYER met3 = 452401 um.
+Total wire length on LAYER met4 = 357312 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311518.
+Up-via summary (total 311518):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140772
+           met2     27200
+           met3     11728
+           met4      1035
+-------------------------
+               311518
+
+
+[INFO DRT-0195] Start 10th guides tiles iteration.
+    Completing 50% with 6 violations.
+    elapsed time = 00:00:00, memory = 3474.41 (MB).
+    Completing 100% with 5 violations.
+    elapsed time = 00:00:00, memory = 3474.41 (MB).
+[INFO DRT-0199]   Number of violations = 5.
+Viol/Layer        met1
+Metal Spacing        5
+[INFO DRT-0267] cpu time = 00:00:00, elapsed time = 00:00:00, memory = 3474.41 (MB), peak = 3552.65 (MB)
+Total wire length = 2008872 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477848 um.
+Total wire length on LAYER met2 = 661177 um.
+Total wire length on LAYER met3 = 452410 um.
+Total wire length on LAYER met4 = 357312 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311522.
+Up-via summary (total 311522):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140773
+           met2     27203
+           met3     11728
+           met4      1035
+-------------------------
+               311522
+
+
+[INFO DRT-0195] Start 11th guides tiles iteration.
+    Completing 100% with 5 violations.
+    elapsed time = 00:00:00, memory = 3474.41 (MB).
+[INFO DRT-0199]   Number of violations = 5.
+Viol/Layer        met1
+Metal Spacing        5
+[INFO DRT-0267] cpu time = 00:00:00, elapsed time = 00:00:00, memory = 3474.41 (MB), peak = 3552.65 (MB)
+Total wire length = 2008872 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477848 um.
+Total wire length on LAYER met2 = 661177 um.
+Total wire length on LAYER met3 = 452410 um.
+Total wire length on LAYER met4 = 357312 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311522.
+Up-via summary (total 311522):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140773
+           met2     27203
+           met3     11728
+           met4      1035
+-------------------------
+               311522
+
+
+[INFO DRT-0195] Start 12th stubborn tiles iteration.
+    Completing 10% with 5 violations.
+    elapsed time = 00:00:14, memory = 3493.28 (MB).
+    Completing 20% with 5 violations.
+    elapsed time = 00:00:21, memory = 3474.41 (MB).
+    Completing 30% with 5 violations.
+    elapsed time = 00:00:27, memory = 3474.41 (MB).
+    Completing 40% with 5 violations.
+    elapsed time = 00:00:35, memory = 3474.41 (MB).
+    Completing 50% with 5 violations.
+    elapsed time = 00:00:47, memory = 3474.41 (MB).
+    Completing 60% with 5 violations.
+    elapsed time = 00:00:51, memory = 3474.41 (MB).
+    Completing 70% with 5 violations.
+    elapsed time = 00:00:57, memory = 3474.41 (MB).
+    Completing 80% with 5 violations.
+    elapsed time = 00:01:01, memory = 3474.41 (MB).
+    Completing 90% with 5 violations.
+    elapsed time = 00:01:05, memory = 3474.41 (MB).
+    Completing 100% with 0 violations.
+    elapsed time = 00:01:08, memory = 3346.66 (MB).
+[INFO DRT-0199]   Number of violations = 0.
+[INFO DRT-0267] cpu time = 00:04:22, elapsed time = 00:01:08, memory = 3346.66 (MB), peak = 3552.65 (MB)
+Total wire length = 2008870 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477846 um.
+Total wire length on LAYER met2 = 661177 um.
+Total wire length on LAYER met3 = 452410 um.
+Total wire length on LAYER met4 = 357312 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311519.
+Up-via summary (total 311519):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140770
+           met2     27203
+           met3     11728
+           met4      1035
+-------------------------
+               311519
+
+
+[INFO DRT-0198] Complete detail routing.
+Total wire length = 2008870 um.
+Total wire length on LAYER li1 = 0 um.
+Total wire length on LAYER met1 = 477846 um.
+Total wire length on LAYER met2 = 661177 um.
+Total wire length on LAYER met3 = 452410 um.
+Total wire length on LAYER met4 = 357312 um.
+Total wire length on LAYER met5 = 60123 um.
+Total number of vias = 311519.
+Up-via summary (total 311519):
+
+-------------------------
+ FR_MASTERSLICE         0
+            li1    130783
+           met1    140770
+           met2     27203
+           met3     11728
+           met4      1035
+-------------------------
+               311519
+
+
+[INFO DRT-0267] cpu time = 01:34:47, elapsed time = 00:27:10, memory = 3346.66 (MB), peak = 3552.65 (MB)
+
+[INFO DRT-0180] Post processing.
+DRT_SECONDS 1766
+DRC_VIOLATIONS 0
+=== register to register, after routing ===
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _63643_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _62754_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout      Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------------
+                            0.000    0.000   clock clk (rise edge)
+                            1.449    1.449   clock network delay (propagated)
+                   0.055    0.000    1.449 ^ _63643_/CLK (sky130_fd_sc_hd__dfrtp_1)
+     2    0.008    0.061    0.383    1.832 v _63643_/Q (sky130_fd_sc_hd__dfrtp_1)
+     8    0.037    0.222    0.552    2.385 v _37537_/X (sky130_fd_sc_hd__or3b_1)
+     3    0.014    0.278    0.332    2.717 ^ _45470_/Y (sky130_fd_sc_hd__nor3_2)
+     3    0.017    0.233    0.278    2.995 v _47637_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.012    0.108    0.452    3.448 v _47681_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.014    0.118    0.432    3.880 v _47703_/X (sky130_fd_sc_hd__maj3_1)
+     3    0.017    0.133    0.449    4.329 v _47725_/X (sky130_fd_sc_hd__maj3_1)
+     3    0.019    0.426    0.418    4.747 ^ _47770_/Y (sky130_fd_sc_hd__o211ai_1)
+     2    0.010    0.151    0.217    4.964 v _47803_/Y (sky130_fd_sc_hd__a311oi_1)
+     1    0.005    0.327    0.385    5.349 ^ _47936_/Y (sky130_fd_sc_hd__o41ai_1)
+     3    0.033    0.102    0.233    5.581 ^ place3656/X (sky130_fd_sc_hd__buf_4)
+     3    0.013    0.138    0.134    5.715 v _47970_/Y (sky130_fd_sc_hd__a211oi_1)
+     2    0.008    0.502    0.480    6.195 ^ _48003_/Y (sky130_fd_sc_hd__o311ai_0)
+     2    0.006    0.135    0.201    6.395 v _48036_/Y (sky130_fd_sc_hd__a311oi_1)
+     2    0.011    0.413    0.396    6.791 ^ _48058_/Y (sky130_fd_sc_hd__o31ai_1)
+     2    0.011    0.108    0.240    7.031 ^ _48158_/X (sky130_fd_sc_hd__a211o_1)
+     3    0.012    0.205    0.158    7.189 v _48181_/Y (sky130_fd_sc_hd__a31oi_1)
+     3    0.015    0.362    0.387    7.576 ^ _48203_/Y (sky130_fd_sc_hd__o211ai_1)
+     2    0.011    0.189    0.218    7.794 v _48236_/Y (sky130_fd_sc_hd__a311oi_1)
+     2    0.009    0.388    0.407    8.200 ^ _48303_/Y (sky130_fd_sc_hd__o311ai_1)
+     2    0.010    0.235    0.242    8.442 v _48425_/Y (sky130_fd_sc_hd__a41oi_1)
+     2    0.009    0.096    0.456    8.898 v _48447_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.010    0.066    0.218    9.115 v _48458_/X (sky130_fd_sc_hd__o21a_1)
+     2    0.016    0.131    0.432    9.547 v _52025_/X (sky130_fd_sc_hd__maj3_1)
+     2    0.011    0.251    0.263    9.809 ^ _52502_/Y (sky130_fd_sc_hd__a21oi_1)
+     2    0.012    0.132    0.283   10.093 ^ _52736_/X (sky130_fd_sc_hd__maj3_1)
+     4    0.035    0.754    0.368   10.460 ^ _52824_/Y (sky130_fd_sc_hd__xnor2_1)
+     2    0.008    0.194    0.255   10.716 ^ _52847_/X (sky130_fd_sc_hd__xor2_1)
+     3    0.009    0.109    0.098   10.814 v _52858_/Y (sky130_fd_sc_hd__a21oi_1)
+     3    0.013    0.401    0.367   11.181 ^ _53170_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.010    0.096    0.220   11.401 ^ _53370_/X (sky130_fd_sc_hd__a21o_1)
+     4    0.016    0.232    0.159   11.560 v _53392_/Y (sky130_fd_sc_hd__a311oi_2)
+     1    0.009    0.153    0.224   11.784 ^ _53526_/Y (sky130_fd_sc_hd__o21ai_2)
+    49    0.196    0.386    0.354   12.138 ^ place3248/X (sky130_fd_sc_hd__buf_6)
+     3    0.011    0.229    0.249   12.387 v _53997_/Y (sky130_fd_sc_hd__nand3_1)
+     3    0.014    0.079    0.287   12.674 v _54001_/X (sky130_fd_sc_hd__a21o_1)
+     2    0.012    0.458    0.465   13.139 ^ _54792_/Y (sky130_fd_sc_hd__a311oi_1)
+     1    0.007    0.182    0.221   13.360 v _55327_/Y (sky130_fd_sc_hd__o21ai_0)
+     3    0.018    0.414    0.461   13.821 ^ _55338_/Y (sky130_fd_sc_hd__a311oi_2)
+     2    0.008    0.171    0.152   13.973 v _55353_/Y (sky130_fd_sc_hd__nand2_1)
+     1    0.007    0.216    0.289   14.262 ^ _55425_/Y (sky130_fd_sc_hd__a32oi_1)
+     1    0.004    0.110    0.133   14.395 v _55426_/Y (sky130_fd_sc_hd__o211ai_1)
+     1    0.012    0.483    0.454   14.850 ^ _55428_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.013    0.115    0.153   15.002 v _55485_/Y (sky130_fd_sc_hd__a221oi_4)
+    32    0.181    0.103    0.211   15.214 v place3165/X (sky130_fd_sc_hd__buf_12)
+     1    0.006    0.216    0.254   15.468 ^ _44219_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.072    0.677    0.622   16.090 ^ _44255_/X (sky130_fd_sc_hd__a31o_1)
+     1    0.014    0.193    0.274   16.364 v _44274_/Y (sky130_fd_sc_hd__a211oi_1)
+     5    0.029    0.203    0.235   16.600 ^ _44275_/Y (sky130_fd_sc_hd__nor2_4)
+     2    0.006    0.185    0.166   16.766 v _47233_/Y (sky130_fd_sc_hd__o221ai_1)
+     2    0.008    0.078    0.424   17.189 v _47265_/X (sky130_fd_sc_hd__a221o_1)
+     2    0.007    0.051    0.181   17.371 v _47266_/X (sky130_fd_sc_hd__a21o_1)
+     3    0.059    0.298    0.517   17.887 v _48575_/X (sky130_fd_sc_hd__mux2_1)
+     1    0.005    0.067    0.415   18.303 v _49365_/X (sky130_fd_sc_hd__mux2_1)
+                   0.067    0.000   18.303 v _62754_/D (sky130_fd_sc_hd__dfrtp_1)
+                                    18.303   data arrival time
+
+                           17.000   17.000   clock clk (rise edge)
+                            1.427   18.427   clock network delay (propagated)
+                            0.000   18.427   clock reconvergence pessimism
+                                    18.427 ^ _62754_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                           -0.121   18.307   library setup time
+                                    18.307   data required time
+---------------------------------------------------------------------------------
+                                    18.307   data required time
+                                   -18.303   data arrival time
+---------------------------------------------------------------------------------
+                                     0.004   slack (MET)
+
+
+Clock clk
+   1.40 source latency _62965_/CLK ^
+  -1.51 target latency _63255_/CLK ^
+  -0.00 CRPR
+--------------
+  -0.11 setup skew
+
+WORST_SLACK_ROUTED 0.004
+WORST_HOLD_ROUTED 0.493
+TNS_ROUTED 0.000
+Design area 307175 um^2 30% utilization.
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[INFO RCX-0435] Reading extraction model file /home/georgedessa/tools/openroad-26q2/rcx/rcx_patterns.rules ...
+[INFO RCX-0436] RC segment generation cv32e40p_core (max_merge_res 50.0) ...
+[INFO RCX-0040] Final 166669 rc segments
+[INFO RCX-0439] Coupling Cap extraction cv32e40p_core ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 25% of 335073 wires extracted
+[INFO RCX-0442] 51% of 335073 wires extracted
+[INFO RCX-0442] 74% of 335073 wires extracted
+[INFO RCX-0442] 100% of 335073 wires extracted
+[INFO RCX-0045] Extract 36331 nets, 202931 rsegs, 202931 caps, 420889 ccs
+[INFO RCX-0443] 36331 nets finished
+=== register to register, extracted parasitics ===
+[WARNING STA-0503] report_checks -group_count is deprecated. Use -group_path_count instead.
+Startpoint: _61893_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _62763_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout      Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------------
+                            0.000    0.000   clock clk (rise edge)
+                            1.480    1.480   clock network delay (propagated)
+                   0.057    0.000    1.480 ^ _61893_/CLK (sky130_fd_sc_hd__dfrtp_1)
+     2    0.082    0.704    0.794    2.274 ^ _61893_/Q (sky130_fd_sc_hd__dfrtp_1)
+    12    0.146    0.400    0.490    2.764 ^ place4950/X (sky130_fd_sc_hd__buf_4)
+     2    0.158    1.223    1.073    3.837 v _57331_/Y (sky130_fd_sc_hd__clkinv_1)
+     2    0.059    0.110    0.582    4.419 v place4441/X (sky130_fd_sc_hd__buf_4)
+     1    0.004    0.174    0.212    4.630 ^ _38225_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.005    0.075    0.214    4.844 ^ _38236_/X (sky130_fd_sc_hd__maj3_1)
+     1    0.003    0.127    0.077    4.921 v _38258_/Y (sky130_fd_sc_hd__a221oi_1)
+     1    0.004    0.185    0.177    5.099 ^ _38269_/Y (sky130_fd_sc_hd__a31oi_1)
+     2    0.009    0.110    0.132    5.231 v _38280_/Y (sky130_fd_sc_hd__a22oi_1)
+     2    0.007    0.251    0.255    5.486 ^ _38292_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.005    0.136    0.121    5.607 v _38303_/Y (sky130_fd_sc_hd__a21oi_1)
+     2    0.016    0.491    0.238    5.845 ^ _38314_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.008    0.217    0.317    6.162 ^ _38369_/Y (sky130_fd_sc_hd__mux2i_1)
+     1    0.003    0.063    0.086    6.247 v _38380_/Y (sky130_fd_sc_hd__nand2_1)
+     3    0.088    0.116    0.223    6.470 v place3537/X (sky130_fd_sc_hd__buf_4)
+     7    0.064    0.572    0.472    6.943 ^ _38391_/Y (sky130_fd_sc_hd__nand2_1)
+     2    0.055    0.467    0.513    7.455 ^ _39914_/X (sky130_fd_sc_hd__a21o_1)
+     1    0.005    0.219    0.183    7.639 v _39970_/Y (sky130_fd_sc_hd__nand4_1)
+     2    0.059    0.765    0.718    8.356 ^ _39981_/Y (sky130_fd_sc_hd__a32oi_2)
+     5    0.019    0.211    0.252    8.608 v _39992_/Y (sky130_fd_sc_hd__nor2_1)
+     2    0.010    0.136    0.202    8.811 ^ _40236_/Y (sky130_fd_sc_hd__nand3_1)
+     1    0.003    0.043    0.067    8.878 v _54425_/Y (sky130_fd_sc_hd__nor2_1)
+     5    0.059    0.084    0.192    9.070 v place3357/X (sky130_fd_sc_hd__buf_4)
+     2    0.009    0.141    0.141    9.211 ^ _54426_/Y (sky130_fd_sc_hd__nand4_1)
+     1    0.003    0.110    0.086    9.297 v _54434_/Y (sky130_fd_sc_hd__a2111oi_2)
+     4    0.088    0.116    0.246    9.543 v place3328/X (sky130_fd_sc_hd__buf_4)
+     1    0.003    0.302    0.315    9.858 ^ _54435_/Y (sky130_fd_sc_hd__o311ai_0)
+     2    0.012    0.279    0.315   10.173 v _54450_/Y (sky130_fd_sc_hd__o311ai_0)
+     1    0.010    0.263    0.379   10.553 ^ _54451_/Y (sky130_fd_sc_hd__a311oi_4)
+     2    0.095    0.118    0.208   10.761 ^ rebuffer5040/X (sky130_fd_sc_hd__buf_12)
+    33    0.125    0.343    0.350   11.111 ^ place3295/X (sky130_fd_sc_hd__buf_4)
+     7    0.037    0.346    0.401   11.513 ^ _54486_/X (sky130_fd_sc_hd__o21a_1)
+    16    0.066    0.186    0.298   11.810 ^ place3273/X (sky130_fd_sc_hd__buf_4)
+     1    0.002    0.068    0.054   11.864 v _54947_/Y (sky130_fd_sc_hd__a21oi_1)
+     1    0.003    0.159    0.082   11.946 ^ _54948_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.003    0.070    0.107   12.053 v _54949_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.004    0.154    0.166   12.219 ^ _54951_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.003    0.128    0.097   12.316 v _54952_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.024    0.498    0.433   12.749 ^ _54954_/Y (sky130_fd_sc_hd__a21oi_1)
+     2    0.014    0.258    0.181   12.931 v _54955_/Y (sky130_fd_sc_hd__a21oi_1)
+     3    0.010    0.312    0.361   13.291 ^ _55135_/Y (sky130_fd_sc_hd__a22oi_1)
+     1    0.004    0.127    0.129   13.420 v _55432_/Y (sky130_fd_sc_hd__a21oi_1)
+     2    0.012    0.277    0.271   13.691 ^ _55433_/Y (sky130_fd_sc_hd__a21oi_1)
+     1    0.005    0.131    0.137   13.828 v _55435_/Y (sky130_fd_sc_hd__o22ai_1)
+     1    0.005    0.342    0.392   14.220 ^ _55439_/Y (sky130_fd_sc_hd__o41ai_1)
+     1    0.010    0.048    0.189   14.410 ^ place3172/X (sky130_fd_sc_hd__buf_4)
+     1    0.010    0.114    0.060   14.470 v _55485_/Y (sky130_fd_sc_hd__a221oi_4)
+    32    0.197    0.110    0.209   14.679 v place3165/X (sky130_fd_sc_hd__buf_12)
+     1    0.002    0.033    0.244   14.923 v _35161_/X (sky130_fd_sc_hd__o21a_1)
+     1    0.034    0.992    0.778   15.700 ^ _35271_/Y (sky130_fd_sc_hd__o21ai_0)
+     1    0.004    0.049    0.237   15.937 ^ place3150/X (sky130_fd_sc_hd__buf_4)
+     1    0.014    0.227    0.139   16.077 v _37906_/Y (sky130_fd_sc_hd__a221oi_1)
+     4    0.014    0.120    0.205   16.282 ^ _37907_/X (sky130_fd_sc_hd__lpflow_isobufsrc_4)
+     4    0.028    0.266    0.201   16.483 v _37945_/Y (sky130_fd_sc_hd__o21ai_1)
+     1    0.003    0.043    0.252   16.735 v _41540_/X (sky130_fd_sc_hd__and2_0)
+     1    0.027    0.866    0.703   17.438 ^ _41541_/Y (sky130_fd_sc_hd__o31ai_1)
+     3    0.017    0.188    0.352   17.790 ^ _41542_/X (sky130_fd_sc_hd__o31a_1)
+     1    0.005    0.140    0.136   17.927 v _42105_/Y (sky130_fd_sc_hd__o21ai_0)
+                   0.140    0.000   17.927 v _62763_/D (sky130_fd_sc_hd__dfrtp_1)
+                                    17.927   data arrival time
+
+                           17.000   17.000   clock clk (rise edge)
+                            1.510   18.510   clock network delay (propagated)
+                            0.000   18.510   clock reconvergence pessimism
+                                    18.510 ^ _62763_/CLK (sky130_fd_sc_hd__dfrtp_1)
+                           -0.152   18.359   library setup time
+                                    18.359   data required time
+---------------------------------------------------------------------------------
+                                    18.359   data required time
+                                   -17.927   data arrival time
+---------------------------------------------------------------------------------
+                                     0.432   slack (MET)
+
+
+Clock clk
+   1.40 source latency _61719_/CLK ^
+  -1.53 target latency _63255_/CLK ^
+   0.00 CRPR
+--------------
+  -0.13 setup skew
+
+WORST_SLACK_RCX 0.432
+WORST_HOLD_RCX 0.472
+TNS_RCX 0.000

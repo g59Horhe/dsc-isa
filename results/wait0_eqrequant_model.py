@@ -46,10 +46,12 @@ ape=[abs(v['resid'])/v['cycles'] for v in allv]
 print(f"coefficients fixed from microbenchmarks (not fitted): mean |resid|/cycles = {sum(ape)/len(ape)*100:.2f}% (MAPE), max {max(ape)*100:.2f}%, over {len(allv)} runs")
 try:   # five-term model: + Ba, the branch-target alignment term measured per run by results/align_term.py
     A={(r['shape'],r['kernel'],int(r['pad'])):int(r['ba']) for r in csv.DictReader(open(f"{S}/wait0_align.csv"))}
+    J={(r['shape'],r['kernel'],int(r['pad'])):int(r['jumps']) for r in csv.DictReader(open(f"{S}/wait0_align.csv"))}
     for p in (0,1):
-        for k,v in P[p].items(): v['pred5']=v['pred']+A[(k[0],k[1],p)]
-    ape5=[abs(v['cycles']-v['pred5'])/v['cycles'] for v in allv]
+        for k,v in P[p].items(): v['pred5']=v['pred']+A[(k[0],k[1],p)]; v['pred6']=v['pred5']+J[(k[0],k[1],p)]
+    ape5=[abs(v['cycles']-v['pred5'])/v['cycles'] for v in allv]; ape6=[abs(v['cycles']-v['pred6'])/v['cycles'] for v in allv]
     print(f"with the alignment term Ba (cycles = I + 2 Bt + Slu + Asplit + Ba): R2={r2([v['pred5'] for v in allv],ys):.4f}, mean |resid| {sum(ape5)/len(ape5)*100:.2f}%, max {max(ape5)*100:.2f}%")
+    print(f"with Ba and the jump term J (cycles = I + 2 Bt + Slu + Asplit + Ba + J): mean |resid| {sum(ape6)/len(ape6)*100:.3f}%, max {max(ape6)*100:.3f}%, exact {sum(v['cycles']==v['pred6'] for v in allv)} of {len(allv)}")
 except FileNotFoundError: pass
 
 # ---------------------------------------------------------------- markdown tables for RESULTS.md
@@ -59,10 +61,11 @@ except FileNotFoundError: pass
 NAMES = {'scalar_O2': 'scalar C, -O2', 'scalar_O3': 'scalar C, -O3', 'scalar_asm': 'scalar asm', 'simd_unal': 'SIMD unaligned', 'simd_al': 'SIMD aligned', 'simd_al_O3': 'SIMD aligned, -O3'}
 try:
     BA = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open(f"{S}/wait0_align.csv"))}
+    JA = {(r['shape'], r['kernel'], int(r['pad'])): int(r['jumps']) for r in csv.DictReader(open(f"{S}/wait0_align.csv"))}
 except FileNotFoundError:
-    BA = {}
-for p in (0, 1):
-    for k, v in P[p].items(): v['ba'] = BA.get((k[0], k[1], p), 0); v['pred5'] = v['pred'] + v['ba']; v['resid5'] = v['cycles'] - v['pred5']
+    BA = {}; JA = {}
+for p in (0, 1):   # pred5/resid5: the full model, with Ba and J
+    for k, v in P[p].items(): v['ba'] = BA.get((k[0], k[1], p), 0); v['j'] = JA.get((k[0], k[1], p), 0); v['pred5'] = v['pred'] + v['ba'] + v['j']; v['resid5'] = v['cycles'] - v['pred5']
 bestrun = lambda s, k: min(P[0][(s, k)], P[1][(s, k)], key=lambda v: v['cycles'])
 print("\n## markdown: Table 1\n")
 print("| shape | kernel | cycles (pad 0) | cycles (pad 1) | instructions | fetches | data reads | data writes | taken branches | load-use stalls | split-load accesses | checksum |")

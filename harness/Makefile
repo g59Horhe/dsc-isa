@@ -48,3 +48,12 @@ run: base pulp test.hex
 
 clean:
 	rm -rf obj_base obj_pulp test.hex
+
+# Gate-level build of a routed netlist (syn/gate_netlist.sh), with FST tracing of the measured
+# window for power analysis:  make gate PT=pulp-16  -> obj_gate_pulp-16/Vcv32e40p_core --fst w.fst
+PT ?= pulp-16
+GATE_NET ?= ../syn/build/gate/$(PT)/gate.v
+gate:
+	$(VERILATOR) --cc --exe --build -j 4 -Wno-fatal --top-module cv32e40p_core --trace-fst --trace-underscore \
+	  -CFLAGS "-DGATE -DTRACE" --Mdir obj_gate_$(PT) $(GATE_NET) sim_main.cpp
+

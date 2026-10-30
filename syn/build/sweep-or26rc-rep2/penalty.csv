@@ -1,0 +1,12 @@
+parasitics,statistic,base_ns,pulp_ns,penalty_pct
+grt,"shortest achieved period, any target",12.252,14.945,21.98
+grt,"median of the floor targets (targets below the shortest period: base 10 to 12, Xpulp 11 to 14.5)",12.507,15.3375,22.63
+grt,"floor pairs, lowest",,,13.4
+grt,"floor pairs, highest",,,30.57
+rcx,"shortest achieved period, any target",11.348,14.139,24.59
+rcx,"median of the floor targets (targets below the shortest period: base 10 to 11, Xpulp 11 to 14)",11.469,14.291,24.61
+rcx,shortest period among closed points,11.348,14.283,25.86
+rcx,median period among closed points,13.632,16.568,21.54
+rcx,tightest closed target,11.5,14.5,26.09
+rcx,"floor pairs, lowest",,,22.28
+rcx,"floor pairs, highest",,,27.27

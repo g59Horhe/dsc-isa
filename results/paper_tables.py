@@ -19,9 +19,10 @@ IMAGE = os.environ.get('MOBILENET_IMAGE', os.path.expanduser('~/tools/models/gra
 DW = ['8x16x16', '16x16x16', '8x32x32', '32x8x8']; PW = ['16x16x8x8', '8x8x16x16', '16x32x8x8', '16x16x16x16']
 
 # ---------------------------------------------------------------- data loading (same definitions as the result scripts)
-ALIGN = {}
+ALIGN = {}; JMP = {}
 if os.path.exists(f'{RES}/wait0_align.csv'):
     ALIGN = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open(f'{RES}/wait0_align.csv'))}
+    JMP = {(r['shape'], r['kernel'], int(r['pad'])): int(r['jumps']) for r in csv.DictReader(open(f'{RES}/wait0_align.csv'))}
 def load(base, p):
     d = collections.OrderedDict()
     for r in csv.DictReader(l for l in open(f'{RES}/{base}_pad{p}.csv') if not l.startswith('DONE')):
@@ -29,8 +30,8 @@ def load(base, p):
         d[(r['shape'], r['kernel'])]['chk'] = r['chk']
     for k, v in d.items():
         v['instr'] = v['ev1']; v['ldstall'] = v['ev2']; v['loads'] = v['ev5']; v['brtaken'] = v['ev9']
-        v['split'] = v['dread'] - v['loads']; v['ba'] = ALIGN.get((k[0], k[1], p), 0)
-        v['pred4'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['pred'] = v['pred4'] + v['ba']
+        v['split'] = v['dread'] - v['loads']; v['ba'] = ALIGN.get((k[0], k[1], p), 0); v['j'] = JMP.get((k[0], k[1], p), 0)
+        v['pred4'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['pred5'] = v['pred4'] + v['ba']; v['pred'] = v['pred5'] + v['j']
         v['resid4'] = v['cycles'] - v['pred4']; v['resid'] = v['cycles'] - v['pred']; v['pad'] = p
     return d
 def merge(*bases):
@@ -102,14 +103,15 @@ def md_tables(text):
 def run(cmd, cwd=RES): return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True).stdout
 
 # ---------------------------------------------------------------- B. wait-0 table, 3x3 equalised set
+WAIT0_SHAPES = ['8x16x16', '32x8x8']   # Table II: headline shape and the smallest window; all four shapes are in RESULTS.md Table 1
 rows = []
 names = {'scalar_O2': 'scalar C \\texttt{-O2}', 'scalar_O3': 'scalar C \\texttt{-O3}', 'scalar_asm': 'scalar asm', 'simd_unal': 'SIMD unaligned C', 'simd_al': 'SIMD aligned C', 'simd_al_O3': 'SIMD aligned C \\texttt{-O3}'}
-for s in DW:
+for s in WAIT0_SHAPES:
     for i, k in enumerate(names):
         a, b = E[0][(s, k)], E[1][(s, k)]; v = min((a, b), key=lambda v: v['cycles'])
-        rows.append([s.replace('x', '\\x') if i == 0 else '', names[k], N(a['cycles']), N(b['cycles']), N(a['instr']), N(a['dread']), N(a['brtaken']), N(a['ldstall']), N(a['split']), N(a['ba']), f"{v['resid']/v['cycles']:+.1%}".replace('%', '\\%')])
-    if s != DW[-1]: rows.append('MIDRULE')
-write_tab('tab_wait0_dw3', 'llrrrrrrrrr', ['shape', 'kernel', 'cycles, pad 0', 'pad 1', '$I$', 'reads', '$B_t$', '$S_{lu}$', '$A_{split}$', '$B_a$', 'resid.'], rows)
+        rows.append([s.replace('x', '\\x') if i == 0 else '', names[k], N(a['cycles']), N(b['cycles']), N(a['instr']), N(a['dread']), N(a['brtaken']), N(a['ldstall']), N(a['split']), N(a['ba']), N(a['j']), f"{v['resid']/v['cycles']:+.1%}".replace('%', '\\%')])
+    if s != WAIT0_SHAPES[-1]: rows.append('MIDRULE')
+write_tab('tab_wait0_dw3', 'llrrrrrrrrrr', ['shape', 'kernel', 'cycles, pad 0', 'pad 1', '$I$', 'reads', '$B_t$', '$S_{lu}$', '$A_{split}$', '$B_a$', '$J$', 'resid.'], rows)
 
 # ---------------------------------------------------------------- C. model fit statistics
 def r2(xs, ys):
@@ -126,18 +128,18 @@ distinct = hw + [v for p in (0, 1) for k, v in E[p].items() if k[1] != 'scalar_a
 fullx = [v for base in ('wait0_clip_dw3', 'wait0_clip_dw5', 'wait0_clip_pw') for p in (0, 1) for k, v in load(base, p).items() if k[1].endswith('_xp_clip') and 'simd' in k[1]]   # full Xpulp: SIMD + hardware loops + clip
 def stats(rs, label):
     ys = [v['cycles'] for v in rs]; e4 = [abs(v['resid4']) / v['cycles'] for v in rs]; e5 = [abs(v['resid']) / v['cycles'] for v in rs]
-    return [label, str(len(rs)), f"{r2([v['pred4'] for v in rs], ys):.4f}", P(sum(e4) / len(e4), 2), P(max(e4), 2), f"{r2([v['pred'] for v in rs], ys):.4f}", P(sum(e5) / len(e5), 2), P(max(e5), 2)]
+    return [label, str(len(rs)), f"{r2([v['pred4'] for v in rs], ys):.4f}", P(sum(e4) / len(e4), 2), P(max(e4), 2), f"{r2([v['pred'] for v in rs], ys):.4f}", P(sum(e5) / len(e5), 3), P(max(e5), 2)]
 rows = [stats(eq, 'equalised 3\\x3 set'), stats(hw, 'hand-written, 3 families'),
         stats(fullx, '\\quad full Xpulp only'), stats(distinct, 'all distinct')]
 ys = [v['cycles'] for v in eq]
 rows.append(['$I$ alone, equalised set', str(len(eq)), f"{r2([v['instr'] for v in eq], ys):.4f}", '', '', '', '', ''])
-write_tab('tab_modelfit', 'lrrrrrrr', ['run set', '$n$', '$R^2_4$', 'mean', 'max', '$R^2_5$', 'mean', 'max'], rows)
+write_tab('tab_modelfit', 'lrrrrrrr', ['run set', '$n$', '$R^2_4$', 'mean', 'max', '$R^2_6$', 'mean', 'max'], rows)
 # residual histogram data
 bins = [0, 0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
 lab = ['0--0.25', '0.25--0.5', '0.5--1', '1--2', '2--4', '4--8']
 h4 = [sum(bins[i] <= abs(v['resid4']) / v['cycles'] < bins[i + 1] for v in distinct) for i in range(6)]
 h5 = [sum(bins[i] <= abs(v['resid']) / v['cycles'] < bins[i + 1] for v in distinct) for i in range(6)]
-write_dat('fig_resid', ['bin', 'four', 'five'], [[lab[i], h4[i], h5[i]] for i in range(6)])
+write_dat('fig_resid', ['bin', 'four', 'six'], [[lab[i], h4[i], h5[i]] for i in range(6)])
 
 # ---------------------------------------------------------------- E. baseline strength and alignment spread, all families and shapes
 rows = []
@@ -181,7 +183,9 @@ for l in open(f'{RES}/decomp_latency_sweep.txt'):
 kmap = {'scalar_rv': ('scalar_asm_rv', 'scalar, RV32IMC ctl'), 'scalar_xp': ('scalar_asm_xp', 'scalar, Xpulp ctl'), 'unal_rv': ('simd_unal_asm_rv', 'SIMD unaligned, RV32IMC ctl'),
         'unal_xp': ('simd_unal_asm_xp', 'SIMD unaligned, Xpulp ctl'), 'al_rv': ('simd_al_asm_rv', 'SIMD aligned, RV32IMC ctl'), 'al_xp': ('simd_al_asm_xp', 'SIMD aligned, Xpulp ctl')}
 rows = []; figrows = [[w] for w in range(4)]
+LAT_SHAPES = ['8x16x16', '32x8x8']   # the paper's Table VII: headline shape and the smallest window; every shape is in decomp_latency_sweep.txt
 for s in DW:
+    if s not in LAT_SHAPES: continue
     for i, (k, (kk, lab)) in enumerate(kmap.items()):
         cyc = sw[(s, k)]; a = D3[0][(s, kk)]; acc = a['dread'] + a['dwrite']
         err = max(abs(cyc[w] - cyc[0] - w * acc) for w in range(1, 4))
@@ -213,6 +217,7 @@ write_dat('fig_ifetch', ['w', 'scalar', 'unal', 'al'], figrows)
 
 # ---------------------------------------------------------------- K. area: headline table from area_table.py, per-module table from attrib_area.txt
 run(['python3', 'area_table.py', '--latex', f'{GEN}/tab_area.tex']); run(['python3', 'clip_model.py', '--latex', f'{GEN}/tab_decomp.tex'])
+run(['python3', 'pulpnn_model.py', '--latex', f'{GEN}/tab_pulpnn.tex'])   # PULP-NN as the accelerated side (needs CORE-V GCC, COREV_BIN)
 rows = []; other = [0, 0, 0]; mods = []
 for l in open(f'{ROOT}/syn/build/attrib_area.txt'):
     m = re.match(r'(cv32e40p_core\S*|design total)\s+([\d,]+)\s+([\d,]+)\s+(-?[\d,]+)', l)

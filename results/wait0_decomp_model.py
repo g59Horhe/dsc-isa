@@ -14,10 +14,11 @@ def load(fn):
 P = {p: load(f'wait0_decomp_pad{p}.csv') for p in (0, 1)}
 try:   # five-term model: the branch-target alignment term, measured per run by align_term.py
     _A = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+    _J = {(r['shape'], r['kernel'], int(r['pad'])): int(r['jumps']) for r in csv.DictReader(open('wait0_align.csv'))}   # J: one cycle per jump
 except FileNotFoundError:
-    _A = {}
+    _A = {}; _J = {}
 for _p in (0, 1):
-    for _k, _v in P[_p].items(): _v['ba'] = _A.get((_k[0], _k[1], _p), 0); _v['pred'] += _v['ba']; _v['resid'] = _v['cycles'] - _v['pred']
+    for _k, _v in P[_p].items(): _v['ba'] = _A.get((_k[0], _k[1], _p), 0); _v['j'] = _J.get((_k[0], _k[1], _p), 0); _v['pred'] += _v['ba'] + _v['j']; _v['resid'] = _v['cycles'] - _v['pred']
 keys = list(P[0]); shapes = []; [shapes.append(k[0]) for k in keys if k[0] not in shapes]
 best = lambda s, k: min(P[0][(s, k)], P[1][(s, k)], key=lambda v: v['cycles'])
 names = {'scalar_asm_rv': 'scalar asm, RV32IMC control', 'scalar_asm_xp': 'scalar asm, Xpulp control', 'simd_unal_asm_rv': 'SIMD unaligned asm, RV32IMC control',

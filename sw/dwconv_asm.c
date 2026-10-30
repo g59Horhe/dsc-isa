@@ -105,6 +105,7 @@ static void dwconv_asm(void) {
             const act_t *r0 = p + 2, *r1 = p + W + 2, *r2 = p + 2 * W + 2;
             int cnt = OW / 3;
             asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               LBA " %[a0],-2(%[r0])\n " LBA " %[a1],-1(%[r0])\n " LBA " %[b0],-2(%[r1])\n " LBA " %[b1],-1(%[r1])\n"
               LBA " %[c0],-2(%[r2])\n " LBA " %[c1],-1(%[r2])\n"
@@ -125,6 +126,7 @@ static void dwconv_asm(void) {
             (void)pend; (void)p;
 #else
             asm volatile (
+              RQ_INIT("%[u]")
               LBA " %[a0],0(%[p])\n " LBA " %[a1],1(%[p])\n " LBA " %[b0]," W1 "(%[p])\n " LBA " %[b1]," W1p1 "(%[p])\n"
               LBA " %[c0]," W2 "(%[p])\n " LBA " %[c1]," W2p1 "(%[p])\n"
               "1:\n"

@@ -13,10 +13,11 @@ def load(fn):
 P = {p: load(f'wait0_pw_pad{p}.csv') for p in (0, 1)}
 try:   # five-term model: the branch-target alignment term, measured per run by align_term.py
     _A = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open('wait0_align.csv'))}
+    _J = {(r['shape'], r['kernel'], int(r['pad'])): int(r['jumps']) for r in csv.DictReader(open('wait0_align.csv'))}   # J: one cycle per jump
 except FileNotFoundError:
-    _A = {}
+    _A = {}; _J = {}
 for _p in (0, 1):
-    for _k, _v in P[_p].items(): _v['ba'] = _A.get((_k[0], _k[1], _p), 0); _v['pred'] += _v['ba']; _v['resid'] = _v['cycles'] - _v['pred']
+    for _k, _v in P[_p].items(): _v['ba'] = _A.get((_k[0], _k[1], _p), 0); _v['j'] = _J.get((_k[0], _k[1], _p), 0); _v['pred'] += _v['ba'] + _v['j']; _v['resid'] = _v['cycles'] - _v['pred']
 keys = list(P[0]); shapes = []; [shapes.append(k[0]) for k in keys if k[0] not in shapes]
 names = {'pw_C_O2': 'scalar C, -O2', 'pw_C_O3': 'scalar C, -O3', 'pw_simd_C_O2': 'SIMD C, -O2', 'pw_simd_C_O3': 'SIMD C, -O3',
          'pw_asm_rv': 'scalar asm, RV32IMC ctrl', 'pw_asm_xp': 'scalar asm, Xpulp ctrl', 'pw_simd_asm_rv': 'SIMD asm, RV32IMC ctrl', 'pw_simd_asm_xp': 'SIMD asm, Xpulp ctrl'}

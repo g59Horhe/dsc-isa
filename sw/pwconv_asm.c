@@ -26,6 +26,7 @@ static void pwconv_asm(void) {
         int a0, a1, a2, a3, a4, a5, a6, a7;
         int cnt = CO;
         asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               LBA " %[a0],0(%[xp])\n"
               LBA " %[a1],1(%[xp])\n"
@@ -65,6 +66,7 @@ static void pwconv_asm(void) {
         int a0, a1, a2, a3, a4, a5, a6, a7;
         const signed char *wend = wp + CO * CI;
         asm volatile (
+              RQ_INIT("%[u]")
               
               LBA " %[a0],0(%[xp])\n"
               LBA " %[a1],1(%[xp])\n"
@@ -104,6 +106,7 @@ static void pwconv_asm(void) {
         int a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15;
         int cnt = CO;
         asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               LBA " %[a0],0(%[xp])\n"
               LBA " %[a1],1(%[xp])\n"
@@ -167,6 +170,7 @@ static void pwconv_asm(void) {
         int a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15;
         const signed char *wend = wp + CO * CI;
         asm volatile (
+              RQ_INIT("%[u]")
               
               LBA " %[a0],0(%[xp])\n"
               LBA " %[a1],1(%[xp])\n"

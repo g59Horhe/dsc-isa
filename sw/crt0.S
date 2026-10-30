@@ -6,6 +6,15 @@
     .globl _start
 _start:
     la      sp, _stack_top
+#if REQUANT_ZBB
+    # Zbb-style saturation (sw/requant.h): one clamp bound lives in tp for the whole program; GCC never
+    # allocates tp and nothing here uses TLS
+#ifdef REAL_DATA
+    li      tp, 255
+#else
+    li      tp, -128
+#endif
+#endif
 
     la      t0, _bss_start
     la      t1, _bss_end

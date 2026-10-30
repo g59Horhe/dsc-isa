@@ -25,10 +25,21 @@ committed files; the `compare` stage diffs them. What should come out:
 | every counter CSV in `results/` (cycles, counters, checksums) | identical, row for row |
 | latency sweeps (`results/*_sweep.txt`) | identical |
 | alignment term (`results/wait0_align.csv`) | identical |
+| saturation-idiom and `-Os` sets (`results/wait0_{zbb,branch,Os}_*.csv`) | identical, row for row |
+| both-port wait-state runs (`results/both_ports.csv`) | identical |
 | synthesis totals, flat (`syn/build/{base,pulp}/area.txt`) | identical: 43,771 and 68,703 GE |
 | per-module attribution (`syn/build/attrib_area.txt`) | delta within about 20 GE of 24,218 (ABC varies between checkouts; no derived figure moves) |
 | placement (`syn/build/place-*/openroad.txt`) | identical: slack $-1.521$ / $-2.984$ ns after repair, 187,770 / 297,737 um^2 |
 | unplaced-netlist STA (`syn/build/net-*/sta.txt`) | register-to-register arrival 22.0 / 29.1 ns (area-mapped) and 26.7 / 29.9 ns (delay-mapped): not meaningful, kept as the negative example |
+
+Two stages are not in the default run because of their length. The routed
+timing sweep (`make -C syn sweep`: CTS, routing, extraction and post-route
+repair at 32 clock targets, about 3.5 hours) is committed as
+`syn/build/sweep-or26rc-rep2/` (`sweep.csv`, `penalty.csv`, `run.sh` and the
+32 `openroad.txt` logs). The energy stage (`./reproduce.sh energy`, about 1.5
+hours) exports four of its routed points to gate level, builds a traced
+simulator for each and runs the power analysis; its output is
+`results/energy_runs.csv`.
 
 Two quick checks before anything else (`./reproduce.sh sims check`):
 
@@ -46,8 +57,11 @@ build failure becomes a `BUILDFAIL` row, not an error.
 | Verilator | 5.020 | distribution package |
 | riscv32-unknown-elf-gcc | 16.1.0, built from riscv-gnu-toolchain with `--with-arch=rv32imc --with-abi=ilp32` | `RISCV_BIN` (default `/opt/riscv/bin`) |
 | sv2v | 0.0.13 | `SV2V` (default `~/tools/sv2v-Linux/sv2v`) |
-| Yosys | 0.70+201, OSS CAD Suite 2026-10-23 | `YOSYS` (default `~/tools/oss-cad-suite/bin/yosys`) |
-| OpenROAD and OpenSTA | litex-hub conda `openroad` package (`micromamba create -p ~/tools/eda -c litex-hub -c conda-forge openroad`) | `OPENROAD`, `STA` (default `~/tools/eda/bin/`) |
+| Yosys | 0.70+201, OSS CAD Suite 2026-10-23; its `fst2vcd` serves the energy stage | `YOSYS` (default `~/tools/oss-cad-suite/bin/yosys`), `FST2VCD` |
+| OpenROAD and OpenSTA, 2022 build | litex-hub conda `openroad` package (`micromamba create -p ~/tools/eda -c litex-hub -c conda-forge openroad`); placement and timing repair (`place.tcl`) and the unplaced-netlist STA | `OPENROAD`, `STA` (default `~/tools/eda/bin/`) |
+| OpenROAD 26Q2 | `26Q2-1164-g08f67ee5ec`, the Precision Innovations .deb (vaultlink.precisioninno.com); CTS, routing, extraction and post-route repair (`route.tcl`, `make sweep`) and the power analysis (`power.tcl`) | `OPENROAD_ROUTE` (default `/usr/bin/openroad`) |
+| Sky130 HD wire RC | OpenROAD-flow-scripts `flow/platforms/sky130hd/`: `setRC.tcl`, sha256 `6aeade350bf498177ea61506db8849a064a71848b05c18ad6a6e1fc5d62c962a`, and `rcx_patterns.rules`, sha256 `d5bd9b1077ceac9929416abca272a6d52e51cd9a575453a31d129817bb286476`. The tech LEF's wire capacitance is about half the calibrated value, so timing uses these | `RC_TCL`, `RCX_RULES` (default `~/tools/openroad-26q2/rcx/`) |
+| riscv32-corev-elf-gcc | 14.1.0, Embecosm `corev-openhw-gcc-ubuntu2204-20240530` from buildbot.embecosm.com, tarball sha256 `f4c79749ac4b870e01f55bf29ae29aeaa468b3c96cfa31391a85737d9ebf2160`; the only compiler here that emits CORE-V hardware loops and post-increment, used for the PULP-NN datasets `wait0_pulpnncv*` and `pulpnn_clip_loops.py`, which are skipped when it is absent | `COREV_BIN` (default `~/tools/corev-gcc/bin`) |
 | Sky130 HD | `sky130_fd_sc_hd__tt_025C_1v80.lib`, `sky130_fd_sc_hd.tlef`, `sky130_fd_sc_hd_merged.lef`, `make_tracks.tcl` from the open PDK | `LIB`, `TLEF`, `LEF`, `TRACKS` (default `~/tools/sky130/`) |
 | Python | 3.12; a venv with numpy 2.5, Pillow 13, ai-edge-litert 2.3 for `ibex_model.py` and the real-data generator | `VENV_PYTHON` (default `~/tools/venv/bin/python`) |
 | MobileNetV1 model | `mobilenet_v1_1.0_224_quant.tflite`, sha256 `ecc3a67c47c5a609ec35f6a58a7d97532834e43df4cb7d3f1204a8164b7d20dd` | `MOBILENET_TFLITE` (default `~/tools/models/`) |
@@ -56,7 +70,9 @@ build failure becomes a `BUILDFAIL` row, not an error.
 | CV32E40P | submodule at `b353438` | `third_party/cv32e40p` |
 | Ibex | submodule at `8f4c75c5` | `third_party/ibex` |
 
-The counter datasets need only Verilator and the RISC-V toolchain. The real-data
+The counter datasets need only Verilator and the RISC-V toolchain, except the
+PULP-NN datasets built with CORE-V GCC. The routed sweep needs OpenROAD 26Q2 and
+the RC files; the energy stage needs those and `fst2vcd`. The real-data
 headers are committed, so the model and image are needed only to regenerate them
 (`results/paper_tables.py` does, and checks the result against the committed
 headers). The `syn/Makefile` variables are overridden on the command line or in
@@ -67,18 +83,25 @@ the environment.
 Measured on a fresh clone on one laptop, Verilator with `-j4`: the four
 simulator builds about 5 minutes; all CV32E40P counter datasets 2 minutes and
 the Ibex datasets 1 minute (one build per run); the two sweeps 30 seconds; the alignment term 1
-minute (it rebuilds 304 binaries and asserts each reproduces its committed
-cycle count); synthesis with attribution 1.5 minutes; placement 75 seconds per
-configuration; models and papers seconds. The whole sequence after the
-simulators is about 15 minutes.
+minute (it rebuilds 368 binaries and asserts each reproduces its committed
+cycle count); the `questions` stage (96 both-port runs, and the alignment
+microbenchmark on a patched core it builds) 15 seconds, plus a few minutes the
+first time for that core's Verilator build; synthesis with attribution
+1.5 minutes; placement 75 seconds per configuration; models about a minute
+(`pulpnn_clip_loops.py` rebuilds PULP-NN 24 times) and papers seconds. The
+whole default sequence after the simulators is about 20 minutes. Outside the
+defaults, the routed sweep takes about 3.5 hours (32 targets, 4 jobs of 4
+threads) and the energy stage about 1.5 hours (four gate-level simulator builds
+20 minutes, 50 traced runs with power analysis 75 minutes).
 
 ## Layout
 
-    harness/        Verilator testbench for CV32E40P, collect_wait0.sh (counters), sweep.sh (latency), check_hwloop.py
+    harness/        Verilator testbench for CV32E40P, collect_wait0.sh (counters), sweep.sh (latency), check_hwloop.py, gate-level build (make gate)
     harness_ibex/   the same testbench for Ibex 2- and 3-stage, with the generated prim wrappers
     sw/             bare-metal kernels, requant.h (shared saturation), xpulp.h (.insn encodings), real/ (MobileNetV1 headers and generator)
     results/        counter CSVs, sweep outputs, the model scripts, RESULTS.md
-    syn/            sv2v + Yosys synthesis and attribution, OpenROAD placement (place.tcl), Ibex synthesis; build/ holds the committed flow outputs
+    syn/            sv2v + Yosys synthesis and attribution, OpenROAD placement (place.tcl), CTS, routing and extraction (route.tcl, make sweep),
+                    gate-level netlists and power (gate_netlist.sh, power.tcl), Ibex synthesis; build/ holds the committed flow outputs
     third_party/    CV32E40P and Ibex submodules
 
 Simulator flags: `--hex`, `--cycles`, `--wait N` (data port), `--iwait N`
@@ -91,7 +114,16 @@ window, so every counter comes from the binary whose cycles are reported.
 `-DPERF_EVENT=<bit>` with `-march=rv32imc_zicsr` still programs the CSR counter
 and reports it as an AUX word; `results/counter_validation.py` uses it to check
 the EVENTS counts. `-DCODE_PAD=<n>` shifts code alignment by n compressed nops;
-both alignments are measured for every number.
+both alignments are measured for every number. `sw/requant.h` holds the one
+saturation sequence every kernel uses, and its review modes: `-DREQUANT_CLIP=1`
+(`cv.clip`), `-DREQUANT_ZBB=1` (a three-instruction Zbb-style min/max
+saturation, two one-cycle ALU stand-ins since the core has no Zbb; cycles only
+on data that saturate) and `-DREQUANT_BRANCH=1` (a not-taken-branch fast path
+with the clamp out of line; not for hardware-loop bodies). A gate-level build
+(`make -C harness gate PT=<point>`, from a routed netlist of the sweep) has no
+EVENTS line and takes two more flags: `--fst FILE` records the core's nets over
+the measured window, and `--fst-hp PS` sets the half clock period so that trace
+times are real time.
 
 ## Why CV32E40P
 

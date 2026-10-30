@@ -81,6 +81,7 @@ static void dwconv_simd_al_asm(void) {
 #if XPULP_CTRL
             int cnt = OW / 4;
             asm volatile (
+              RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               HWLOOP0("%[cnt]", RQ_XS(55+4*RQ_N))   /* 6 loads + 24 window ops + 4 x (5 + requant + 1), + 1 */
               LW_INC("%[l0]", "%[p]", "4")
@@ -98,6 +99,7 @@ static void dwconv_simd_al_asm(void) {
 #else
             const act_t *pend = p + (OW / 4) * 4;
             asm volatile (
+              RQ_INIT("%[u]")
               "1:\n"
               "lw %[l0],0(%[p])\n lw %[h0],4(%[p])\n lw %[l1]," XS(W) "(%[p])\n lw %[h1]," XS(W+4) "(%[p])\n"
               "lw %[l2]," XS(2*W) "(%[p])\n lw %[h2]," XS(2*W+4) "(%[p])\n"
