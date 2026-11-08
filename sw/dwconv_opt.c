@@ -29,8 +29,11 @@
 #define W    16
 #endif
 #define K    3
-#define OH   (H - K + 1)
-#define OW   (W - K + 1)
+#ifndef STRIDE
+#define STRIDE 1   /* 2: stride-2 convolution (review round R4); the default build is unchanged */
+#endif
+#define OH   ((H - K) / STRIDE + 1)
+#define OW   ((W - K) / STRIDE + 1)
 #ifndef SHIFT
 #define SHIFT 7
 #endif
@@ -82,9 +85,9 @@ static void dwconv_opt(void) {
 
         for (int oy = 0; oy < OH; oy++) {
             /* Three row pointers, advanced by one byte per output pixel. */
-            const act_t *r0 = &input[c][oy + 0][0];
-            const act_t *r1 = &input[c][oy + 1][0];
-            const act_t *r2 = &input[c][oy + 2][0];
+            const act_t *r0 = &input[c][oy * STRIDE + 0][0];
+            const act_t *r1 = &input[c][oy * STRIDE + 1][0];
+            const act_t *r2 = &input[c][oy * STRIDE + 2][0];
 
             for (int ox = 0; ox < OW; ox++) {
                 int acc = r0[0] * w00 + r0[1] * w01 + r0[2] * w02
@@ -95,7 +98,7 @@ static void dwconv_opt(void) {
 #else
                 *op = requant(acc); op += OSTRIDE;
 #endif
-                r0++; r1++; r2++;
+                r0 += STRIDE; r1 += STRIDE; r2 += STRIDE;
             }
         }
     }

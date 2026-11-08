@@ -30,8 +30,11 @@
 #define W 16
 #endif
 #define K 3
-#define OH (H - K + 1)
-#define OW (W - K + 1)
+#ifndef STRIDE
+#define STRIDE 1   /* 2: stride-2 convolution (review round R4); the default build is unchanged */
+#endif
+#define OH ((H - K) / STRIDE + 1)
+#define OW ((W - K) / STRIDE + 1)
 
 #define XS(x) S_(x)
 #define S_(x) #x
@@ -98,10 +101,51 @@ static void dwconv_asm(void) {
             w5 = wp[5], w6 = wp[6], w7 = wp[7], w8 = wp[8];
         out_t *op = &output[c][0][0];
         for (int oy = 0; oy < OH; oy++) {
-            const act_t *p = &input[c][oy][0];
-            const act_t *pend = p + (OW / 3) * 3;
+            const act_t *p = &input[c][oy * STRIDE][0];
+            const act_t *pend = p + (OW / 3) * 3 * STRIDE;
             int a0, a1, a2, b0, b1, b2, c0, c1, c2, acc, t, u;
-#if XPULP_CTRL
+#if XPULP_CTRL && STRIDE == 2
+            /* Stride 2: each pixel needs two new columns; the three column registers still rotate with period 3. */
+            const act_t *r0 = p + 1, *r1 = p + W + 1, *r2 = p + 2 * W + 1;
+            int cnt = OW / 3;
+            asm volatile (
+              RQ_INIT("%[u]")
+              XPULP_ASM_BEGIN
+              LBA " %[a0],-1(%[r0])\n " LBA " %[b0],-1(%[r1])\n " LBA " %[c0],-1(%[r2])\n"
+              HWLOOP0("%[cnt]", RQ_XS(3*(24+RQ_N)+1))   /* 3 pixels x (6 loads + 18 + requant) + 1 */
+              LOAD3("%[a1]","%[b1]","%[c1]",1) LOAD3("%[a2]","%[b2]","%[c2]",2)
+              PIX("%[a0]","%[a1]","%[a2]","%[b0]","%[b1]","%[b2]","%[c0]","%[c1]","%[c2]","0")
+              LOAD3("%[a0]","%[b0]","%[c0]",3) LOAD3("%[a1]","%[b1]","%[c1]",4)
+              PIX("%[a2]","%[a0]","%[a1]","%[b2]","%[b0]","%[b1]","%[c2]","%[c0]","%[c1]","1")
+              LOAD3("%[a2]","%[b2]","%[c2]",5) LOAD3("%[a0]","%[b0]","%[c0]",6)
+              PIX("%[a1]","%[a2]","%[a0]","%[b1]","%[b2]","%[b0]","%[c1]","%[c2]","%[c0]","2")
+              XPULP_ASM_END
+              : [r0]"+r"(r0), [r1]"+r"(r1), [r2]"+r"(r2), [op]"+r"(op), [acc]"=&r"(acc), [t]"=&r"(t), [u]"=&r"(u),
+                [a0]"=&r"(a0), [a1]"=&r"(a1), [a2]"=&r"(a2), [b0]"=&r"(b0), [b1]"=&r"(b1),
+                [b2]"=&r"(b2), [c0]"=&r"(c0), [c1]"=&r"(c1), [c2]"=&r"(c2)
+              : [cnt]"r"(cnt), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2), [w3]"r"(w3),
+                [w4]"r"(w4), [w5]"r"(w5), [w6]"r"(w6), [w7]"r"(w7), [w8]"r"(w8)
+              : "memory");
+            (void)pend; (void)p;
+#elif STRIDE == 2
+            asm volatile (
+              RQ_INIT("%[u]")
+              LBA " %[a0],0(%[p])\n " LBA " %[b0]," W1 "(%[p])\n " LBA " %[c0]," W2 "(%[p])\n"
+              "1:\n"
+              LOAD3("%[a1]","%[b1]","%[c1]",1) LOAD3("%[a2]","%[b2]","%[c2]",2)
+              PIX("%[a0]","%[a1]","%[a2]","%[b0]","%[b1]","%[b2]","%[c0]","%[c1]","%[c2]","0")
+              LOAD3("%[a0]","%[b0]","%[c0]",3) LOAD3("%[a1]","%[b1]","%[c1]",4)
+              PIX("%[a2]","%[a0]","%[a1]","%[b2]","%[b0]","%[b1]","%[c2]","%[c0]","%[c1]","1")
+              LOAD3("%[a2]","%[b2]","%[c2]",5) LOAD3("%[a0]","%[b0]","%[c0]",6)
+              PIX("%[a1]","%[a2]","%[a0]","%[b1]","%[b2]","%[b0]","%[c1]","%[c2]","%[c0]","2")
+              "addi %[p],%[p],6\n addi %[op],%[op],3\n bne %[p],%[pend],1b\n"
+              : [p]"+r"(p), [op]"+r"(op), [acc]"=&r"(acc), [t]"=&r"(t), [u]"=&r"(u),
+                [a0]"=&r"(a0), [a1]"=&r"(a1), [a2]"=&r"(a2), [b0]"=&r"(b0), [b1]"=&r"(b1),
+                [b2]"=&r"(b2), [c0]"=&r"(c0), [c1]"=&r"(c1), [c2]"=&r"(c2)
+              : [pend]"r"(pend), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2), [w3]"r"(w3),
+                [w4]"r"(w4), [w5]"r"(w5), [w6]"r"(w6), [w7]"r"(w7), [w8]"r"(w8)
+              : "memory");
+#elif XPULP_CTRL
             const act_t *r0 = p + 2, *r1 = p + W + 2, *r2 = p + 2 * W + 2;
             int cnt = OW / 3;
             asm volatile (
@@ -145,7 +189,7 @@ static void dwconv_asm(void) {
               : "memory");
 #endif
             for (int ox = (OW / 3) * 3; ox < OW; ox++) {
-                const act_t *r0 = &input[c][oy][ox], *r1 = r0 + W, *r2 = r0 + 2 * W;
+                const act_t *r0 = &input[c][oy * STRIDE][ox * STRIDE], *r1 = r0 + W, *r2 = r0 + 2 * W;
                 int s = r0[0]*w0 + r0[1]*w1 + r0[2]*w2 + r1[0]*w3 + r1[1]*w4 + r1[2]*w5
                       + r2[0]*w6 + r2[1]*w7 + r2[2]*w8;
                 *op++ = requant(s);

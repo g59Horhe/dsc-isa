@@ -76,7 +76,7 @@ S_DEC="scalar_rv|dwconv_asm.c|-O2 scalar_xp|dwconv_asm.c|-O2+$XP unal_rv|dwconv_
 S_IF="scalar_rv|dwconv_asm.c|-O2+$CL scalar_xp|dwconv_asm.c|-O2+$XP+$CL unal_rv|dwconv_simd_asm.c|-O2+$CL unal_xp|dwconv_simd_asm.c|-O2+$XP+$CL al_rv|dwconv_simd_al_asm.c|-O2+$CL al_xp|dwconv_simd_al_asm.c|-O2+$XP+$CL"
 S_IF_PW="pw_rv|pwconv_asm.c|-O2+$CL pw_xp|pwconv_asm.c|-O2+$XP+$CL pws_rv|pwconv_simd_asm.c|-O2+$CL pws_xp|pwconv_simd_asm.c|-O2+$XP+$CL"
 
-stage_sims()    { log sims; make -C harness all && make -C harness_ibex all; }
+stage_sims()    { log sims; make -C harness all && make -C harness_ibex all ibex2b ibex3b; }   # ibex*b: RV32B=1, for the Zbb measurement
 stage_check()   { log check; (cd sw && make run-hello && make run-dotp); }
 stage_validate() { log validate; (cd results && python3 counter_validation.py > /dev/null && cp counter_validation.txt ../$OUT/); }   # harness event counts against the CSR counters
 stage_collect() {
@@ -105,6 +105,16 @@ stage_collect() {
   REAL_HDR_PREFIX=real/dw3 collect branch_real_dw3 "$DW" "scalar_asm_rv|sw/dwconv_asm.c|-O2+$BR simd_unal_asm_rv|sw/dwconv_simd_asm.c|-O2+$BR simd_al_asm_rv|sw/dwconv_simd_al_asm.c|-O2+$BR"
   REAL_HDR_PREFIX=real/pw  collect branch_real_pw "$PW" "pw_asm_rv|sw/pwconv_asm.c|-O2+$BR pw_simd_asm_rv|sw/pwconv_simd_asm.c|-O2+$BR"
   collect Os_dw "$DW" "scalar_Os|sw/dwconv_opt.c|-Os simd_unal_Os|sw/dwconv_simd.c|-Os simd_al_Os|sw/dwconv_simd_al.c|-Os dw5_C_Os|sw/dwconv5.c|-Os"
+  # review round R4: the 3x3 grid and the C kernels at stride 2 (results/stride2_model.py), shapes whose rows hold a 4-pixel group
+  S2SH="8:16:16 32:16:16 8:32:32 16:32:32"; K_S2="scalar_O2|sw/dwconv_opt.c|-O2 scalar_O3|sw/dwconv_opt.c|-O3"
+  for nf in scalar_asm:dwconv_asm simd_unal_asm:dwconv_simd_asm simd_al_asm:dwconv_simd_al_asm; do n=${nf%%:*}; f=${nf##*:}
+    K_S2="$K_S2 ${n}_rv|sw/$f.c|-O2 ${n}_xp|sw/$f.c|-O2+$XP ${n}_rv_clip|sw/$f.c|-O2+$CL ${n}_xp_clip|sw/$f.c|-O2+$XP+$CL"; done
+  EV="1 2 5 7 9" collect s2_dw3 "$S2SH" "$K_S2" "-DSTRIDE=2"
+  # review round R7: pointwise with the input channels in blocks (sw/gen_pwconv_blk_asm.py, results/pw_blocked_model.py)
+  K_PWB="pw_C_O2|sw/pwconv.c|-O2 pw_C_O3|sw/pwconv.c|-O3"
+  for nf in asm:pwconv_blk_asm simd_asm:pwconv_blk_simd_asm; do n=${nf%%:*}; f=${nf##*:}
+    K_PWB="$K_PWB pwb_${n}_rv|sw/$f.c|-O2 pwb_${n}_xp|sw/$f.c|-O2+$XP pwb_${n}_rv_clip|sw/$f.c|-O2+$CL pwb_${n}_xp_clip|sw/$f.c|-O2+$XP+$CL"; done
+  collect pwb "32:16:8:8 64:16:8:8 128:16:8:8" "$K_PWB"
   collect Os_pw "$PW" "pw_C_Os|sw/pwconv.c|-Os pw_simd_C_Os|sw/pwconv_simd.c|-Os"
   # PULP-NN: upstream GCC (pulpnn), CORE-V GCC without (pulpnncv0) and with (pulpnncv) hardware loops and post-increment;
   # each as a library build (PULPNN_LIB=1) and shape-specialised (_spec)
@@ -120,7 +130,13 @@ stage_collect() {
   done
   unset CROSS
 }
-stage_ibex()    { log ibex; for c in ibex2 ibex3; do collect_ibex $c dw3 "$DW" "$K_IBEX_DW3"; collect_ibex $c dw5 "$DW" "$K_IBEX_DW5"; collect_ibex $c dw5os "$DW" "$K_IBEX_DW5OS"; collect_ibex $c pw "$PW" "$K_IBEX_PW"; done; }
+stage_ibex()    { log ibex; for c in ibex2 ibex3; do collect_ibex $c dw3 "$DW" "$K_IBEX_DW3"; collect_ibex $c dw5 "$DW" "$K_IBEX_DW5"; collect_ibex $c dw5os "$DW" "$K_IBEX_DW5OS"; collect_ibex $c pw "$PW" "$K_IBEX_PW"; done
+  # review round R4: Zbb on Ibex built with RV32B=1, branch-free against srai; max; min (standard encodings), synthetic and real (results/ibex_zbb_model.py)
+  local ZS="-DREQUANT_ZBB=1+-DZBB_STD=1"
+  for c in ibex2b ibex3b; do for sat in bf zbb; do F="-O2"; [ $sat = zbb ] && F="-O2+$ZS"
+    collect_ibex $c ${sat}_dw3 "$DW" "scalar_asm_rv|sw/dwconv_asm.c|$F"; collect_ibex $c ${sat}_dw5os "$DW" "dw5_os_asm_rv|sw/dwconv5_os_asm.c|$F"; collect_ibex $c ${sat}_pw "$PW" "pw_asm_rv|sw/pwconv_asm.c|$F"
+    REAL_HDR_PREFIX=real/dw3 collect_ibex $c ${sat}_real_dw3 "$DW" "scalar_asm_rv|sw/dwconv_asm.c|$F"; REAL_HDR_PREFIX=real/pw collect_ibex $c ${sat}_real_pw "$PW" "pw_asm_rv|sw/pwconv_asm.c|$F"
+  done; done; }
 stage_sweeps()  {
   log sweeps
   KERNELS="$S_DEC" harness/sweep.sh > $OUT/decomp_latency_sweep.txt
@@ -132,11 +148,11 @@ stage_questions() {   # Q4: the cycle model with wait states on both ports (96 r
   (cd results && BOTH_PORTS_OUT=../$OUT/both_ports.csv python3 both_ports_model.py > ../$OUT/both_ports_model.md || echo "!! both_ports_model.py failed")
   (cd results && python3 align_rule_check.py > ../$OUT/align_rule_check.md || echo "!! align_rule_check.py failed")
 }
-stage_syn()     { log syn; make -C syn all attrib timing && make -C syn/ibex all; }   # timing = unplaced-netlist OpenSTA, kept as the negative example
+stage_syn()     { log syn; make -C syn all attrib timing && make -C syn/ibex all wb0b wb1b; }   # timing = unplaced-netlist OpenSTA, kept as the negative example
 stage_place()   { log place; make -C syn net-base-area net-pulp-area && make -C syn place-base place-pulp; }
 stage_models()  {
   log models
-  (cd results && for s in wait0_eqrequant_model.py wait0_decomp_model.py wait0_pw_model.py wait0_dw5_model.py dw5_os_model.py summary_kernels.py clip_model.py real_data_model.py block_model.py area_table.py pulpnn_model.py energy_model.py shapley_baselines.py time_adjusted.py saturation_model.py; do python3 $s > ../$OUT/${s%.py}.md || echo "!! $s failed"; done; $VENV_PYTHON ibex_model.py > ../$OUT/ibex_model.md || echo "!! ibex_model.py failed (needs numpy)")
+  (cd results && for s in wait0_eqrequant_model.py wait0_decomp_model.py wait0_pw_model.py wait0_dw5_model.py dw5_os_model.py summary_kernels.py clip_model.py real_data_model.py block_model.py area_table.py pulpnn_model.py energy_model.py shapley_baselines.py time_adjusted.py saturation_model.py ibex_zbb_model.py stride2_model.py icache_check.py pw_blocked_model.py ubench_split.py; do python3 $s > ../$OUT/${s%.py}.md || echo "!! $s failed"; done; $VENV_PYTHON ibex_model.py > ../$OUT/ibex_model.md || echo "!! ibex_model.py failed (needs numpy)")
   if [ -x "$COREV_BIN/riscv32-corev-elf-gcc" ]; then (cd results && COREV_BIN=$COREV_BIN python3 pulpnn_clip_loops.py > ../$OUT/pulpnn_clip_loops.md || echo "!! pulpnn_clip_loops.py failed"); else echo "!! $COREV_BIN/riscv32-corev-elf-gcc not found, skipping pulpnn_clip_loops.py"; fi
   [ -d paper ] && (cd results && python3 clip_model.py --latex ../paper/tab_decomp.tex --no-zbb > /dev/null && python3 area_table.py --latex ../paper/tab_area.tex > /dev/null)
   VENV_PYTHON=$VENV_PYTHON python3 results/paper_tables.py
@@ -144,7 +160,7 @@ stage_models()  {
 stage_energy()  {   # M3: routed netlists to gate level (syn/gate_netlist.sh), gate-level harnesses, switching activity and power (about an hour)
   log energy
   for pt in base-16 pulp-16 base-11.5 pulp-14.5; do (cd syn && sh gate_netlist.sh build/sweep-or26rc-rep2/$pt build/gate/$pt) && make -C harness gate PT=$pt || return 1; done
-  (cd results && ENERGY_OUT=../$OUT/energy_runs.csv python3 energy_runs.py)   # needs the routed sweep (make -C syn sweep); not in the default stages
+  (cd results && ENERGY_OUT=../$OUT/energy_runs.csv python3 energy_runs.py && ENERGY_GROUPS_OUT=../$OUT/energy_groups.csv python3 energy_groups.py)   # needs the routed sweep (make -C syn sweep); not in the default stages
 }
 stage_papers()  {
   log papers

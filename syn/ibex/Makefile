@@ -11,7 +11,10 @@ FLIST = ../../harness_ibex/ibex.f
 INCS = -I$(IBEX)/vendor/lowrisc_ip/ip/prim/rtl -I$(IBEX)/vendor/lowrisc_ip/dv/sv/dv_utils -I$(IBEX)/rtl -I../../harness_ibex/gen
 PARAMS = -set RV32M 3 -set RV32B 0 -set RegFile 0 -set MHPMCounterNum 10 -set ICache 0 -set PMPEnable 0 -set BranchTargetALU 1
 
-.PHONY: all wb0 wb1 clean
+# wb0b / wb1b: the same with RV32B=1 (RV32BBalanced, which includes Zbb's min and max)
+PARAMS_B = $(subst -set RV32B 0,-set RV32B 1,$(PARAMS))
+
+.PHONY: all wb0 wb1 wb0b wb1b clean
 all: wb0 wb1
 ibex.v: $(FLIST)
 	$(SV2V) $(INCS) -DSYNTHESIS -DYOSYS $(addprefix ../../,$(shell cat $(FLIST))) -w $@
@@ -21,5 +24,9 @@ wb0 wb1: ibex.v
 	mkdir -p $@
 	$(YOSYS) -q -l $@/yosys.log -p "read_verilog -sv -DSYNTHESIS ibex.v; chparam $(PARAMS) -set WritebackStage $(subst wb,,$@) ibex_top; hierarchy -check -top ibex_top; proc; flatten -wb; opt -full; memory -nomap; opt_clean; synth -top ibex_top -run coarse:; opt -full; techmap; opt -fast; dfflibmap -liberty $(LIB); abc -liberty $(LIB); opt_clean -purge; tee -q -o $@/stat.json stat -liberty $(LIB) -json"
 	python3 ../area.py $@/stat.json $(NAND2_AREA) | head -3
+wb0b wb1b: ibex.v
+	mkdir -p $@
+	$(YOSYS) -q -l $@/yosys.log -p "read_verilog -sv -DSYNTHESIS ibex.v; chparam $(PARAMS_B) -set WritebackStage $(subst b,,$(subst wb,,$@)) ibex_top; hierarchy -check -top ibex_top; proc; flatten -wb; opt -full; memory -nomap; opt_clean; synth -top ibex_top -run coarse:; opt -full; techmap; opt -fast; dfflibmap -liberty $(LIB); abc -liberty $(LIB); opt_clean -purge; tee -q -o $@/stat.json stat -liberty $(LIB) -json"
+	python3 ../area.py $@/stat.json $(NAND2_AREA) | head -3
 clean:
-	rm -rf ibex.v wb0 wb1
+	rm -rf ibex.v wb0 wb1 wb0b wb1b

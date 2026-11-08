@@ -18,15 +18,14 @@ survive verification. The retired claims and why are listed at the end.
    instruction at an address 2 mod 4 (the aligner penalty, counted from
    the harness's fetch stream by `results/align_term.py`) and J the jumps
    retired (one cycle each, `sw/ubench_jump.c`; 56 of the 296 runs have
-   them). The coefficients are fixed from microbenchmarks, not fitted. Of
-   the 296 distinct runs (48 equalised 3x3 runs and 256 hand-written-kernel
-   runs of all three families, sharing 8), 284 are predicted exactly; the
-   mean absolute error is 0.008% and the maximum 1.14%. Ten of the other
-   twelve are one cycle per channel high (at most 0.14%, cause not
-   identified); the last two have two branch targets in one fetch word,
-   which the harness's per-word redirect histogram cannot split (flagged as
-   `ba_ambig` in `wait0_align.csv`). The compiler-generated 5x5 and
-   pointwise kernels and the block fit exactly. Without Ba and J the figures
+   them). The coefficients are fixed from microbenchmarks, not fitted. All
+   296 distinct runs (48 equalised 3x3 runs and 256 hand-written-kernel runs
+   of all three families, sharing 8) are predicted to the cycle, as are the
+   64 runs of the compiler-generated 5x5 and pointwise kernels and the
+   block. Ba is counted from the redirect targets the core's fetch stage
+   takes (harness `--redir-pc`); counted from the instruction bus instead,
+   twelve runs miss by up to 1.14%, because the bus sees words and misses a
+   short forward jump whose target word the prefetcher already fetched. Without Ba and J the figures
    are 0.59% / 2.24% over the 48 equalised runs and 0.67% / 6.4% over the
    256. Every event count comes from the measured binary itself: the
    harness integrates the core's counter event signals over the measured
@@ -129,8 +128,8 @@ survive verification. The retired claims and why are listed at the end.
    they return 1.67x / 1.05x / 2.89x over -O3 at the headline shapes,
    against 2.53x / 4.30x / 5.39x. The build alone moves them 1.34 to 2.67x,
    which makes the accelerated library's build a fifth measurement
-   sensitivity. The cycle model predicts all 144 PULP-NN runs within 0.23%
-   (mean 0.01%) once misaligned stores join the split-load term; the jump
+   sensitivity. The cycle model predicts all 144 PULP-NN runs to the cycle
+   once misaligned stores join the split-load term; the jump
    term J (1 cycle each, `sw/ubench_jump.c`) is part of the model for all
    code (finding 1).
 18. Core energy per MAC, from gate-level switching activity of the routed
@@ -163,6 +162,39 @@ survive verification. The retired claims and why are listed at the end.
    (`saturation_model.py`, `wait0_{zbb,branch,Os}_*.csv`). An earlier
    version measured the Zbb cells with two ALU stand-ins, one of which
    assembled to a 16-bit `c.and` (2.05x, exactly 6.0 cycles per output).
+20. The full 2^3 grid and its interactions (`clip_model.py --lattice`, the TC
+   decomposition table). Control and clip are both worth more on top of the
+   datapath: the pairwise Shapley interaction (a factor on log-speedup) is
+   1.26, 1.10 and 1.22 for datapath and control and 1.14, 1.13 and 1.33 for
+   datapath and clip on 3x3, 5x5 and 1x1; control and clip barely interact
+   (1.05, 1.01, 1.06).
+21. Stride 2 (3x3, the whole grid at four shapes, 112 runs, all exact in the
+   model, checksums against an independent Python model; `stride2_model.py`).
+   The aligned kernel's shift-and-merge saves nothing when four outputs need
+   three words per row: it takes 1.37 to 1.42 times the unaligned kernel's
+   cycles (1.16 at stride 1). Split loads are 9.3 to 10.8% of the unaligned
+   kernel's cycles; the full extension returns 2.65 to 2.73x over the hand
+   kernel and 2.5 to 3.2x over -O3; clip's Shapley value, 1.34 to 1.37x, still
+   exceeds control's, 1.14 to 1.18x. At width 16 the hand kernel is 5% slower
+   than -O3; with it as the base every Shapley value scales by the same factor
+   and the ranking stands. The speedup over the hand kernel grows from 2.24 to
+   2.49x at stride 1 because the hand kernel loses its column reuse (7.10
+   loads per output at 8x16x16 against 4.35 at stride 1), while the
+   unaligned kernel's loads and cycles per output do not change.
+22. Zbb on Ibex (`ibex_zbb_model.py`). Built with RV32B=1, both pipelines run
+   the branch-free binaries in the same cycles as without it, and the
+   standard max and min save 5.75 to 5.97 cycles per output (5.00 to 5.07 on
+   real data), the same as cv.max and cv.min on CV32E40P, with every checksum
+   equal: 1.21x, 1.06x and 1.11x on the 3-stage pipeline. The whole bitmanip
+   option adds 3,404 GE (2-stage, 7.8%) and 2,854 GE (3-stage, 6.4%) at
+   synthesis, a loose upper bound on min and max: RV32BBalanced implements
+   Zba, Zbb and Zbs and the draft Zbf (bfp) and Zbt (cmix, cmov, fsl, fsr),
+   per Ibex's integration guide and decoder.
+23. Bus accesses per MAC (`clip_model.py`), for the energy caveat: the full
+   extension fetches 2.47x, 3.50x and 4.66x fewer instruction words than -O3
+   and moves 2.14x and 3.43x fewer data words on 5x5 and 1x1, but 1.31x more
+   on 3x3, where split loads double a word access. Leaving the memories out
+   of the energy figures therefore understates the extension's advantage.
 
 ## Kernels
 
@@ -253,9 +285,8 @@ The coefficients are fixed from the microbenchmarks below, not fitted, so
 the R^2 is that of a fixed-form prediction. Without the alignment term the
 mean absolute error is 0.59% and the maximum 2.24% over the 48 runs, and
 0.67% and 6.4% over the 256 hand-written kernel runs of all three
-families, with and without clip; with it and the jump term J, 46 of the 48
-and 244 of the 256 are exact, with maxima of 0.015% and 1.14%
-(`results/clip_model.py`, `results/align_term.py`).
+families, with and without clip; with it and the jump term J, all 48 and
+all 256 are exact (`results/clip_model.py`, `results/align_term.py`).
 
 ### Fifth and sixth terms: branch-target alignment and jumps
 
@@ -263,12 +294,15 @@ The residual of the four-term model is the aligner effect of the code
 alignment section: a taken branch, jump or hardware-loop return whose
 target is a 32-bit instruction at an address 2 mod 4 costs one cycle,
 because the fetched word holds only its lower half. `harness/sim_main.cpp
---redir <file>` writes the histogram of non-sequential instruction fetches
-(word addresses) in the measured window; `results/align_term.py` rebuilds
-every hand-written and equalised run (304 builds, 296 distinct; the rebuilt binary must
-reproduce the committed cycle count, which it does in every case), resolves
-each redirect to its target PC from the ELF, and counts the penalised
-redirects, Ba. The rule is the aligner's (`cv32e40p_aligner.sv`, state
+--redir-pc <file>` writes the histogram of redirect targets in the measured
+window by exact address, from the IF stage's own redirect request and target
+(`branch_req`, `branch_addr_n`, exposed in `harness/public.vlt`), so every
+branch, jump and hardware-loop redirect the core takes is in it;
+`results/align_term.py` rebuilds every hand-written and equalised run (304
+builds, 296 distinct; the rebuilt binary must reproduce the committed cycle
+count, which it does in every case), looks each target up in the ELF, and
+counts the penalised redirects, Ba. It also asserts that, in every kernel
+without hardware loops, the redirects equal taken branches plus jumps. The rule is the aligner's (`cv32e40p_aligner.sv`, state
 BRANCH_MISALIGNED): after a jump to an address with bit 1 set it holds the
 upper half-word of the fetched word; if that half-word carries the 32-bit
 opcode marker (bits 17:16 = 11) it deasserts instr_valid for one cycle
@@ -291,14 +325,15 @@ decomposition set's scalar_asm_rv, same binary, counted once); rule A is
 the one above and is used:
 
 rule | mean |resid| | max | runs over 1% (296 distinct runs); sw/ubench_align.c confirms rule A: +1 cycle per iteration only with a 32-bit instruction at a 2 mod 4 target
-A | 0.01% | 1.14% | 1
+A | 0.00% | 0.00% | 0
 B | 0.17% | 3.17% | 12
-C | 0.21% | 3.17% | 14
+C | 0.21% | 3.17% | 13
 rule A written as ba
-equalised 3x3 set (6 kernels x 4 shapes x 2 alignments): 48 runs; four-term model mean |resid| 0.59% max 2.24%; with Ba mean 0.079% max 0.74%; with Ba and J mean 0.001% max 0.01%, exact 46; runs over 1%: 10 -> 0 -> 0; runs with Ba > 0: 42; with J > 0: 12
-hand-written runs (three families, with and without clip): 256 runs; four-term model mean |resid| 0.67% max 6.36%; with Ba mean 0.081% max 1.34%; with Ba and J mean 0.009% max 1.14%, exact 244; runs over 1%: 50 -> 2 -> 1; runs with Ba > 0: 144; with J > 0: 48
-all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once): 296 runs; four-term model mean |resid| 0.66% max 6.36%; with Ba mean 0.079% max 1.34%; with Ba and J mean 0.008% max 1.14%, exact 284; runs over 1%: 59 -> 2 -> 1; runs with Ba > 0: 179; with J > 0: 56
+equalised 3x3 set (6 kernels x 4 shapes x 2 alignments): 48 runs; four-term model mean |resid| 0.59% max 2.24%; with Ba mean 0.078% max 0.74%; with Ba and J mean 0.000% max 0.00%, exact 48; runs over 1%: 10 -> 0 -> 0; runs with Ba > 0: 42; with J > 0: 12
+hand-written runs (three families, with and without clip): 256 runs; four-term model mean |resid| 0.67% max 6.36%; with Ba mean 0.071% max 0.98%; with Ba and J mean 0.000% max 0.00%, exact 256; runs over 1%: 50 -> 0 -> 0; runs with Ba > 0: 146; with J > 0: 48
+all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once): 296 runs; four-term model mean |resid| 0.66% max 6.36%; with Ba mean 0.071% max 0.98%; with Ba and J mean 0.000% max 0.00%, exact 296; runs over 1%: 59 -> 0 -> 0; runs with Ba > 0: 181; with J > 0: 56
 compiler-generated 5x5 and pointwise kernels and the block (not part of the 296): 64 runs; four-term model mean |resid| 1.58% max 8.59%; with Ba mean 0.000% max 0.00%; with Ba and J mean 0.000% max 0.00%, exact 64; runs over 1%: 22 -> 0 -> 0; runs with Ba > 0: 43; with J > 0: 0
+stride 2: the 3x3 grid and the C kernels (not part of the 296): 112 runs; four-term model mean |resid| 0.56% max 5.00%; with Ba mean 0.000% max 0.00%; with Ba and J mean 0.000% max 0.00%, exact 112; runs over 1%: 15 -> 0 -> 0; runs with Ba > 0: 79; with J > 0: 0
 
 
 With Ba and J the model is `cycles = I + 2 x taken branches + load-use
@@ -307,20 +342,26 @@ jump event (ev7), which `align_term.py` reads from the run it already does
 and writes to `results/wait0_align.csv` with Ba; a jump costs one cycle
 beyond its instruction (`sw/ubench_jump.c`: 1,000 `jal` add 1,000 cycles,
 1,000 call-return pairs add 2,001 for 2,001 jumps). 56 of the 296 runs have
-jumps, all of them 3x3 kernels, about one per output row. With both terms
-284 of the 296 runs are exact (mean 0.008%, maximum 1.14%), and all 32
-full-Xpulp runs. Ten of the other twelve are one cycle per channel high
-(+8, +16, +32 cycles), all in RV32IMC-control 3x3 hand kernels; the cause
-is not identified. The last two are the aligned SIMD kernel with RV32IMC
-control at 8x32x32, pad 1, with and without clip, 1,440 cycles high: fetch
-word 0x1e0 holds two branch targets, `j 1e0` (8 times, a 16-bit target, no
-penalty) and the loop's `bne ...,1e2` (1,440 times, a 32-bit `lw` at 2 mod
-4). The redirect histogram is per word, so the two cannot be split; counted
-at 0x1e2 the runs close exactly. `wait0_align.csv` column `ba_ambig` counts
-the redirects into such words. The compiler-generated 5x5 and pointwise
-kernels and the eight block variants (64 runs, not part of the 296) fit
-exactly. The model scripts add Ba and J when the file is present; every
-residual quoted below is six-term. The 256 hand-written runs by family (`results/clip_model.py`;
+jumps, all of them 3x3 kernels: one per output row where GCC reaches the
+second iteration of a two-pixel C row tail by a jump, and in the hand scalar
+and aligned SIMD asm kernels one more per channel, where the row loop is
+entered by a jump (120 = 112 + 8 at 8x16x16, 224 = 192 + 32 at 32x8x8).
+With both terms all 296 runs are exact, and the compiler-generated 5x5 and
+pointwise kernels and the eight block variants (64 runs, not part of the
+296) too.
+
+An earlier version counted Ba from the instruction bus (`--redir`, word
+addresses of non-sequential fetches, resolved against the ELF); that count
+is kept as `ba_word` in `results/wait0_align.csv`. It left 12 of the 296
+runs inexact, all positive. Ten were one cycle per channel high: the row
+loop's entry jump is a short forward jump to a 32-bit instruction at 2 mod
+4, and the prefetcher had already fetched its target word in sequence, so
+the bus showed no redirect. Two (the aligned SIMD kernel with RV32IMC
+control, 8x32x32, pad 1, with and without clip) were 1,440 cycles high:
+word 0x1e0 holds two targets, `j 1e0` (8 times, a 16-bit target) and the
+loop's `bne ...,1e2` (1,440 times, a 32-bit `lw` at 2 mod 4), which a word
+histogram cannot split. The model scripts add Ba and J when the file is
+present; every residual quoted below is six-term. The 256 hand-written runs by family (`results/clip_model.py`;
 full Xpulp means the SIMD datapath, hardware loops and clip together):
 
 | family | kernels | runs | of which full Xpulp |
@@ -330,22 +371,23 @@ full Xpulp means the SIMD datapath, hardware loops and clip together):
 | 1x1 pointwise | pw_asm_rv, pw_asm_rv_clip, pw_asm_xp, pw_asm_xp_clip, pw_simd_asm_rv, pw_simd_asm_rv_clip, pw_simd_asm_xp, pw_simd_asm_xp_clip | 64 | 8 |
 | total | | 256 | 32 |
 
-Worst runs of the full model (six terms), with the four- and five-term residuals:
+The largest residuals with Ba counted from the bus (last column; 12 of the 296 distinct runs are inexact with it, and the
+equalised set's scalar_asm repeats scalar_asm_rv). With Ba from the fetch stage every run is exact:
 
-| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | J | residual, four terms | with Ba | with Ba and J (cycles) | Ba ambiguity |
+| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | J | residual, four terms | with Ba | with Ba and J (cycles) | Ba, bus view |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| simd_al_asm_rv_clip 8x32x32 pad1 | 125,847 | 118,122 | 3,390 | 1,440 | 720 | 1,943 | 487 | 248 | +1.73% | +1.34% | +1.144% (+1,440) | 1,448 |
-| simd_al_asm_rv 8x32x32 pad1 | 176,255 | 168,522 | 3,390 | 1,440 | 720 | 1,943 | 495 | 248 | +1.24% | +0.96% | +0.817% (+1,440) | 1,448 |
-| simd_al_asm_rv_clip 32x8x8 pad0 | 23,173 | 20,648 | 510 | 1,152 | 576 | 447 | 31 | 224 | +1.24% | +1.10% | +0.138% (+32) | 0 |
-| simd_al_asm_rv 32x8x8 pad0 | 31,237 | 28,712 | 510 | 1,152 | 576 | 447 | 31 | 224 | +0.92% | +0.82% | +0.102% (+32) | 0 |
-| simd_al_asm_rv_clip 16x16x16 pad0 | 56,199 | 52,506 | 1,406 | 1,344 | 672 | 927 | 15 | 240 | +0.48% | +0.46% | +0.028% (+16) | 0 |
-| simd_al_asm_rv_clip 8x16x16 pad0 | 28,110 | 26,257 | 702 | 672 | 336 | 463 | 15 | 120 | +0.51% | +0.46% | +0.028% (+8) | 0 |
-| simd_al_asm_rv 16x16x16 pad0 | 78,151 | 74,458 | 1,406 | 1,344 | 672 | 927 | 15 | 240 | +0.35% | +0.33% | +0.020% (+16) | 0 |
-| simd_al_asm_rv 8x16x16 pad0 | 39,078 | 37,233 | 702 | 672 | 336 | 463 | 7 | 120 | +0.35% | +0.33% | +0.020% (+8) | 0 |
-| scalar_asm_rv_clip 16x16x16 pad0 | 85,159 | 83,049 | 1,854 | 0 | 0 | 1,151 | 0 | 240 | +0.30% | +0.30% | +0.019% (+16) | 0 |
-| scalar_asm_rv_clip 8x16x16 pad1 | 42,585 | 41,531 | 926 | 0 | 0 | 575 | 0 | 120 | +0.30% | +0.30% | +0.019% (+8) | 0 |
-| scalar_asm 16x16x16 pad0 | 107,335 | 105,001 | 1,854 | 0 | 0 | 1,151 | 224 | 240 | +0.45% | +0.24% | +0.015% (+16) | 0 |
-| scalar_asm_rv 16x16x16 pad0 | 107,335 | 105,001 | 1,854 | 0 | 0 | 1,151 | 224 | 240 | +0.45% | +0.24% | +0.015% (+16) | 0 |
+| simd_al_asm_rv_clip 8x32x32 pad1 | 125,847 | 118,122 | 3,390 | 1,440 | 720 | 1,943 | 1,927 | 248 | +1.73% | +0.20% | +0.000% (+0) | 487 |
+| simd_al_asm_rv 8x32x32 pad1 | 176,255 | 168,522 | 3,390 | 1,440 | 720 | 1,943 | 1,935 | 248 | +1.24% | +0.14% | +0.000% (+0) | 495 |
+| simd_al_asm_rv_clip 32x8x8 pad0 | 23,173 | 20,648 | 510 | 1,152 | 576 | 479 | 63 | 224 | +1.24% | +0.97% | +0.000% (+0) | 31 |
+| simd_al_asm_rv 32x8x8 pad0 | 31,237 | 28,712 | 510 | 1,152 | 576 | 479 | 63 | 224 | +0.92% | +0.72% | +0.000% (+0) | 31 |
+| simd_al_asm_rv_clip 16x16x16 pad0 | 56,199 | 52,506 | 1,406 | 1,344 | 672 | 943 | 31 | 240 | +0.48% | +0.43% | +0.000% (+0) | 15 |
+| simd_al_asm_rv_clip 8x16x16 pad0 | 28,110 | 26,257 | 702 | 672 | 336 | 471 | 23 | 120 | +0.51% | +0.43% | +0.000% (+0) | 15 |
+| simd_al_asm_rv 16x16x16 pad0 | 78,151 | 74,458 | 1,406 | 1,344 | 672 | 943 | 31 | 240 | +0.35% | +0.31% | +0.000% (+0) | 15 |
+| simd_al_asm_rv 8x16x16 pad0 | 39,078 | 37,233 | 702 | 672 | 336 | 471 | 15 | 120 | +0.35% | +0.31% | +0.000% (+0) | 7 |
+| scalar_asm_rv_clip 16x16x16 pad0 | 85,159 | 83,049 | 1,854 | 0 | 0 | 1,167 | 16 | 240 | +0.30% | +0.28% | +0.000% (+0) | 0 |
+| scalar_asm_rv_clip 8x16x16 pad1 | 42,585 | 41,531 | 926 | 0 | 0 | 583 | 8 | 120 | +0.30% | +0.28% | +0.000% (+0) | 0 |
+| scalar_asm 16x16x16 pad0 | 107,335 | 105,001 | 1,854 | 0 | 0 | 1,167 | 240 | 240 | +0.45% | +0.22% | +0.000% (+0) | 224 |
+| scalar_asm_rv 16x16x16 pad0 | 107,335 | 105,001 | 1,854 | 0 | 0 | 1,167 | 240 | 240 | +0.45% | +0.22% | +0.000% (+0) | 224 |
 
 
 The 2 cycles per taken branch and 1 cycle per load-use hazard were
@@ -500,19 +542,25 @@ The data-only sweep models instruction memory as zero-wait. To check that an
 instruction cache behaves the same way for these kernels, the harness has a
 direct-mapped I-cache model (`--icache SIZE LINE`): a hit answers with zero
 wait, a miss pays the instruction-port wait and fills the line. At 8x16x16
-with three data-port wait states and a three-cycle miss penalty:
+with three data-port wait states and a three-cycle miss penalty, all six
+kernels of the equalised set (`icache_check.py`; review round R5 added the two
+-O3 kernels and the script, and the four earlier rows reproduce exactly):
 
-| kernel | both ports wait 3 | instruction port zero-wait | 1 KB I-cache, 16 B lines | hits / misses | 256 B I-cache | hits / misses |
-|---|---|---|---|---|---|---|
-| scalar -O2 | 207,085 | 89,526 | 89,546 | 51,754 / 16 | 89,546 | 51,754 / 16 |
-| scalar asm | 179,808 | 79,122 | 79,178 | 44,857 / 37 | 92,089 | 38,109 / 6,785 |
-| SIMD unaligned | 130,512 | 77,521 | 77,538 | 30,653 / 14 | 77,538 | 30,653 / 14 |
-| SIMD aligned | 130,488 | 54,778 | 54,845 | 32,136 / 36 | 63,511 | 27,349 / 4,823 |
+| kernel | both ports wait 3 | instruction port zero-wait | 1 KB I-cache, 16 B lines | hits / misses | 256 B I-cache | hits / misses | vs zero-wait, 1 KB |
+|---|---|---|---|---|---|---|---|
+| scalar -O2 | 207,085 | 89,526 | 89,546 | 51,754 / 16 | 89,546 | 51,754 / 16 | +0.022% |
+| scalar -O3 | 182,100 | 76,739 | 76,766 | 45,494 / 23 | 77,710 | 44,980 / 537 | +0.035% |
+| scalar asm | 179,808 | 79,122 | 79,178 | 44,857 / 37 | 92,089 | 38,109 / 6,785 | +0.071% |
+| SIMD unaligned | 130,512 | 77,521 | 77,538 | 30,653 / 14 | 77,538 | 30,653 / 14 | +0.022% |
+| SIMD aligned | 130,488 | 54,778 | 54,845 | 32,136 / 36 | 63,511 | 27,349 / 4,823 | +0.122% |
+| SIMD aligned -O3 | 133,944 | 56,040 | 56,118 | 33,443 / 41 | 68,232 | 27,380 / 6,104 | +0.139% |
 
-A 1 KB cache reproduces the zero-wait instruction port to within 0.12% with a
-few dozen misses, so "zero-wait instruction memory" is a measured statement
-for this code size, not an assumption. A 256 B direct-mapped cache thrashes
-on the two kernels whose loops exceed it; no MCU ships one that small.
+A 1 KB cache reproduces the zero-wait instruction port to within 0.14% with
+14 to 41 misses, all compulsory (code footprints 224 to 656 bytes), so
+"zero-wait instruction memory" is a measured statement for this code size,
+not an assumption. A 256 B direct-mapped cache thrashes on the three kernels
+whose loops exceed it and costs the -O3 scalar kernel 537 misses; no MCU ships
+one that small.
 
 ## Area: Sky130 HD, synthesis
 
@@ -1341,20 +1389,20 @@ hardware-loop setups and CORE-V loads/stores (post-increment or register-indexed
 | dw3 | corev spec | 0 | 0 | 0 | 1 | 2 | 0.00% | 0.01% | 0.00% | 0.00% | 0 |
 | dw3 | corev+hwlp lib | 2 | 22-23 | 0 | 1 | 2 | 0.00% | 0.01% | 0.00% | 0.00% | 0 |
 | dw3 | corev+hwlp spec | 2 | 22-23 | 0 | 1 | 2 | 0.00% | 0.01% | 0.00% | 0.00% | 0 |
-| dw5 | gcc16 lib | 0 | 0 | 10751 | 6272 | 6274 | 2.92% | 3.05% | 0.00% | 0.00% | 0 |
-| dw5 | gcc16 spec | 0 | 0 | 10751 | 12999 | 0 | 1.55% | 6.41% | 0.00% | 0.00% | 0 |
-| dw5 | corev lib | 0 | 0 | 10751 | 13441 | 6498 | 3.93% | 4.33% | 0.00% | 0.00% | 0 |
-| dw5 | corev spec | 0 | 0 | 10751 | 13441 | 6498 | 3.93% | 4.33% | 0.00% | 0.00% | 0 |
-| dw5 | corev+hwlp lib | 14 | 21-22 | 10751 | 12545 | 6498 | 3.94% | 3.95% | 0.00% | 0.00% | 0 |
-| dw5 | corev+hwlp spec | 14 | 21-22 | 10751 | 12545 | 6498 | 3.94% | 3.95% | 0.00% | 0.00% | 0 |
-| pw | gcc16 lib | 0 | 0 | 0 | 2048 | 770 | 2.39% | 2.56% | 0.00% | 0.00% | 0 |
-| pw | gcc16 spec | 0 | 0 | 0 | 127 | 258 | 0.81% | 1.34% | 0.09% | 0.23% | 0 |
-| pw | corev lib | 0 | 0 | 0 | 1648 | 770 | 2.04% | 2.16% | 0.00% | 0.00% | 0 |
-| pw | corev spec | 0 | 0 | 0 | 1648 | 770 | 2.04% | 2.16% | 0.00% | 0.00% | 0 |
-| pw | corev+hwlp lib | 6 | 24-25 | 0 | 0 | 770 | 0.92% | 1.16% | 0.00% | 0.00% | 0 |
-| pw | corev+hwlp spec | 6 | 24-25 | 0 | 0 | 770 | 0.92% | 1.16% | 0.00% | 0.00% | 0 |
+| dw5 | gcc16 lib | 0 | 0 | 10752 | 6272 | 6274 | 2.92% | 3.05% | 0.00% | 0.00% | 0 |
+| dw5 | gcc16 spec | 0 | 0 | 10752 | 12999 | 0 | 1.55% | 6.41% | 0.00% | 0.00% | 0 |
+| dw5 | corev lib | 0 | 0 | 10752 | 13441 | 6498 | 3.93% | 4.33% | 0.00% | 0.00% | 0 |
+| dw5 | corev spec | 0 | 0 | 10752 | 13441 | 6498 | 3.93% | 4.33% | 0.00% | 0.00% | 0 |
+| dw5 | corev+hwlp lib | 14 | 21-22 | 10752 | 12545 | 6498 | 3.94% | 3.95% | 0.00% | 0.00% | 0 |
+| dw5 | corev+hwlp spec | 14 | 21-22 | 10752 | 12545 | 6498 | 3.94% | 3.95% | 0.00% | 0.00% | 0 |
+| pw | gcc16 lib | 0 | 0 | 0 | 2049 | 770 | 2.39% | 2.56% | 0.00% | 0.00% | 0 |
+| pw | gcc16 spec | 0 | 0 | 0 | 255 | 258 | 0.81% | 1.34% | 0.00% | 0.00% | 0 |
+| pw | corev lib | 0 | 0 | 0 | 1649 | 770 | 2.04% | 2.16% | 0.00% | 0.00% | 0 |
+| pw | corev spec | 0 | 0 | 0 | 1649 | 770 | 2.04% | 2.16% | 0.00% | 0.00% | 0 |
+| pw | corev+hwlp lib | 6 | 24-25 | 0 | 1 | 770 | 0.92% | 1.16% | 0.00% | 0.00% | 0 |
+| pw | corev+hwlp spec | 6 | 24-25 | 0 | 1 | 770 | 0.92% | 1.16% | 0.00% | 0.00% | 0 |
 
-all 144 PULP-NN runs: mean |resid| 0.01%, max 0.23%; largest residuals (cycles): pw gcc16 spec 16x16x16x16 pad0 +128, pw gcc16 spec 16x16x16x16 pad1 +128, pw gcc16 spec 16x32x8x8 pad0 +32, pw gcc16 spec 16x32x8x8 pad1 +32
+all 144 PULP-NN runs: mean |resid| 0.00%, max 0.00%; largest residuals (cycles): dw3 gcc16 lib 8x16x16 pad0 +0, dw3 gcc16 lib 8x16x16 pad1 +0, dw3 gcc16 lib 16x16x16 pad0 +0, dw3 gcc16 lib 16x16x16 pad1 +0
 
 What this adds:
 
@@ -1426,7 +1474,7 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.26x | 1.51x | 1.36x |
 | product | | | 2.49x (measured 2.49x) |
 
-3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.92; instruction ratio with the split-load cost on the accelerated side only 2.46; cycle model applied to both sides 2.49; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 128 residual); full-Xpulp split-load share 15.6%; activation words loaded 4,704 = 3.00 MACs per activation word (loads retired 4,776)
+3x3 depthwise, 8x16x16: measured speedup 2.49x; instruction ratio 2.92; instruction ratio with the split-load cost on the accelerated side only 2.46; cycle model applied to both sides 2.49; baseline non-instruction share 2.2% (926 taken-branch cycles, 0 load-use stalls, 0 split accesses, 128 residual); full-Xpulp split-load share 15.6%; activation words loaded in the inner loop 4,704 = 3.00 MACs per activation word (loads retired 4,776)
 
 ### 5x5 depthwise
 
@@ -1459,7 +1507,7 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.07x | 1.22x | 1.14x |
 | product | | | 3.62x (measured 3.62x) |
 
-5x5 depthwise, 8x16x16: measured speedup 3.62x; instruction ratio 4.69; instruction ratio with the split-load cost on the accelerated side only 3.57; cycle model applied to both sides 3.62; baseline non-instruction share 1.7% (2,302 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 23.7%; activation words loaded 11,520 = 2.50 MACs per activation word (loads retired 11,840)
+5x5 depthwise, 8x16x16: measured speedup 3.62x; instruction ratio 4.69; instruction ratio with the split-load cost on the accelerated side only 3.57; cycle model applied to both sides 3.62; baseline non-instruction share 1.7% (2,302 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 23.7%; activation words loaded in the inner loop 11,520 = 2.50 MACs per activation word (loads retired 11,840)
 
 ### 1x1 pointwise
 
@@ -1492,7 +1540,7 @@ Better alignment per kernel, zero wait states, cycles:
 | clip | 1.12x | 1.60x | 1.32x |
 | product | | | 5.39x (measured 5.39x) |
 
-1x1 pointwise, 16x16x8x8: measured speedup 5.39x; instruction ratio 5.27; instruction ratio with the split-load cost on the accelerated side only 5.27; cycle model applied to both sides 5.39; baseline non-instruction share 3.2% (2,046 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 0.0%; activation words loaded 4,096 = 4.00 MACs per activation word (loads retired 4,352)
+1x1 pointwise, 16x16x8x8: measured speedup 5.39x; instruction ratio 5.27; instruction ratio with the split-load cost on the accelerated side only 5.27; cycle model applied to both sides 5.39; baseline non-instruction share 3.2% (2,046 taken-branch cycles, 0 load-use stalls, 0 split accesses, 0 residual); full-Xpulp split-load share 0.0%; weight words loaded in the inner loop 4,096 = 4.00 MACs per weight word (loads retired 4,352)
 
 Clip removes seven instructions per output from the requantisation. Executed,
 the saving is exactly seven instructions in 123 of the 128 cell pairs (every
@@ -2067,12 +2115,13 @@ branch target ALU takes a cycle off taken branches.
   with ten loads and four accumulator stores per output and kernel row,
   matches -O3 on CV32E40P and gains 12% over it on the 2-stage Ibex. A
   baseline that is strongest on one pipeline is not strongest on another.
-- **The cycle model** closes exactly on Ibex too, with different terms.
+- **The cycle model** on Ibex is an identity.
   On CV32E40P the counters expose load-use stalls and split loads directly
-  and the six-term model is exact on 284 of 296 runs. Ibex's counters partition
-  every cycle: cycles = instructions + data-side wait + instruction-side
-  wait, with zero error on all 80 runs of both pipelines (least-squares
-  coefficients 1.00, 1.00 and 0.00 for taken branches). The branch and
+  and the six-term model is exact on all 296 runs. Ibex's counters
+  partition every cycle, so cycles = instructions + data-side wait +
+  instruction-side wait holds on all 80 runs of both pipelines by
+  construction (least-squares coefficients 1.00, 1.00 and 0.00 for taken
+  branches) and validates nothing. The branch and
   alignment penalties sit inside the instruction-side wait, so Ibex's
   counters do not separate them, which CV32E40P's do. An earlier version of
   this section reported a best fixed-form fit of 1.2% mean and 4.5% maximum
@@ -2112,6 +2161,237 @@ slightly; neither has been placed.
 What this does not show: anything about the extension on another core, and
 that remains the limit of the study.
 
+## The whole grid, its interactions, and bus accesses per MAC
+
+Review round R4. `clip_model.py --lattice` writes the TC decomposition table with every cell of the 2^3
+grid over the scalar kernel and the pairwise Shapley interaction index (the mean, over the third feature
+absent and present, of the pair's second difference in log-speedup, exponentiated), in place of the
+added-first and added-last rows, which follow from the grid. Headline shapes:
+
+```
+pairwise Shapley interaction (factor on log-speedup, > 1: worth more together): datapath x control 1.26, datapath x clip 1.14, control x clip 1.05
+pairwise Shapley interaction (factor on log-speedup, > 1: worth more together): datapath x control 1.10, datapath x clip 1.13, control x clip 1.01
+pairwise Shapley interaction (factor on log-speedup, > 1: worth more together): datapath x control 1.22, datapath x clip 1.33, control x clip 1.06
+3x3 depthwise, 8x16x16: bus accesses per MAC, C -O3 against full Xpulp: data 0.52 / 0.69 (0.76x, inverse 1.31x), instruction fetches 3.18 / 1.28 (2.47x)
+5x5 depthwise, 8x16x16: bus accesses per MAC, C -O3 against full Xpulp: data 1.61 / 0.75 (2.14x, inverse 0.47x), instruction fetches 3.35 / 0.96 (3.50x)
+1x1 pointwise, 16x16x8x8: bus accesses per MAC, C -O3 against full Xpulp: data 1.12 / 0.33 (3.43x, inverse 0.29x), instruction fetches 3.39 / 0.73 (4.66x)
+```
+
+## Stride 2 (3x3 depthwise)
+
+Review round R4. `-DSTRIDE=2` in `sw/dwconv_opt.c`, `dwconv_asm.c`, `dwconv_simd_asm.c` and
+`dwconv_simd_al_asm.c`; the stride-1 builds are byte-identical to before. The hand scalar kernel loads two
+new columns per pixel and keeps the period-3 register rotation; the unaligned SIMD kernel steps its pointer by
+two; the aligned kernel loads three words per row per four outputs (offsets 0, 4, 8) with the windows
+`l`, `l >> 16 | h << 16`, `h`, `h >> 16 | g << 16`. Shapes are those whose rows hold a 4-pixel group (at 32x8x8
+a stride-2 row has 3 pixels and the aligned kernel degenerates to its tail). Collector set
+`wait0_s2_dw3_pad{0,1}.csv`; the cycle model on these runs is `align_term.py`'s stride-2 group (rows prefixed
+`s2_` in `wait0_align.csv`).
+
+# Stride-2 3x3 depthwise
+
+112 runs; checksum mismatches against the Python reference: 0
+
+| shape | SIMD formulation | full Xpulp | vs hand | vs -O3 | hand vs -O3 | Shapley: datapath | control | clip | split share | aligned / unaligned |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 8x16x16 | unaligned | 5,414 | 2.65x | 2.53x | 0.95x | 1.73x | 1.14x | 1.34x | 9.3% | 1.42 |
+| 8x16x16 | aligned | 7,693 | 1.87x | 1.78x | 0.95x | 1.44x | 1.00x | 1.29x | 2.2% | 1.42 |
+| 32x16x16 | unaligned | 21,636 | 2.65x | 2.51x | 0.95x | 1.73x | 1.14x | 1.34x | 9.3% | 1.42 |
+| 32x16x16 | aligned | 30,662 | 1.87x | 1.77x | 0.95x | 1.44x | 1.01x | 1.29x | 2.2% | 1.42 |
+| 8x32x32 | unaligned | 23,303 | 2.73x | 3.23x | 1.18x | 1.69x | 1.18x | 1.37x | 10.8% | 1.37 |
+| 8x32x32 | aligned | 31,878 | 1.99x | 2.36x | 1.18x | 1.45x | 1.04x | 1.32x | 1.1% | 1.37 |
+| 16x32x32 | unaligned | 46,598 | 2.73x | 3.24x | 1.19x | 1.69x | 1.18x | 1.37x | 10.8% | 1.37 |
+| 16x32x32 | aligned | 63,623 | 2.00x | 2.37x | 1.19x | 1.45x | 1.04x | 1.32x | 1.1% | 1.37 |
+
+Per output (loads: retired load instructions):
+
+| shape | kernel | stride 1: cycles | loads | stride 2: cycles | loads |
+|---|---|---|---|---|---|
+| 8x16x16 | hand scalar | 34.23 | 4.35 | 36.62 | 7.10 |
+| 8x16x16 | full Xpulp, unaligned | 13.74 | 3.05 | 13.81 | 3.18 |
+| 8x32x32 | hand scalar | 32.00 | 3.21 | 35.30 | 6.26 |
+| 8x32x32 | full Xpulp, unaligned | 13.44 | 3.01 | 12.95 | 3.04 |
+
+## Zbb on Ibex
+
+Review round R4. Ibex built with RV32B=1 (RV32BBalanced: Zba, Zbb, Zbs and the draft Zbf and Zbt;
+`harness_ibex` targets ibex2b / ibex3b, `syn/ibex` targets wb0b / wb1b) runs the RV32IMC hand scalar kernels with
+the branch-free saturation and with `srai; max; min` in the standard encodings (`-DREQUANT_ZBB=1 -DZBB_STD=1`, the
+bounds in `tp` and `u` as on CV32E40P). Collector sets `wait0_ibex{2,3}b_{bf,zbb}{,_real}_{dw3,dw5os,pw}_pad*.csv`.
+
+# Zbb on Ibex
+
+
+## ibex2b (RV32B=1), cycles at the better alignment
+
+| kernel | shape | branch-free | Zbb | saved per output | speedup | data |
+|---|---|---|---|---|---|---|
+| 3x3 | 8x16x16 | 61,621 | 52,549 | 5.79 | 1.17x | syn |
+| 3x3 | 16x16x16 | 123,210 | 105,066 | 5.79 | 1.17x | syn |
+| 3x3 | 8x32x32 | 258,328 | 215,368 | 5.97 | 1.20x | syn |
+| 3x3 | 32x8x8 | 44,484 | 37,764 | 5.83 | 1.18x | syn |
+| 3x3 | 8x16x16 | 60,056 | 52,104 | 5.07 | 1.15x | real |
+| 3x3 | 16x16x16 | 120,094 | 104,190 | 5.07 | 1.15x | real |
+| 3x3 | 8x32x32 | 251,088 | 215,088 | 5.00 | 1.17x | real |
+| 3x3 | 32x8x8 | 43,332 | 37,572 | 5.00 | 1.15x | real |
+| 5x5 | 8x16x16 | 189,277 | 182,461 | 5.92 | 1.04x | syn |
+| 5x5 | 16x16x16 | 378,532 | 364,900 | 5.92 | 1.04x | syn |
+| 5x5 | 8x32x32 | 1,029,343 | 991,935 | 5.96 | 1.04x | syn |
+| 5x5 | 32x8x8 | 84,808 | 81,864 | 5.75 | 1.04x | syn |
+| 1x1 | 16x16x8x8 | 82,246 | 76,166 | 5.94 | 1.08x | syn |
+| 1x1 | 8x8x16x16 | 99,591 | 87,559 | 5.88 | 1.14x | syn |
+| 1x1 | 16x32x8x8 | 162,118 | 149,894 | 5.97 | 1.08x | syn |
+| 1x1 | 16x16x16x16 | 329,485 | 305,165 | 5.94 | 1.08x | syn |
+| 1x1 | 16x16x8x8 | 81,220 | 76,100 | 5.00 | 1.07x | real |
+| 1x1 | 8x8x16x16 | 97,547 | 87,307 | 5.00 | 1.12x | real |
+| 1x1 | 16x32x8x8 | 160,076 | 149,836 | 5.00 | 1.07x | real |
+| 1x1 | 16x16x16x16 | 325,138 | 304,658 | 5.00 | 1.07x | real |
+
+## ibex3b (RV32B=1), cycles at the better alignment
+
+| kernel | shape | branch-free | Zbb | saved per output | speedup | data |
+|---|---|---|---|---|---|---|
+| 3x3 | 8x16x16 | 53,210 | 44,138 | 5.79 | 1.21x | syn |
+| 3x3 | 16x16x16 | 106,408 | 88,264 | 5.79 | 1.21x | syn |
+| 3x3 | 8x32x32 | 227,967 | 185,007 | 5.97 | 1.23x | syn |
+| 3x3 | 32x8x8 | 38,371 | 31,651 | 5.83 | 1.21x | syn |
+| 3x3 | 8x16x16 | 51,645 | 43,693 | 5.07 | 1.18x | real |
+| 3x3 | 16x16x16 | 103,292 | 87,388 | 5.07 | 1.18x | real |
+| 3x3 | 8x32x32 | 220,741 | 184,741 | 5.00 | 1.19x | real |
+| 3x3 | 32x8x8 | 37,219 | 31,459 | 5.00 | 1.18x | real |
+| 5x5 | 8x16x16 | 130,524 | 123,708 | 5.92 | 1.06x | syn |
+| 5x5 | 16x16x16 | 261,027 | 247,395 | 5.92 | 1.06x | syn |
+| 5x5 | 8x32x32 | 709,470 | 672,062 | 5.96 | 1.06x | syn |
+| 5x5 | 32x8x8 | 58,695 | 55,751 | 5.75 | 1.05x | syn |
+| 1x1 | 16x16x8x8 | 63,813 | 57,733 | 5.94 | 1.11x | syn |
+| 1x1 | 8x8x16x16 | 79,110 | 67,078 | 5.88 | 1.18x | syn |
+| 1x1 | 16x32x8x8 | 126,276 | 114,052 | 5.97 | 1.11x | syn |
+| 1x1 | 16x16x16x16 | 255,497 | 231,177 | 5.94 | 1.11x | syn |
+| 1x1 | 16x16x8x8 | 62,787 | 57,667 | 5.00 | 1.09x | real |
+| 1x1 | 8x8x16x16 | 77,066 | 66,826 | 5.00 | 1.15x | real |
+| 1x1 | 16x32x8x8 | 124,233 | 113,993 | 5.00 | 1.09x | real |
+| 1x1 | 16x16x16x16 | 251,150 | 230,670 | 5.00 | 1.09x | real |
+
+branch-free binaries on RV32B=1 against RV32B=0: 48 runs identical in cycles; mismatches (cycles or Zbb checksums): 0
+
+## Area, Sky130 HD, synthesis (yosys), same flow as the RV32B=0 cores
+
+2-stage (wb0): RV32B=0 43,548 GE; RV32B=1 46,952 GE; the bitmanip option adds 3,404 GE, 7.8%
+3-stage (wb1): RV32B=0 44,746 GE; RV32B=1 47,600 GE; the bitmanip option adds 2,854 GE, 6.4%
+
+## Pointwise beyond 16 input channels (review round R7)
+
+`sw/gen_pwconv_blk_asm.py` writes `sw/pwconv_blk_asm.c` (scalar) and `sw/pwconv_blk_simd_asm.c` (cv.dotsp.b): the
+input channels of a pixel in blocks, 16 per block in the scalar kernel (one activation per register) and up to 64
+in the SIMD kernel (16 activation words), with each output channel's int32 partial sum stored to and reloaded from
+a CO-word buffer between blocks. RV32IMC and Xpulp control, with and without clip, so the whole 2^3 grid; C at
+-O2 and -O3 beside them. 32, 64 and 128 input channels, 16 outputs, 8x8 pixels, both code alignments
+(`results/wait0_pwb_pad{0,1}.csv`; every checksum equals the C kernel's). The 60 runs were measured after the cycle
+model was fixed and Eq. 1 reproduces every one to the cycle (`align_term.py`, its own group).
+
+| shape (CIxCOxHxW) | kernels | checksums | C -O2 | C -O3 | hand scalar | full Xpulp | vs hand | vs -O3 | instr. ratio | Shapley dp | ctl | clip | cycles/MAC hand / full | loads per output hand / full | stores per output hand / full | Eq. 1 exact (8 cells) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 16x16x8x8 | register-resident | 64922 | 164,227 | 64,834 | 64,836 | 12,038 | 5.39x | 5.39x | 5.27 | 3.37x | 1.21x | 1.32x | 3.96 / 0.73 | 17.00 / 4.25 | 1.00 / 1.00 | True |
+| 32x16x8x8 | blocked | 65381 | 311,747 | 311,747 | 123,793 | 20,485 | 6.04x | 15.22x | 5.88 | 4.44x | 1.15x | 1.19x | 3.78 / 0.63 | 35.44 / 8.50 | 2.07 / 1.00 | True |
+| 64x16x8x8 | blocked | 65485 | 606,659 | 606,659 | 239,182 | 37,446 | 6.39x | 16.20x | 6.19 | 5.25x | 1.10x | 1.11x | 3.65 / 0.57 | 71.50 / 17.06 | 4.00 / 1.00 | True |
+| 128x16x8x8 | blocked | 65497 | 1,196,484 | 1,196,483 | 470,673 | 76,047 | 6.19x | 15.73x | 5.99 | 5.38x | 1.09x | 1.05x | 3.59 / 0.58 | 143.44 / 35.38 | 8.07 / 2.07 | True |
+
+added first (to the hand scalar kernel) / added last (on top of the other two), datapath, control, clip:
+
+- 16x16x8x8: first 2.69x / 1.08x / 1.12x; last 4.38x / 1.41x / 1.60x
+- 32x16x8x8: first 3.80x / 1.08x / 1.06x; last 5.26x / 1.24x / 1.35x
+- 64x16x8x8: first 4.83x / 1.08x / 1.03x; last 5.75x / 1.13x / 1.19x
+- 128x16x8x8: first 5.12x / 1.07x / 1.02x; last 5.66x / 1.12x / 1.09x
+
+blocked, 32 to 128 input channels: full Xpulp 6.04x to 6.39x over the hand scalar kernel (register-resident, 16 input channels: 5.39x); Shapley datapath 4.44x to 5.38x, control 1.09x to 1.15x, clip 1.05x to 1.19x; C -O3 is 2.52x to 2.54x the hand kernel's cycles (GCC unrolls the 16-channel loop fully, not the longer ones)
+
+- **The pointwise speedup holds beyond 16 input channels and grows**: 6.04 to 6.39x over the blocked hand scalar
+  kernel, against 5.39x at 16. The requantisation is a fixed cost per output on both sides; spread over more MACs
+  it weighs less, and more so in the SIMD kernel's short body.
+- **Clip and control lose value with the channel count**, and at 128 input channels control (1.09x) outweighs clip
+  (1.05x) against RV32IMC. The ranking "saturation over loop hardware" holds at the main shapes only.
+- **GCC -O3 unrolls the 16-channel loop fully and the longer ones not at all** (48 multiplies in the -O3 binary at
+  CI = 16, 3 at CI = 32), so the C baseline takes 2.5x the hand kernel's cycles from 32 channels on.
+
+## Misaligned word stores (review round R7)
+
+`sw/ubench_unaligned_store.c` is `ubench_unaligned.c` with sw instead of lw; `results/ubench_split.py` runs both
+at byte offsets 0 to 3 and 0 to 3 data-port wait states. The store coefficient of A_split, added for PULP-NN's
+window copy after its residuals were seen, is now measured rather than inferred.
+
+| access | offset | wait states | cycles per instruction above the bracket | bus reads per instruction | bus writes per instruction |
+|---|---|---|---|---|---|
+| lw | 0 | 0 | 1.04 | 1.00 | 0.00 |
+| lw | 1 | 0 | 2.04 | 2.00 | 0.00 |
+| lw | 2 | 0 | 2.04 | 2.00 | 0.00 |
+| lw | 3 | 0 | 2.04 | 2.00 | 0.00 |
+| lw | 0 | 1 | 2.06 | 1.00 | 0.00 |
+| lw | 1 | 1 | 4.04 | 2.00 | 0.00 |
+| lw | 2 | 1 | 4.04 | 2.00 | 0.00 |
+| lw | 3 | 1 | 4.04 | 2.00 | 0.00 |
+| lw | 0 | 2 | 3.10 | 1.00 | 0.00 |
+| lw | 1 | 2 | 6.06 | 2.00 | 0.00 |
+| lw | 2 | 2 | 6.06 | 2.00 | 0.00 |
+| lw | 3 | 2 | 6.06 | 2.00 | 0.00 |
+| lw | 0 | 3 | 4.14 | 1.00 | 0.00 |
+| lw | 1 | 3 | 8.08 | 2.00 | 0.00 |
+| lw | 2 | 3 | 8.08 | 2.00 | 0.00 |
+| lw | 3 | 3 | 8.08 | 2.00 | 0.00 |
+| sw | 0 | 0 | 1.04 | 0.00 | 1.00 |
+| sw | 1 | 0 | 2.04 | 0.00 | 2.00 |
+| sw | 2 | 0 | 2.04 | 0.00 | 2.00 |
+| sw | 3 | 0 | 2.04 | 0.00 | 2.00 |
+| sw | 0 | 1 | 2.06 | 0.00 | 1.00 |
+| sw | 1 | 1 | 4.04 | 0.00 | 2.00 |
+| sw | 2 | 1 | 4.04 | 0.00 | 2.00 |
+| sw | 3 | 1 | 4.04 | 0.00 | 2.00 |
+| sw | 0 | 2 | 3.10 | 0.00 | 1.00 |
+| sw | 1 | 2 | 6.06 | 0.00 | 2.00 |
+| sw | 2 | 2 | 6.06 | 0.00 | 2.00 |
+| sw | 3 | 2 | 6.06 | 0.00 | 2.00 |
+| sw | 0 | 3 | 4.14 | 0.00 | 1.00 |
+| sw | 1 | 3 | 8.08 | 0.00 | 2.00 |
+| sw | 2 | 3 | 8.08 | 0.00 | 2.00 |
+| sw | 3 | 3 | 8.08 | 0.00 | 2.00 |
+
+lw: misaligned (offset 1 to 3) against aligned: extra bus accesses per instruction 1.00 to 1.00 at 0 to 3 wait states; extra cycles at zero wait states 1.00 to 1.00
+
+sw: misaligned (offset 1 to 3) against aligned: extra bus accesses per instruction 1.00 to 1.00 at 0 to 3 wait states; extra cycles at zero wait states 1.00 to 1.00
+
+loads and stores take the same cycles at every offset and wait state: True
+
+## Where the unused-extension energy goes (review round R7)
+
+`results/energy_groups.py`: the hand-written scalar kernels of the three families on the RV32IMC and Xpulp
+routed netlists at 16 ns (energy_runs.py's iso point; every total equals energy_runs.csv's), with OpenROAD's power
+report split into its cell groups. The routed netlists keep no module names, so there is no per-module split.
+
+flip-flops and latches: RV32IMC 2,137, Xpulp 2,488 (+16%)
+
+| kernel | group | RV32IMC (mW) | Xpulp (mW) | change | share of the increase | Xpulp internal / switching change |
+|---|---|---|---|---|---|---|
+| dw3 | sequential | 5.674 | 6.640 | +17.0% | 22% | +16.2% / +43.0% |
+| dw3 | combinational | 5.357 | 7.238 | +35.1% | 43% | +28.0% / +37.3% |
+| dw3 | clock | 6.723 | 8.243 | +22.6% | 35% | +20.8% / +25.3% |
+| dw3 | total | 17.754 | 22.121 | +24.6% | 100% | +19.3% / +32.7% |
+| dw3 | leakage, absolute | 75.6 nW | 115.7 nW | | | |
+| dw5 | sequential | 5.651 | 6.605 | +16.9% | 23% | +16.2% / +40.4% |
+| dw5 | combinational | 4.479 | 6.152 | +37.3% | 40% | +31.9% / +39.0% |
+| dw5 | clock | 6.723 | 8.243 | +22.6% | 37% | +20.8% / +25.3% |
+| dw5 | total | 16.853 | 21.000 | +24.6% | 100% | +19.5% / +33.0% |
+| dw5 | leakage, absolute | 76.1 nW | 116.2 nW | | | |
+| pw | sequential | 5.720 | 6.689 | +16.9% | 20% | +16.2% / +37.6% |
+| pw | combinational | 6.213 | 8.542 | +37.5% | 48% | +30.7% / +39.6% |
+| pw | clock | 6.723 | 8.243 | +22.6% | 32% | +20.8% / +25.3% |
+| pw | total | 18.656 | 23.474 | +25.8% | 100% | +19.8% / +34.4% |
+| pw | leakage, absolute | 75.8 nW | 115.9 nW | | | |
+
+liberty: ~/tools/sky130/sky130_fd_sc_hd__tt_025C_1v80.lib (typical corner, 25 C, 1.80 V), syn/power.tcl
+
+- **The cost is dynamic and spread over the core**: combinational logic takes 40 to 48% of the increase (35 to 38%
+  more power), the clock tree 32 to 37% (23% more, for 16% more flip-flops), the flip-flops 20 to 23% (17% more).
+  Leakage is 76 and 116 nW, under 0.001% of the core's power, at the library's typical corner.
+
 ## Retired claims from the previous RESULTS.md
 
 | claim | status | what the data say |
@@ -2128,8 +2408,8 @@ that remains the limit of the study.
 ## Threats to validity
 
 - One core for the extension; two cores (CV32E40P, Ibex in two pipeline
-  configurations) for the scalar baselines, the alignment and flag effects
-  and the cycle model. Three kernels (3x3 and 5x5 depthwise, 1x1
+  configurations) for the scalar baselines, the alignment and flag effects,
+  the cycle model and Zbb. Stride 2 for 3x3 only. Three kernels (3x3 and 5x5 depthwise, 1x1
   pointwise). Real
   data from one image and two MobileNetV1 layers, with the pointwise
   input channels cropped to 16; 5x5 has no real-data source in MobileNetV1
@@ -2139,8 +2419,10 @@ that remains the limit of the study.
   possible on this core.
 - Flat memory with no bus contention between ports. Instruction memory
   is zero-wait or a direct-mapped I-cache model; no data cache.
-- Energy and power are not measured. A Verilator activity trace on the
-  placed netlist with OpenROAD's power report would give an estimate.
+- Energy is the core's alone, from zero-delay gate-level activity of the
+  routed netlists at one corner: glitch power is not measured and its sign
+  is unknown; the memories are left out, which understates the extension's
+  advantage (bus accesses per MAC above). An SDF-annotated run was not done.
 - The 5x5 scalar baseline is the better of two hand-written loop orders
   (row-wise with the accumulator row in memory, and output-stationary with
   weights reloaded); other orders, such as keeping two weight rows

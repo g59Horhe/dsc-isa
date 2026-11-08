@@ -19,6 +19,16 @@
  */
 #ifndef REQUANT_H
 #define REQUANT_H
+/* The Zbb-style form's max and min: Xpulp's cv.max / cv.min on CV32E40P, or with -DZBB_STD=1 the standard
+ * Zbb max / min (opcode 0x33, funct7 0x05, funct3 110 / 100), for a core with Zbb such as Ibex built
+ * with RV32B. Both are one-cycle R-type operations with 32-bit encodings. */
+#if ZBB_STD
+#define RQ_MAX ".insn r 0x33, 0x6, 0x05,"
+#define RQ_MIN ".insn r 0x33, 0x4, 0x05,"
+#else
+#define RQ_MAX ".insn r 0x2b, 0x3, 0x2d,"
+#define RQ_MIN ".insn r 0x2b, 0x3, 0x2b,"
+#endif
 #define RQ_XS(x) RQ_S(x)
 #define RQ_S(x) #x
 
@@ -50,8 +60,8 @@ typedef unsigned char out_t;
 #define RQ_N 3
 #define REQUANT_ASM_LH(acc, lo, hi) \
   "srai " acc "," acc "," RQ_XS(SHIFT) "\n" \
-  ".insn r 0x2b, 0x3, 0x2d, " acc ", " acc ", " lo "\n" \
-  ".insn r 0x2b, 0x3, 0x2b, " acc ", " acc ", " hi "\n"
+  RQ_MAX " " acc ", " acc ", " lo "\n" \
+  RQ_MIN " " acc ", " acc ", " hi "\n"
 #define REQUANT_ASM(acc, t, u) REQUANT_ASM_LH(acc, "x0", "tp")
 #elif REQUANT_BRANCH
 /* Review measurement (2026-10-30): fast path with a not-taken branch; the slow path lives in GAS
@@ -102,8 +112,8 @@ typedef signed char out_t;
 #define RQ_N 3
 #define REQUANT_ASM_LH(acc, lo, hi) \
   "srai " acc "," acc "," RQ_XS(SHIFT) "\n" \
-  ".insn r 0x2b, 0x3, 0x2d, " acc ", " acc ", " lo "\n" \
-  ".insn r 0x2b, 0x3, 0x2b, " acc ", " acc ", " hi "\n"
+  RQ_MAX " " acc ", " acc ", " lo "\n" \
+  RQ_MIN " " acc ", " acc ", " hi "\n"
 #define REQUANT_ASM(acc, t, u) REQUANT_ASM_LH(acc, "tp", u)
 #define RQ_INIT(u) "li " u ",127\n"
 #elif REQUANT_BRANCH

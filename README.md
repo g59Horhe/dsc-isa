@@ -106,7 +106,9 @@ threads) and the energy stage about 1.5 hours (four gate-level simulator builds
 
 Simulator flags: `--hex`, `--cycles`, `--wait N` (data port), `--iwait N`
 (instruction port), `--icache SIZE LINE`, `--redir FILE` (histogram of
-non-sequential instruction fetches, for the alignment term). The MEASURED line
+non-sequential instruction fetches by word, as the bus sees them), `--redir-pc FILE`
+(histogram of redirect targets by exact address, from the fetch stage; this is what
+the alignment term uses). The MEASURED line
 carries data reads, data writes and instruction fetches for the bracketed
 region; the EVENTS line carries the core's performance-counter events (ev1 to
 ev10, numbered as in `sw/bench.h`), integrated by the harness over the same

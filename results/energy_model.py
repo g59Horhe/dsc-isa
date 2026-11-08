@@ -8,7 +8,8 @@ Points: iso, both cores at 16 ns (both closed there); fast, each core at its fas
 routed sweep (RV32IMC 11.5 ns, Xpulp 14.5 ns). Roles: O3 = C at -O3, hand = best hand-written RV32IMC
 kernel, full = the complete extension (dot product, hardware loops, post-increment, clip).
 Table 1: energy per MAC, and the energy ratio against the cycle ratio, base core against Xpulp core.
-Table 2: the cost of carrying the extension unused: the same scalar binaries on the Xpulp core.
+Table 2: the cost of carrying the extension unused: the same scalar binaries on the Xpulp core, with the change in
+internal and switching power and the leakage share.
 --latex PATH writes the paper's table (iso point)."""
 import csv, collections, sys
 MACS = {('dw3', '8x16x16'): 8 * 14 * 14 * 9, ('dw5', '8x16x16'): 8 * 12 * 12 * 25, ('pw', '16x16x8x8'): 16 * 16 * 8 * 8}
@@ -33,13 +34,15 @@ for point, lab in (('iso', 'both cores at 16 ns'), ('fast', 'RV32IMC at 11.5 ns,
         print(f"| {NAME[fam]} | {data} | {o3['pj']:.1f} | {hd['pj']:.1f} | {fu['pj']:.1f} | {o3['E']/fu['E']:.2f}x | {hd['E']/fu['E']:.2f}x | "
               f"{o3['cyc']/fu['cyc']:.2f}x | {hd['cyc']/fu['cyc']:.2f}x | {o3['mw']:.2f} / {hd['mw']:.2f} / {fu['mw']:.2f} |")
     print(f"\ncarrying the extension unused ({point}): the same scalar binary on the Xpulp core against the RV32IMC core\n")
-    print("| kernel | data | role | cycles RV32IMC / Xpulp | energy RV32IMC (nJ) | energy Xpulp (nJ) | Xpulp / RV32IMC |")
-    print("|---|---|---|---|---|---|---|")
+    print("| kernel | data | role | cycles RV32IMC / Xpulp | energy RV32IMC (nJ) | energy Xpulp (nJ) | Xpulp / RV32IMC | internal power | switching power | leakage share, Xpulp |")
+    print("|---|---|---|---|---|---|---|---|---|---|")
     for (fam, data) in [('dw3', 'syn'), ('dw5', 'syn'), ('pw', 'syn'), ('dw3', 'real'), ('pw', 'real')]:
         for role in ('O3', 'hand'):
             b, p = R.get((point, 'base', fam, data, role)), R.get((point, 'pulp', fam, data, role))
             if not (b and p): continue
-            print(f"| {NAME[fam]} | {data} | {role} | {b['cyc']:,} / {p['cyc']:,} | {b['E']*1e9:.1f} | {p['E']*1e9:.1f} | {p['E']/b['E']:.3f} |")
+            d = lambda c: float(p[c]) / float(b[c]) - 1   # review round R6: where the extra energy goes (same cycles, same period)
+            print(f"| {NAME[fam]} | {data} | {role} | {b['cyc']:,} / {p['cyc']:,} | {b['E']*1e9:.1f} | {p['E']*1e9:.1f} | {p['E']/b['E']:.3f} | "
+                  f"{d('p_internal'):+.1%} | {d('p_switching'):+.1%} | {float(p['p_leakage'])/float(p['p_total']):.4%} |")
     print()
 if '--latex' in sys.argv:
     path = sys.argv[sys.argv.index('--latex') + 1]

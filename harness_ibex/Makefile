@@ -17,11 +17,19 @@ INCS = -I$(IBEX)/vendor/lowrisc_ip/ip/prim/rtl -I$(IBEX)/vendor/lowrisc_ip/dv/sv
 PARAMS = -GRV32M=3 -GRV32B=0 -GRegFile=0 -GMHPMCounterNum=10 -GICache=0 -GPMPEnable=0 -GBranchTargetALU=1
 VFLAGS = --cc --exe --build -j 4 -Wno-fatal -Wno-WIDTH -Wno-UNOPTFLAT -Wno-ENUMVALUE --top-module ibex_top $(INCS) $(PARAMS)
 
-.PHONY: all ibex2 ibex3 clean
+# RV32B=1 (RV32BBalanced: Zba, Zbb, Zbs and a few others) for the Zbb measurement: make ibex2b ibex3b
+PARAMS_B = $(subst -GRV32B=0,-GRV32B=1,$(PARAMS))
+VFLAGS_B = $(subst -GRV32B=0,-GRV32B=1,$(VFLAGS))
+
+.PHONY: all ibex2 ibex3 ibex2b ibex3b clean
 all: ibex2 ibex3
 ibex2:
 	$(VERILATOR) $(VFLAGS) -GWritebackStage=0 --Mdir obj_ibex2 public.vlt $(SRCS) sim_main.cpp
 ibex3:
 	$(VERILATOR) $(VFLAGS) -GWritebackStage=1 --Mdir obj_ibex3 public.vlt $(SRCS) sim_main.cpp
+ibex2b:
+	$(VERILATOR) $(VFLAGS_B) -GWritebackStage=0 --Mdir obj_ibex2b public.vlt $(SRCS) sim_main.cpp
+ibex3b:
+	$(VERILATOR) $(VFLAGS_B) -GWritebackStage=1 --Mdir obj_ibex3b public.vlt $(SRCS) sim_main.cpp
 clean:
-	rm -rf obj_ibex2 obj_ibex3
+	rm -rf obj_ibex2 obj_ibex3 obj_ibex2b obj_ibex3b

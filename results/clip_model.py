@@ -8,7 +8,7 @@ prints the exact Shapley attribution of log-speedup to the three features (the
 order-independent split; the product of the three factors is the full speedup),
 beside the order-dependent added-first and added-last values, the baseline's
 non-instruction cycle share, the cycle model applied to both sides, MACs per
-activation word, and the model error over every hand-written run.
+word loaded in the inner loop, and the model error over every hand-written run.
 Run from results/.  --latex PATH writes the paper's decomposition table; --no-zbb leaves out the Zbb rows (conference version)."""
 import csv, collections, glob, re, math, itertools, sys
 LATEX = sys.argv[sys.argv.index('--latex') + 1] if '--latex' in sys.argv else None
@@ -42,8 +42,9 @@ fam = {
  '5x5 depthwise': (merge('wait0_dw5', 'wait0_clip_dw5', 'wait0_dw5os'), 'dw5_os_asm_rv', 'dw5_os_asm_xp', 'dw5_simd_rv', 'dw5_simd_xp', 'dw5_simd_rv_clip', 'dw5_simd_xp_clip', 'dw5_os_asm_rv_clip', 'dw5_os_asm_xp_clip', lambda s: (lambda c, h, w: c * (h - 4) * (w - 4))(*map(int, s.split('x'))), 'wait0_dw5', 'dw5_C_O3', 10, 28800),
  '1x1 pointwise': (merge('wait0_pw', 'wait0_clip_pw'), 'pw_asm_rv', 'pw_asm_xp', 'pw_simd_asm_rv', 'pw_simd_asm_xp', 'pw_simd_asm_rv_clip', 'pw_simd_asm_xp_clip', 'pw_asm_rv_clip', 'pw_asm_xp_clip', lambda s: (lambda ci, co, h, w: co * h * w)(*map(int, s.split('x'))), 'wait0_pw', 'pw_C_O3', 4, 16384),
 }
-# act_words: activation word loads per output in the best SIMD kernel, from the kernel structure
-# (3x3: one word per kernel row; 5x5: two words per kernel row; 1x1: CI/4 = 4 words at CI = 16).
+# act_words: inner-loop word loads per output in the best SIMD kernel, from the kernel structure
+# (3x3: one activation word per kernel row; 5x5: two activation words per kernel row; 1x1: CI/4 = 4 weight words
+# at CI = 16, the pixel's activations being held in registers across the output channels).
 # macs: MACs at the headline shape.
 def shapley(cyc):
     """cyc: dict (d, c, k) -> cycles over the 2^3 grid. Returns the three Shapley factors on
@@ -58,6 +59,15 @@ def shapley(cyc):
             S0 = tuple(S); S[i] = 1; tot += val(tuple(S)) - val(S0)
         out.append(math.exp(tot / 6))
     return out
+def interaction(cyc, i, j):
+    """Shapley interaction index of features i and j on log-speedup (n = 3: the mean of the pair's second
+    difference without and with the third feature), exponentiated: > 1 means they are worth more together."""
+    k = 3 - i - j; v = lambda S: math.log(cyc[(0, 0, 0)] / cyc[tuple(S)])
+    def d2(base):
+        a = list(base); b = list(base); b[i] = 1; c_ = list(base); c_[j] = 1; d = list(base); d[i] = 1; d[j] = 1
+        return v(d) - v(b) - v(c_) + v(a)
+    return math.exp((d2([0, 0, 0]) + d2([1 if t == k else 0 for t in range(3)])) / 2)
+LATTICE = '--lattice' in sys.argv   # TC table: the full 2^3 grid and the pairwise interactions instead of added first / added last
 TEX = collections.OrderedDict()   # row label -> list of per-family cell strings
 worst = 0; chkbad = 0
 for name, (D, s_rv, s_xp, v_rv, v_xp, v_rvc, v_xpc, s_rvc, s_xpc, outs, o3base, o3k, act_words, macs) in fam.items():
@@ -99,14 +109,20 @@ for name, (D, s_rv, s_xp, v_rv, v_xp, v_rvc, v_xpc, s_rvc, s_xpc, outs, o3base, 
     print("| feature | added first | added last | Shapley |\n|---|---|---|---|")
     af = (c(s_rv)/c(v_rv), c(s_rv)/c(s_xp), c(s_rv)/c(s_rvc)); al = (c(s_xpc)/c(v_xpc), c(v_rvc)/c(v_xpc), c(v_xp)/c(v_xpc))
     for i, lab in enumerate(("datapath", "control", "clip")): print(f"| {lab} | {af[i]:.2f}x | {al[i]:.2f}x | {sh[i]:.2f}x |")
+    ix = {(0, 1): interaction(cyc, 0, 1), (0, 2): interaction(cyc, 0, 2), (1, 2): interaction(cyc, 1, 2)}
+    print(f"pairwise Shapley interaction (factor on log-speedup, > 1: worth more together): datapath x control {ix[(0,1)]:.2f}, datapath x clip {ix[(0,2)]:.2f}, control x clip {ix[(1,2)]:.2f}")
     print(f"| product | | | {sh[0]*sh[1]*sh[2]:.2f}x (measured {c(s_rv)/c(v_xpc):.2f}x) |")
     if shz: print(f"\n{name}, {s0}, the same grid with a Zbb-style three-instruction saturation in every non-clip cell (wait0_zbb_*): full Xpulp {cycz[(0,0,0)]/cycz[(1,1,1)]:.2f}x over the Zbb scalar kernel; Shapley datapath {shz[0]:.2f}x, control {shz[1]:.2f}x, clip over Zbb {shz[2]:.2f}x")
-    bshare = 1 - base['instr'] / base['cycles']
+    bshare = 1 - base['instr'] / base['cycles']; wl = 'weight' if 'pointwise' in name else 'activation'   # pointwise holds the pixel's activations in registers and streams the weights
     print(f"\n{name}, {s0}: measured speedup {c(s_rv)/c(v_xpc):.2f}x; instruction ratio {base['instr']/full['instr']:.2f}; "
           f"instruction ratio with the split-load cost on the accelerated side only {base['instr']/(full['instr']+full['split']):.2f}; "
           f"cycle model applied to both sides {base['pred']/full['pred']:.2f}; baseline non-instruction share {bshare:.1%} "
           f"({2*base['brtaken']:,} taken-branch cycles, {base['ldstall']:,} load-use stalls, {base['split']:,} split accesses, {base['resid']:,} residual); "
-          f"full-Xpulp split-load share {full['split']/full['cycles']:.1%}; activation words loaded {outs(s0)*act_words:,} = {macs/(outs(s0)*act_words):.2f} MACs per activation word (loads retired {full['loads']:,})")
+          f"full-Xpulp split-load share {full['split']/full['cycles']:.1%}; {wl} words loaded in the inner loop {outs(s0)*act_words:,} = {macs/(outs(s0)*act_words):.2f} MACs per {wl} word (loads retired {full['loads']:,})")
+    ob = min(O3[0][(s0, o3k)], O3[1][(s0, o3k)], key=lambda v: v['cycles']); fb = best(s0, v_xpc)
+    dO, dF = ob['dread'] + ob['dwrite'], fb['dread'] + fb['dwrite']
+    print(f"{name}, {s0}: bus accesses per MAC, C -O3 against full Xpulp: data {dO/macs:.2f} / {dF/macs:.2f} ({dO/dF:.2f}x, inverse {dF/dO:.2f}x), "
+          f"instruction fetches {ob['ifetch']/macs:.2f} / {fb['ifetch']/macs:.2f} ({ob['ifetch']/fb['ifetch']:.2f}x)")
     if name.startswith('5x5'):   # the row-wise hand kernel (dwconv5_asm.c), the 5x5 baseline before the output-stationary one
         rw = best(s0, 'dw5_asm_rv'); meas = rw['cycles'] / full['cycles']; short = rw['instr'] / (full['instr'] + full['split'])
         print(f"{name}, {s0}, row-wise hand baseline: measured speedup {meas:.2f}x; instruction ratio with the split-load cost on the accelerated side only "
@@ -120,15 +136,20 @@ for name, (D, s_rv, s_xp, v_rv, v_xp, v_rvc, v_xpc, s_rvc, s_xpc, outs, o3base, 
     print(f"{name}, {s0}: clip saves {min(ci):.3f} to {max(ci):.3f} instructions and {min(cs):.3f} to {max(cs):.3f} cycles per output over the four cell pairs and both alignments")
     short = {'3x3 depthwise': '3\\x3 dw', '5x5 depthwise': '5\\x5 dw', '1x1 pointwise': '1\\x1 pw'}[name]
     for lab, v in (("\\textit{Shapley value, order removed}", None), ("\\quad datapath", f"{sh[0]:.2f}\\x"), ("\\quad control (hw loop, post-incr.)", f"{sh[1]:.2f}\\x"), ("\\quad clip", f"{sh[2]:.2f}\\x"),
-                   ("\\textit{added first, to the scalar kernel}", None), ("\\quad datapath alone", f"{af[0]:.2f}\\x"), ("\\quad control alone", f"{af[1]:.2f}\\x"), ("\\quad clip alone", f"{af[2]:.2f}\\x"),
-                   ("\\textit{added last, on top of the other two}", None), ("\\quad datapath, last", f"{al[0]:.2f}\\x"), ("\\quad control, last", f"{al[1]:.2f}\\x"), ("\\quad clip, last", f"{al[2]:.2f}\\x"),
+                   *((("\\textit{every cell of the grid, over the scalar kernel}", None), ("\\quad control only", f"{c(s_rv)/c(s_xp):.2f}\\x"), ("\\quad clip only", f"{c(s_rv)/c(s_rvc):.2f}\\x"),
+                      ("\\quad control + clip", f"{c(s_rv)/c(s_xpc):.2f}\\x"), ("\\quad datapath only", f"{c(s_rv)/c(v_rv):.2f}\\x"), ("\\quad datapath + control", f"{c(s_rv)/c(v_xp):.2f}\\x"),
+                      ("\\quad datapath + clip", f"{c(s_rv)/c(v_rvc):.2f}\\x"), ("\\quad all three (full Xpulp)", f"{c(s_rv)/c(v_xpc):.2f}\\x"),
+                      ("\\textit{pairwise interaction ($>1$: worth more together)}", None), ("\\quad datapath $\\times$ control", f"{ix[(0,1)]:.2f}"),
+                      ("\\quad datapath $\\times$ clip", f"{ix[(0,2)]:.2f}"), ("\\quad control $\\times$ clip", f"{ix[(1,2)]:.2f}")) if LATTICE else
+                     (("\\textit{added first, to the scalar kernel}", None), ("\\quad datapath alone", f"{af[0]:.2f}\\x"), ("\\quad control alone", f"{af[1]:.2f}\\x"), ("\\quad clip alone", f"{af[2]:.2f}\\x"),
+                      ("\\textit{added last, on top of the other two}", None), ("\\quad datapath, last", f"{al[0]:.2f}\\x"), ("\\quad control, last", f"{al[1]:.2f}\\x"), ("\\quad clip, last", f"{al[2]:.2f}\\x"))),
                    ("\\textit{Zbb min/max saturation in the non-clip cells}", None if shz else "__skip__"), ("\\quad full Xpulp vs Zbb scalar", f"{cycz[(0,0,0)]/cycz[(1,1,1)]:.2f}\\x" if shz else "__skip__"),
                    ("\\quad datapath, Zbb grid", f"{shz[0]:.2f}\\x" if shz else "__skip__"), ("\\quad control, Zbb grid", f"{shz[1]:.2f}\\x" if shz else "__skip__"), ("\\quad clip over Zbb", f"{shz[2]:.2f}\\x" if shz else "__skip__"),
                    ("\\midrule", None),
                    ("full Xpulp vs hand scalar", f"{c(s_rv)/c(v_xpc):.2f}\\x"), ("full Xpulp vs C \\texttt{-O3}", f"{o3/c(v_xpc):.2f}\\x"),
                    ("instruction ratio vs hand scalar", f"{base['instr']/full['instr']:.2f}"), ("Eq.~\\ref{eq:model} on both kernels", f"{base['pred']/full['pred']:.2f}\\x"),
                    ("baseline cycles that are stalls", f"{bshare:.1%}".replace('%', '\\%')), ("split-load share, full Xpulp", f"{full['split']/full['cycles']:.1%}".replace('%', '\\%')),
-                   ("cycles per MAC, full Xpulp", f"{c(v_xpc)/macs:.2f}"), ("MACs per activation word", f"{macs/(outs(s0)*act_words):.1f}")):
+                   ("cycles per MAC, full Xpulp", f"{c(v_xpc)/macs:.2f}"), *(() if LATTICE else (("MACs per inner-loop word", f"{macs/(outs(s0)*act_words):.1f}"),))):   # the TC table needs the row's space for the grid
         TEX.setdefault(lab, []).append(v)
     TEX.setdefault('__heads__', []).append(short)
 print(f"\nmax |model residual| over clip runs: {worst:.1%}; checksum mismatches vs branch-free kernels: {chkbad}")

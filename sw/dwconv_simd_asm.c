@@ -29,8 +29,11 @@
 #define W 16
 #endif
 #define K 3
-#define OH (H - K + 1)
-#define OW (W - K + 1)
+#ifndef STRIDE
+#define STRIDE 1   /* 2: stride-2 convolution (review round R4); the default build is unchanged */
+#endif
+#define OH ((H - K) / STRIDE + 1)
+#define OW ((W - K) / STRIDE + 1)
 #define XS(x) S_(x)
 #define S_(x) #x
 
@@ -68,7 +71,7 @@ static void dwconv_simd_asm(void) {
         const unsigned int w2 = pack3(wp[6], wp[7], wp[8]);
         out_t *op = DW_OUT_PTR(ch);
         for (int oy = 0; oy < OH; oy++) {
-            const act_t *p = &input[ch][oy][0];
+            const act_t *p = &input[ch][oy * STRIDE][0];
             unsigned int a, b, c; int t, u;
 #if XPULP_CTRL
             int cnt = OW;
@@ -76,8 +79,8 @@ static void dwconv_simd_asm(void) {
               RQ_INIT("%[u]")
               XPULP_ASM_BEGIN
               HWLOOP0("%[cnt]", RQ_XS(10+RQ_N))   /* 3 loads + 3 dotsp + 2 add + requant + 1 store, + 1 */
-              LW_INC("%[a]", "%[p]", "1")
-              "lw %[b]," XS(W-1) "(%[p])\n lw %[c]," XS(2*W-1) "(%[p])\n"
+              LW_INC("%[a]", "%[p]", XS(STRIDE))
+              "lw %[b]," XS(W-STRIDE) "(%[p])\n lw %[c]," XS(2*W-STRIDE) "(%[p])\n"
               MAC3
               SB_INC("%[a]", "%[op]", XS(OSTRIDE))
               XPULP_ASM_END
@@ -85,13 +88,13 @@ static void dwconv_simd_asm(void) {
               : [cnt]"r"(cnt), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
               : "memory");
 #else
-            const act_t *pend = p + OW;
+            const act_t *pend = p + OW * STRIDE;
             asm volatile (
               RQ_INIT("%[u]")
               "1:\n"
               "lw %[a],0(%[p])\n lw %[b]," XS(W) "(%[p])\n lw %[c]," XS(2*W) "(%[p])\n"
               MAC3
-              "sb %[a],0(%[op])\n addi %[p],%[p],1\n addi %[op],%[op]," XS(OSTRIDE) "\n bne %[p],%[pend],1b\n"
+              "sb %[a],0(%[op])\n addi %[p],%[p]," XS(STRIDE) "\n addi %[op],%[op]," XS(OSTRIDE) "\n bne %[p],%[pend],1b\n"
               : [p]"+r"(p), [op]"+r"(op), [a]"=&r"(a), [b]"=&r"(b), [c]"=&r"(c), [t]"=&r"(t), [u]"=&r"(u)
               : [pend]"r"(pend), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
               : "memory");

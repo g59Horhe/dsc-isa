@@ -7,19 +7,21 @@ aligner: the fetched word holds only the lower half of the instruction. This
 script measures that term, Ba, for every hand-written run and the 48
 equalised-requantisation runs: it rebuilds each binary exactly as
 harness/collect_wait0.sh does (and asserts the cycle count matches the
-committed CSV), runs it with --redir to get the histogram of non-sequential
-instruction fetches (word addresses) in the measured window, resolves each
-redirect to its target PC with the ELF's disassembly, and counts the
-redirects whose target satisfies the rule. Three candidate rules are
-evaluated against all runs (see flagged()); rule A above fits best and is
-written. Output: results/wait0_align.csv (shape,kernel,pad,cycles,redirects,
-ba,ba_rule_a,ba_rule_b,ba_rule_c) and the residuals with and without the
+committed CSV), runs it with --redir-pc to get the histogram of redirect
+targets by exact address in the measured window (the IF stage's own branch
+request and target: every branch, jump and hardware-loop redirect), looks
+each target up in the ELF's disassembly, and counts the redirects whose
+target satisfies the rule. Three candidate rules are evaluated against all
+runs (see flagged()); rule A above fits best and is written. Output:
+results/wait0_align.csv (shape,kernel,pad,cycles,redirects,ba,ba_rule_a,
+ba_rule_b,ba_rule_c,jumps,ba_word) and the residuals with and without the
 term. Run from results/.
 The same runs also give J, the jumps retired (the core's jump event, ev7, integrated by the harness): a jump
-costs one cycle beyond its instruction (sw/ubench_jump.c), and 56 of the 296 runs have them (C row tails and
-the row loops' back jumps). Written as the jumps column; ba_ambig counts the redirects into fetch words that
-hold two static targets of which only one satisfies rule A: the fetch histogram is per word, so those
-redirects cannot be split between the two targets, and Ba can be low by up to that count.
+costs one cycle beyond its instruction (sw/ubench_jump.c). 56 of the 296 runs have them, all 3x3 kernels: one
+per output row where GCC reaches the second iteration of a two-pixel C row tail by a jump, and one per channel
+where the row loop is entered by a jump. ba_word is Ba as an earlier version counted it, from the bus's
+non-sequential instruction fetches (--redir, word addresses resolved against the ELF): it misses short forward
+jumps whose target word the prefetcher had already fetched in sequence, and cannot split two targets in one word.
 cycles = I + 2 Bt + Slu + Asplit + Ba + J."""
 import csv, collections, os, re, subprocess, sys, tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -52,6 +54,19 @@ EXTRA = [  # compiler-generated 5x5 and pointwise kernels, and the block: Ba for
      'blk_simd_rv': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {BLK}'), 'blk_simd_rv_fused': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 -DBLOCK_FUSED=1 {BLK}'),
      'blk_simd_xp': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} {BLK}'), 'blk_simd_xp_fused': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} -DBLOCK_FUSED=1 {BLK}'),
      'blk_full': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} {CL} {BLK}'), 'blk_full_fused': ('sw/block.c', f'-O2 -DBLOCK_SIMD=1 {XP} {CL} -DBLOCK_FUSED=1 {BLK}')}),
+]
+S2D = ['8x16x16', '32x16x16', '8x32x32', '16x32x32']; S2F = '-DSTRIDE=2'
+STRIDE2 = [  # review round R4: the 3x3 grid and the C kernels at stride 2, reported as their own group
+  ('wait0_s2_dw3', S2D, {'scalar_O2': ('sw/dwconv_opt.c', f'-O2 {S2F}'), 'scalar_O3': ('sw/dwconv_opt.c', f'-O3 {S2F}'),
+     **{f'{n}_{c}{x}': (src, f'-O2 {S2F} {XP if c == "xp" else ""} {CL if x else ""}'.split() and ' '.join(f'-O2 {S2F} {XP if c == "xp" else ""} {CL if x else ""}'.split()))
+        for n, src in (('scalar_asm', 'sw/dwconv_asm.c'), ('simd_unal_asm', 'sw/dwconv_simd_asm.c'), ('simd_al_asm', 'sw/dwconv_simd_al_asm.c'))
+        for c in ('rv', 'xp') for x in ('', '_clip')}}),
+]
+PWBD = ['32x16x8x8', '64x16x8x8', '128x16x8x8']
+PWB = [  # review round R7: pointwise with the input channels in blocks (sw/gen_pwconv_blk_asm.py), its grid and the C kernels, its own group
+  ('wait0_pwb', PWBD, {'pw_C_O2': ('sw/pwconv.c', '-O2'), 'pw_C_O3': ('sw/pwconv.c', '-O3'),
+     **{f'pwb_{n}_{c}{x}': (src, ' '.join(f'-O2 {XP if c == "xp" else ""} {CL if x else ""}'.split()))
+        for n, src in (('asm', 'sw/pwconv_blk_asm.c'), ('simd_asm', 'sw/pwconv_blk_simd_asm.c')) for c in ('rv', 'xp') for x in ('', '_clip')}}),
 ]
 BR = {'beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu', 'beqz', 'bnez', 'blez', 'bgez', 'bltz', 'bgtz', 'j', 'jal', 'c.j', 'c.jal', 'c.beqz', 'c.bnez'}
 def load(fn):
@@ -94,7 +109,8 @@ def shape_defs(s):
     f = s.split('x')
     return ['-DCI=%s' % f[0], '-DCO=%s' % f[1], '-DH=%s' % f[2], '-DW=%s' % f[3]] if len(f) == 4 else ['-DCH=%s' % f[0], '-DH=%s' % f[1], '-DW=%s' % f[2]]
 rows = []; tmp = tempfile.mkdtemp(prefix='align_')
-for base, shapes, kernels in SETS + [(b, s, k) for b, s, k in EXTRA]:
+S2KEYS = {(b, kk) for b, _, ks in STRIDE2 for kk in ks}; PWBKEYS = {(b, kk) for b, _, ks in PWB for kk in ks}
+for base, shapes, kernels in SETS + [(b, s, k) for b, s, k in EXTRA] + STRIDE2 + PWB:
     P = {p: load(f'{base}_pad{p}.csv') for p in (0, 1)}
     for s in shapes:
         for k, (src, cf) in kernels.items():
@@ -104,22 +120,26 @@ for base, shapes, kernels in SETS + [(b, s, k) for b, s, k in EXTRA]:
                 subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True)
                 subprocess.run([OBJCOPY, '-O', 'binary', elf, f'{tmp}/x.bin'], check=True)
                 with open(f'{tmp}/x.hex', 'w') as h: subprocess.run(['python3', 'sw/bin2hex.py', f'{tmp}/x.bin'], cwd=ROOT, check=True, stdout=h)
-                r = subprocess.run([SIM, '--hex', f'{tmp}/x.hex', '--cycles', '50000000', '--wait', '0', '--redir', f'{tmp}/redir.txt'], capture_output=True, text=True, check=True).stdout
+                r = subprocess.run([SIM, '--hex', f'{tmp}/x.hex', '--cycles', '50000000', '--wait', '0', '--redir', f'{tmp}/redir.txt', '--redir-pc', f'{tmp}/redirpc.txt'], capture_output=True, text=True, check=True).stdout
                 cyc = int(re.search(r'MEASURED (\d+)', r)[1]); jumps = int(re.search(r'\bev7=(\d+)', r)[1])
                 assert cyc == v['cycles'], (base, s, k, p, cyc, v['cycles'])   # the rebuilt binary must reproduce the committed count
                 ln, targets = disasm(elf)
-                nred = 0; ba = {r: 0 for r in RULES}; ambig = 0
-                for l in open(f'{tmp}/redir.txt'):
-                    w, n = l.split(); w = int(w, 16); n = int(n); nred += n; t = resolve(w, ln, targets)
+                nred = 0; ba = {r: 0 for r in RULES}; baw = 0
+                for l in open(f'{tmp}/redirpc.txt'):   # exact targets
+                    t, n = l.split(); t = int(t, 16); n = int(n); nred += n
+                    assert t in ln, (base, s, k, p, hex(t))   # every target is an instruction boundary
                     for r in RULES:
                         if flagged(t, ln, r): ba[r] += n
-                    if w in targets and w + 2 in targets and flagged(w, ln, 'A') != flagged(w + 2, ln, 'A'): ambig += n
-                rows.append(dict(base=base, extra=(base, k) in {(b, kk) for b, _, ks in EXTRA for kk in ks}, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, jumps=jumps, ba_ambig=ambig, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
+                for l in open(f'{tmp}/redir.txt'):     # the bus view, for comparison
+                    w, n = l.split(); w = int(w, 16); n = int(n)
+                    if flagged(resolve(w, ln, targets), ln, 'A'): baw += n
+                if XP not in cf: assert nred == v['brtaken'] + jumps, (base, s, k, p, nred, v['brtaken'], jumps)   # no hardware loops: redirects = taken branches + jumps
+                rows.append(dict(base=base, extra=(base, k) in {(b, kk) for b, _, ks in EXTRA for kk in ks} | S2KEYS | PWBKEYS, s2=(base, k) in S2KEYS, pwb=(base, k) in PWBKEYS, shape=s, kernel=k, pad=p, cycles=cyc, redirects=nred, jumps=jumps, ba_word=baw, **{f'ba_{r.lower()}': ba[r] for r in RULES}, **{x: v[x] for x in ('instr', 'brtaken', 'ldstall', 'split', 'pred')}))
 def err(rs, col): return [abs(r['cycles'] - r['pred'] - r[col] - r['jumps']) / r['cycles'] for r in rs]
 # the equalised set's scalar_asm is the same source and flags as the decomposition set's scalar_asm_rv (identical binaries and
 # cycle counts), so the union has 8 fewer distinct runs than the sum
 core = [r for r in rows if not r['extra']]   # the hand-written and equalised sets: the paper's 296 distinct runs
-extra = [r for r in rows if r['extra']]
+extra = [r for r in rows if r['extra'] and not r['s2'] and not r['pwb']]; s2 = [r for r in rows if r['s2']]; pwb = [r for r in rows if r['pwb']]
 distinct = [r for r in core if not (r['base'] == 'wait0_eqrequant' and r['kernel'] == 'scalar_asm')]
 print(f"rule | mean |resid| | max | runs over 1% ({len(distinct)} distinct runs); sw/ubench_align.c confirms rule A: +1 cycle per iteration only with a 32-bit instruction at a 2 mod 4 target")
 for r in RULES:
@@ -128,8 +148,8 @@ BEST = min(RULES, key=lambda r: sum(err(distinct, f'ba_{r.lower()}')))
 for r in rows: r['ba'] = r[f'ba_{BEST.lower()}']
 print(f"rule {BEST} written as ba")
 with open('wait0_align.csv', 'w') as f:
-    f.write('shape,kernel,pad,cycles,redirects,ba,ba_rule_a,ba_rule_b,ba_rule_c,jumps,ba_ambig\n')
-    for r in rows: f.write(f"{r['shape']},{r['kernel']},{r['pad']},{r['cycles']},{r['redirects']},{r['ba']},{r['ba_a']},{r['ba_b']},{r['ba_c']},{r['jumps']},{r['ba_ambig']}\n")
+    f.write('shape,kernel,pad,cycles,redirects,ba,ba_rule_a,ba_rule_b,ba_rule_c,jumps,ba_word\n')
+    for r in rows: f.write(f"{r['shape']},{'s2_' if r['s2'] else ''}{r['kernel']},{r['pad']},{r['cycles']},{r['redirects']},{r['ba']},{r['ba_a']},{r['ba_b']},{r['ba_c']},{r['jumps']},{r['ba_word']}\n")
 def stats(rs, label):
     old = [abs(r['cycles'] - r['pred']) / r['cycles'] for r in rs]; mid = [abs(r['cycles'] - r['pred'] - r['ba']) / r['cycles'] for r in rs]
     new = [abs(r['cycles'] - r['pred'] - r['ba'] - r['jumps']) / r['cycles'] for r in rs]
@@ -139,12 +159,14 @@ def stats(rs, label):
 hw = [r for r in core if r['base'] != 'wait0_eqrequant']; eq = [r for r in core if r['base'] == 'wait0_eqrequant']
 stats(eq, 'equalised 3x3 set (6 kernels x 4 shapes x 2 alignments)'); stats(hw, 'hand-written runs (three families, with and without clip)'); stats(distinct, 'all distinct runs (equalised scalar_asm = decomposition scalar_asm_rv, counted once)')
 stats(extra, 'compiler-generated 5x5 and pointwise kernels and the block (not part of the 296)')
-print("\n| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | J | residual, four terms | with Ba | with Ba and J (cycles) | Ba ambiguity |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|")
-for r in sorted(rows, key=lambda r: -abs(r['cycles'] - r['pred'] - r['ba'] - r['jumps']) / r['cycles'])[:12]:
+stats(s2, 'stride 2: the 3x3 grid and the C kernels (not part of the 296)')
+stats(pwb, 'pointwise, input channels in blocks: the grid and the C kernels at 32, 64 and 128 input channels (not part of the 296)')
+print("\n| run | cycles | I | 2Bt | Slu | Asplit | redirects | Ba | J | residual, four terms | with Ba | with Ba and J (cycles) | Ba, bus view |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+for r in sorted(rows, key=lambda r: -abs(r['cycles'] - r['pred'] - r['ba_word'] - r['jumps']) / r['cycles'])[:12]:   # the runs the bus view gets wrong
     res6 = r['cycles'] - r['pred'] - r['ba'] - r['jumps']
     print(f"| {r['kernel']} {r['shape']} pad{r['pad']} | {r['cycles']:,} | {r['instr']:,} | {2*r['brtaken']:,} | {r['ldstall']:,} | {r['split']:,} | {r['redirects']:,} | {r['ba']:,} | {r['jumps']:,} | "
-          f"{(r['cycles']-r['pred'])/r['cycles']:+.2%} | {(r['cycles']-r['pred']-r['ba'])/r['cycles']:+.2%} | {res6/r['cycles']:+.3%} ({res6:+,}) | {r['ba_ambig']:,} |")
-res = [r for r in core if r['cycles'] != r['pred'] + r['ba'] + r['jumps']]
-inb = [r for r in res if 0 < r['cycles'] - r['pred'] - r['ba'] - r['jumps'] <= r['ba_ambig']]
-print(f"\nof the {len(distinct)} distinct runs, {len(distinct) - sum(1 for r in res if r in distinct)} are exact with Ba and J; of the {len(res)} hand-written or equalised runs that are not, "
-      f"{len(inb)} have a residual between 0 and their Ba ambiguity (two targets in one fetch word)")
+          f"{(r['cycles']-r['pred'])/r['cycles']:+.2%} | {(r['cycles']-r['pred']-r['ba'])/r['cycles']:+.2%} | {res6/r['cycles']:+.3%} ({res6:+,}) | {r['ba_word']:,} |")
+res = [r for r in distinct if r['cycles'] != r['pred'] + r['ba'] + r['jumps']]
+wb = [r for r in distinct if r['cycles'] != r['pred'] + r['ba_word'] + r['jumps']]
+print(f"\nof the {len(distinct)} distinct runs, {len(distinct) - len(res)} are exact with Ba (exact redirect targets) and J; "
+      f"with Ba counted from the bus's fetch words instead, {len(distinct) - len(wb)}")

@@ -24,8 +24,11 @@
 #define W 16
 #endif
 #define K 3
-#define OH (H - K + 1)
-#define OW (W - K + 1)
+#ifndef STRIDE
+#define STRIDE 1   /* 2: stride-2 convolution (review round R4); the default build is unchanged */
+#endif
+#define OH ((H - K) / STRIDE + 1)
+#define OW ((W - K) / STRIDE + 1)
 #define XS(x) S_(x)
 #define S_(x) #x
 
@@ -67,6 +70,15 @@ static inline int cv_dotsp_b(unsigned int a, unsigned int b) {
              "srli %[y],%[l1],24\n slli %[t],%[h1],8\n or %[y],%[y],%[t]\n" \
              "srli %[z],%[l2],24\n slli %[t],%[h2],8\n or %[z],%[z],%[t]\n"
 #define WIN0 "mv %[x],%[l0]\n mv %[y],%[l1]\n mv %[z],%[l2]\n"
+/* Stride 2: four outputs read bytes 0..8 of each row, three aligned words l, h, g at offsets 0, 4, 8.
+ *   pixel 0: l    pixel 1: (l >> 16) | (h << 16)    pixel 2: h    pixel 3: (h >> 16) | (g << 16) */
+#define S2WIN1 "srli %[x],%[l0],16\n slli %[t],%[h0],16\n or %[x],%[x],%[t]\n" \
+               "srli %[y],%[l1],16\n slli %[t],%[h1],16\n or %[y],%[y],%[t]\n" \
+               "srli %[z],%[l2],16\n slli %[t],%[h2],16\n or %[z],%[z],%[t]\n"
+#define S2WIN2 "mv %[x],%[h0]\n mv %[y],%[h1]\n mv %[z],%[h2]\n"
+#define S2WIN3 "srli %[x],%[h0],16\n slli %[t],%[g0],16\n or %[x],%[x],%[t]\n" \
+               "srli %[y],%[h1],16\n slli %[t],%[g1],16\n or %[y],%[y],%[t]\n" \
+               "srli %[z],%[h2],16\n slli %[t],%[g2],16\n or %[z],%[z],%[t]\n"
 
 static void dwconv_simd_al_asm(void) {
     for (int ch = 0; ch < CH; ch++) {
@@ -76,9 +88,49 @@ static void dwconv_simd_al_asm(void) {
         const unsigned int w2 = pack3(wp[6], wp[7], wp[8]);
         out_t *op = &output[ch][0][0];
         for (int oy = 0; oy < OH; oy++) {
-            const act_t *p = &input[ch][oy][0];
+            const act_t *p = &input[ch][oy * STRIDE][0];
             unsigned int l0, h0, l1, h1, l2, h2, x, y, z; int t, u;
-#if XPULP_CTRL
+#if STRIDE == 2
+            unsigned int g0, g1, g2;
+#endif
+#if XPULP_CTRL && STRIDE == 2
+            int cnt = OW / 4;
+            if (OW / 4)   /* at stride 2 a row can be narrower than one 4-pixel group (W = 8: OW = 3) */
+            asm volatile (
+              RQ_INIT("%[u]")
+              XPULP_ASM_BEGIN
+              HWLOOP0("%[cnt]", RQ_XS(58+4*RQ_N))   /* 9 loads + 24 window ops + 4 x (5 + requant + 1), + 1 */
+              LW_INC("%[l0]", "%[p]", "8")
+              "lw %[h0],-4(%[p])\n lw %[g0],0(%[p])\n lw %[l1]," XS(W-8) "(%[p])\n lw %[h1]," XS(W-4) "(%[p])\n lw %[g1]," XS(W) "(%[p])\n"
+              "lw %[l2]," XS(2*W-8) "(%[p])\n lw %[h2]," XS(2*W-4) "(%[p])\n lw %[g2]," XS(2*W) "(%[p])\n"
+              WIN0 MAC3 SB_INC("%[x]", "%[op]", "1")
+              S2WIN1 MAC3 SB_INC("%[x]", "%[op]", "1")
+              S2WIN2 MAC3 SB_INC("%[x]", "%[op]", "1")
+              S2WIN3 MAC3 SB_INC("%[x]", "%[op]", "1")
+              XPULP_ASM_END
+              : [p]"+r"(p), [op]"+r"(op), [l0]"=&r"(l0), [h0]"=&r"(h0), [g0]"=&r"(g0), [l1]"=&r"(l1), [h1]"=&r"(h1), [g1]"=&r"(g1),
+                [l2]"=&r"(l2), [h2]"=&r"(h2), [g2]"=&r"(g2), [x]"=&r"(x), [y]"=&r"(y), [z]"=&r"(z), [t]"=&r"(t), [u]"=&r"(u)
+              : [cnt]"r"(cnt), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
+              : "memory");
+#elif STRIDE == 2
+            const act_t *pend = p + (OW / 4) * 8;
+            if (OW / 4)
+            asm volatile (
+              RQ_INIT("%[u]")
+              "1:\n"
+              "lw %[l0],0(%[p])\n lw %[h0],4(%[p])\n lw %[g0],8(%[p])\n"
+              "lw %[l1]," XS(W) "(%[p])\n lw %[h1]," XS(W+4) "(%[p])\n lw %[g1]," XS(W+8) "(%[p])\n"
+              "lw %[l2]," XS(2*W) "(%[p])\n lw %[h2]," XS(2*W+4) "(%[p])\n lw %[g2]," XS(2*W+8) "(%[p])\n"
+              WIN0 MAC3 "sb %[x],0(%[op])\n"
+              S2WIN1 MAC3 "sb %[x],1(%[op])\n"
+              S2WIN2 MAC3 "sb %[x],2(%[op])\n"
+              S2WIN3 MAC3 "sb %[x],3(%[op])\n"
+              "addi %[p],%[p],8\n addi %[op],%[op],4\n bne %[p],%[pend],1b\n"
+              : [p]"+r"(p), [op]"+r"(op), [l0]"=&r"(l0), [h0]"=&r"(h0), [g0]"=&r"(g0), [l1]"=&r"(l1), [h1]"=&r"(h1), [g1]"=&r"(g1),
+                [l2]"=&r"(l2), [h2]"=&r"(h2), [g2]"=&r"(g2), [x]"=&r"(x), [y]"=&r"(y), [z]"=&r"(z), [t]"=&r"(t), [u]"=&r"(u)
+              : [pend]"r"(pend), [w0]"r"(w0), [w1]"r"(w1), [w2]"r"(w2)
+              : "memory");
+#elif XPULP_CTRL
             int cnt = OW / 4;
             asm volatile (
               RQ_INIT("%[u]")
@@ -115,7 +167,7 @@ static void dwconv_simd_al_asm(void) {
 #endif
             /* tail: unaligned path, identical in both variants */
             for (int ox = (OW / 4) * 4; ox < OW; ox++) {
-                const act_t *r0 = &input[ch][oy][ox];
+                const act_t *r0 = &input[ch][oy * STRIDE][ox * STRIDE];
                 int acc = cv_dotsp_b(*(const unsigned int *)(const void *)r0, w0)
                         + cv_dotsp_b(*(const unsigned int *)(const void *)(r0 + W), w1)
                         + cv_dotsp_b(*(const unsigned int *)(const void *)(r0 + 2 * W), w2);

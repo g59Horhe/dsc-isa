@@ -18,12 +18,13 @@ Table 1: cycles per valid MAC (the 3x3 kernel also computes the two zero-padded 
 does W/(W-2) times the outputs), each kernel at its better code alignment.
 Table 2: speedups over -O3 C and over the hand scalar kernel, study kernel against the PULP-NN builds.
 Table 3: the cycle model, cycles = I + 2 Bt + Slu + Asplit + Ba, on every PULP-NN run, with two
-terms the study's kernels never exercise: Asplit also counts split stores (dwrite - stores), and
+terms the study's kernels never exercise: Asplit also counts split stores (dwrite - (stores - 1): the end-marker store retires
+but is not a counted bus write), and
 J, one cycle per jump (jal, jalr; event 7), fixed by sw/ubench_jump.c (1,000 jal: +1,000 cycles
 beyond the instruction count; 1,000 call-return pairs: +2,001 for 2,001 jumps). Ba is measured as
 in align_term.py: each binary is rebuilt as harness/collect_wait0.sh builds it (the cycle count
-must match the CSV), run with --redir, and the taken redirects to a 32-bit instruction at an
-address 2 mod 4 are counted. The table also gives the static count of hardware-loop setups and
+must match the CSV), run with --redir-pc (redirect targets by exact address, from the IF stage), and the
+redirects to a 32-bit instruction at an address 2 mod 4 are counted. The table also gives the static count of hardware-loop setups and
 CORE-V loads/stores in each build, to show what the compiler emitted. Run from results/.
 --latex PATH writes the paper's table (headline shapes: cycles per valid MAC and speedup over -O3)."""
 import csv, collections, os, re, subprocess, sys, tempfile
@@ -119,13 +120,13 @@ for _, f, shapes, *_ in FAMILIES:
                 subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True)
                 subprocess.run([f'{tp}objcopy', '-O', 'binary', elf, f'{tmp}/x.bin'], check=True)
                 with open(f'{tmp}/x.hex', 'w') as h: subprocess.run(['python3', 'sw/bin2hex.py', f'{tmp}/x.bin'], cwd=ROOT, check=True, stdout=h)
-                r = subprocess.run([SIM, '--hex', f'{tmp}/x.hex', '--cycles', '50000000', '--wait', '0', '--redir', f'{tmp}/redir.txt'], capture_output=True, text=True, check=True).stdout
+                r = subprocess.run([SIM, '--hex', f'{tmp}/x.hex', '--cycles', '50000000', '--wait', '0', '--redir-pc', f'{tmp}/redir.txt'], capture_output=True, text=True, check=True).stdout
                 cyc = int(re.search(r'MEASURED (\d+)', r)[1]); assert cyc == v['cycles'], (base, f, s, p, cyc, v['cycles'])
                 ln, targets, ops = disasm(f'{tp}objdump', elf); ba = 0
                 for l in open(f'{tmp}/redir.txt'):
-                    w, n = l.split(); t = resolve(int(w, 16), ln, targets)
-                    if t in ln and t % 4 == 2 and ln[t] == 4: ba += int(n)
-                sl, ss, j = v['dread'] - v['ev5'], max(v['dwrite'] - v['ev6'], 0), v['ev7']
+                    t, n = l.split(); t = int(t, 16); assert t in ln, (base, f, s, p, hex(t))
+                    if t % 4 == 2 and ln[t] == 4: ba += int(n)
+                sl, ss, j = v['dread'] - v['ev5'], max(v['dwrite'] - (v['ev6'] - 1), 0), v['ev7']   # stores retired include the window's end-marker store, which is not a counted bus write
                 pred4 = v['ev1'] + 2 * v['ev9'] + v['ev2'] + sl
                 rows.append(dict(f=f, b=b, s=s, p=p, cyc=cyc, pred4=pred4, ss=ss, ba=ba, j=j, res=cyc - pred4 - ss - ba - j, **ops))
 print("\ncycle model on PULP-NN, per family and build (8 runs each: 4 shapes x 2 alignments). First pair of residual\n"
@@ -143,6 +144,10 @@ for _, f, *_ in FAMILIES:
 e = [abs(r['res']) / r['cyc'] for r in rows]
 print(f"\nall {len(rows)} PULP-NN runs: mean |resid| {sum(e)/len(e):.2%}, max {max(e):.2%}; largest residuals (cycles):",
       ', '.join(f"{r['f']} {r['b']} {r['s']} pad{r['p']} {r['res']:+d}" for r in sorted(rows, key=lambda r: -abs(r['res']))[:4]))
+if '--fit' in sys.argv:   # per-run model terms for the manuscript's Table I (paper_tables.py)
+    with open(sys.argv[sys.argv.index('--fit') + 1], 'w') as fo:
+        fo.write('kernel,build,shape,pad,cycles,pred4,pred5,resid\n')
+        for r in rows: fo.write(f"{r['f']},{r['b']},{r['s']},{r['p']},{r['cyc']},{r['pred4']},{r['pred4'] + r['ss'] + r['ba']},{r['res']}\n")
 if '--latex' in sys.argv:
     path = sys.argv[sys.argv.index('--latex') + 1]
     fams = ['dw3', 'dw5', 'pw']

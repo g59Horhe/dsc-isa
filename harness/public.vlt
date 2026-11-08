@@ -1,3 +1,8 @@
 `verilator_config
 // Expose the HPM event signals so the harness can count events in the measured binary itself.
 public_flat_rw -module "cv32e40p_id_stage" -var "mhpmevent_*"
+// Expose the IF stage's redirect request and target so the harness can log redirect targets by exact
+// address (--redir-pc); the bus-level --redir histogram sees words, and misses short forward jumps
+// whose target word the prefetcher already fetched sequentially.
+public_flat_rw -module "cv32e40p_if_stage" -var "branch_req"
+public_flat_rw -module "cv32e40p_if_stage" -var "branch_addr_n"

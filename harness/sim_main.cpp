@@ -68,6 +68,10 @@ int main(int argc, char** argv) {
     // targets, by word address) while counting; results/align_term.py pairs it with the ELF to count
     // redirects whose target's first 32-bit instruction sits at an address 2 mod 4 (aligner penalty).
     const char* redir_file = nullptr; std::map<uint32_t, uint64_t> redirs; uint32_t last_ia = 0; bool last_ia_valid = false;
+    // --redir-pc <file>: histogram of redirect targets by exact (halfword) address, from the IF stage's own
+    // branch request and target while counting: every branch, jump and hardware-loop redirect the core
+    // takes, including those the bus cannot see. RTL builds only.
+    const char* redirpc_file = nullptr; std::map<uint32_t, uint64_t> redirpcs;
     const char* fst_file = nullptr; uint64_t fst_hp = 1;   // --fst-hp: half clock period in ps, so trace times are real time (1 ps timescale)
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--hex")    && i + 1 < argc) hexfile = argv[++i];
@@ -75,6 +79,7 @@ int main(int argc, char** argv) {
         if (!strcmp(argv[i], "--wait")   && i + 1 < argc) wait_states = (uint32_t)strtoul(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--iwait")  && i + 1 < argc) iwait = (uint32_t)strtoul(argv[++i], nullptr, 0);
         if (!strcmp(argv[i], "--redir")  && i + 1 < argc) redir_file = argv[++i];
+        if (!strcmp(argv[i], "--redir-pc") && i + 1 < argc) redirpc_file = argv[++i];
 #ifdef TRACE
         if (!strcmp(argv[i], "--fst")    && i + 1 < argc) fst_file = argv[++i];
         if (!strcmp(argv[i], "--fst-hp") && i + 1 < argc) fst_hp = strtoull(argv[++i], nullptr, 0);
@@ -191,6 +196,7 @@ int main(int argc, char** argv) {
             ev[8] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_branch_o;
             ev[9] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_branch_taken_o;
             ev[10] += q->cv32e40p_core__DOT__id_stage_i__DOT__mhpmevent_compressed_o;
+            if (q->cv32e40p_core__DOT__if_stage_i__DOT__branch_req) redirpcs[q->cv32e40p_core__DOT__if_stage_i__DOT__branch_addr_n & ~1u]++;
         }
 #endif
         dut->clk_i = 1;
@@ -204,6 +210,7 @@ int main(int argc, char** argv) {
         if (cycle == 10) dut->fetch_enable_i = 1;
     }
 
+    if (redirpc_file) { FILE* rf = fopen(redirpc_file, "w"); if (rf) { for (auto& kv : redirpcs) fprintf(rf, "%08x %llu\n", kv.first, (unsigned long long)kv.second); fclose(rf); } }
     if (redir_file) { FILE* rf = fopen(redir_file, "w"); if (rf) { for (auto& kv : redirs) fprintf(rf, "%08x %llu\n", kv.first, (unsigned long long)kv.second); fclose(rf); } }
 #ifdef TRACE
     if (tfp) { tfp->close(); delete tfp; }

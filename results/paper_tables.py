@@ -23,14 +23,14 @@ ALIGN = {}; JMP = {}
 if os.path.exists(f'{RES}/wait0_align.csv'):
     ALIGN = {(r['shape'], r['kernel'], int(r['pad'])): int(r['ba']) for r in csv.DictReader(open(f'{RES}/wait0_align.csv'))}
     JMP = {(r['shape'], r['kernel'], int(r['pad'])): int(r['jumps']) for r in csv.DictReader(open(f'{RES}/wait0_align.csv'))}
-def load(base, p):
+def load(base, p, pre=''):   # pre: the kernel-name prefix of the set's rows in wait0_align.csv (s2_ for stride 2)
     d = collections.OrderedDict()
     for r in csv.DictReader(l for l in open(f'{RES}/{base}_pad{p}.csv') if not l.startswith('DONE')):
         d.setdefault((r['shape'], r['kernel']), {})[r['event']] = int(r['value']) if r['value'].lstrip('-').isdigit() else r['value']
         d[(r['shape'], r['kernel'])]['chk'] = r['chk']
     for k, v in d.items():
         v['instr'] = v['ev1']; v['ldstall'] = v['ev2']; v['loads'] = v['ev5']; v['brtaken'] = v['ev9']
-        v['split'] = v['dread'] - v['loads']; v['ba'] = ALIGN.get((k[0], k[1], p), 0); v['j'] = JMP.get((k[0], k[1], p), 0)
+        v['split'] = v['dread'] - v['loads']; v['ba'] = ALIGN.get((k[0], pre + k[1], p), 0); v['j'] = JMP.get((k[0], pre + k[1], p), 0)
         v['pred4'] = v['instr'] + 2 * v['brtaken'] + v['ldstall'] + v['split']; v['pred5'] = v['pred4'] + v['ba']; v['pred'] = v['pred5'] + v['j']
         v['resid4'] = v['cycles'] - v['pred4']; v['resid'] = v['cycles'] - v['pred']; v['pad'] = p
     return d
@@ -109,9 +109,17 @@ names = {'scalar_O2': 'scalar C \\texttt{-O2}', 'scalar_O3': 'scalar C \\texttt{
 for s in WAIT0_SHAPES:
     for i, k in enumerate(names):
         a, b = E[0][(s, k)], E[1][(s, k)]; v = min((a, b), key=lambda v: v['cycles'])
-        rows.append([s.replace('x', '\\x') if i == 0 else '', names[k], N(a['cycles']), N(b['cycles']), N(a['instr']), N(a['dread']), N(a['brtaken']), N(a['ldstall']), N(a['split']), N(a['ba']), N(a['j']), f"{v['resid']/v['cycles']:+.1%}".replace('%', '\\%')])
+        rows.append([s.replace('x', '\\x') if i == 0 else '', names[k], N(a['cycles']), N(b['cycles']), N(v['instr']), N(v['dread']), N(v['brtaken']), N(v['ldstall']), N(v['split']), N(v['ba']), N(v['j']), f"{v['resid']/v['cycles']:+.1%}".replace('%', '\\%')])   # counters from the better alignment's run
     if s != WAIT0_SHAPES[-1]: rows.append('MIDRULE')
 write_tab('tab_wait0_dw3', 'llrrrrrrrrrr', ['shape', 'kernel', 'cycles, pad 0', 'pad 1', '$I$', 'reads', '$B_t$', '$S_{lu}$', '$A_{split}$', '$B_a$', '$J$', 'resid.'], rows)
+# review round R6: the same table at all four shapes, for the supplementary material
+rows = []
+for s in DW:
+    for i, k in enumerate(names):
+        a, b = E[0][(s, k)], E[1][(s, k)]; v = min((a, b), key=lambda v: v['cycles'])
+        rows.append([s.replace('x', '\\x') if i == 0 else '', names[k], N(a['cycles']), N(b['cycles']), N(v['instr']), N(v['dread']), N(v['brtaken']), N(v['ldstall']), N(v['split']), N(v['ba']), N(v['j']), f"{v['resid']/v['cycles']:+.1%}".replace('%', '\\%')])
+    if s != DW[-1]: rows.append('MIDRULE')
+write_tab('tab_wait0_dw3_all', 'llrrrrrrrrrr', ['shape', 'kernel', 'cycles, pad 0', 'pad 1', '$I$', 'reads', '$B_t$', '$S_{lu}$', '$A_{split}$', '$B_a$', '$J$', 'resid.'], rows)
 
 # ---------------------------------------------------------------- C. model fit statistics
 def r2(xs, ys):
@@ -126,14 +134,14 @@ for base, pat in (('wait0_decomp', 'asm'), ('wait0_clip_dw3', 'asm'), ('wait0_dw
 eq = [v for p in (0, 1) for v in E[p].values()]
 distinct = hw + [v for p in (0, 1) for k, v in E[p].items() if k[1] != 'scalar_asm']
 fullx = [v for base in ('wait0_clip_dw3', 'wait0_clip_dw5', 'wait0_clip_pw') for p in (0, 1) for k, v in load(base, p).items() if k[1].endswith('_xp_clip') and 'simd' in k[1]]   # full Xpulp: SIMD + hardware loops + clip
-def stats(rs, label):
-    ys = [v['cycles'] for v in rs]; e4 = [abs(v['resid4']) / v['cycles'] for v in rs]; e5 = [abs(v['resid']) / v['cycles'] for v in rs]
-    return [label, str(len(rs)), f"{r2([v['pred4'] for v in rs], ys):.4f}", P(sum(e4) / len(e4), 2), P(max(e4), 2), f"{r2([v['pred'] for v in rs], ys):.4f}", P(sum(e5) / len(e5), 3), P(max(e5), 2)]
-rows = [stats(eq, 'equalised 3\\x3 set'), stats(hw, 'hand-written, 3 families'),
-        stats(fullx, '\\quad full Xpulp only'), stats(distinct, 'all distinct')]
-ys = [v['cycles'] for v in eq]
-rows.append(['$I$ alone, equalised set', str(len(eq)), f"{r2([v['instr'] for v in eq], ys):.4f}", '', '', '', '', ''])
-write_tab('tab_modelfit', 'lrrrrrrr', ['run set', '$n$', '$R^2_4$', 'mean', 'max', '$R^2_6$', 'mean', 'max'], rows)
+extra = [v for base, pat in (('wait0_dw5', 'dw5_C_'), ('wait0_pw', 'pw_C_|pw_simd_C_'), ('wait0_block', 'blk_')) for p in (0, 1) for k, v in load(base, p).items() if re.match(pat, k[1])]
+def stats(rs, label):   # four terms; with Ba; the full model (Eq. 1, with Ba and J) as exact runs
+    e4 = [abs(v['resid4']) / v['cycles'] for v in rs]; e5 = [abs(v['cycles'] - v['pred5']) / v['cycles'] for v in rs]
+    return [label, str(len(rs)), P(sum(e4) / len(e4), 2), P(max(e4), 2), P(sum(e5) / len(e5), 2), P(max(e5), 2), f"{sum(v['resid'] == 0 for v in rs)} / {len(rs)}"]
+s2 = [v for p in (0, 1) for v in load('wait0_s2_dw3', p, 's2_').values()]   # review round R5: the sets the terms were not chosen on
+pwb = [v for p in (0, 1) for v in load('wait0_pwb', p).values()]   # review round R7: pointwise with the input channels in blocks, measured after the model was fixed
+fitrows = [stats(eq, 'equalised 3\\x3'), stats(hw, 'hand-written'), stats(fullx, '\\quad full Xpulp'), stats(distinct, 'all distinct'),
+           'MIDRULE', stats(extra, 'compiler, block'), stats(s2, 'stride 2, held out'), stats(pwb, '1\\x1 blocked')]   # PULP-NN's row is added after pulpnn_model.py runs, below
 # residual histogram data
 bins = [0, 0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
 lab = ['0--0.25', '0.25--0.5', '0.5--1', '1--2', '2--4', '4--8']
@@ -144,14 +152,17 @@ write_dat('fig_resid', ['bin', 'four', 'six'], [[lab[i], h4[i], h5[i]] for i in 
 # ---------------------------------------------------------------- E. baseline strength and alignment spread, all families and shapes
 rows = []
 o2k = {'3\\x3 dw': ('wait0_eqrequant', 'scalar_O2'), '5\\x5 dw': ('wait0_dw5', 'dw5_C_O2'), '1\\x1 pw': ('wait0_pw', 'pw_C_O2')}
+OSD = {'wait0_Os_dw': [load('wait0_Os_dw', p) for p in (0, 1)], 'wait0_Os_pw': [load('wait0_Os_pw', p) for p in (0, 1)]}   # review round R: the C kernels at -Os
+osk = {'3\\x3 dw': ('wait0_Os_dw', 'scalar_Os'), '5\\x5 dw': ('wait0_Os_dw', 'dw5_C_Os'), '1\\x1 pw': ('wait0_Os_pw', 'pw_C_Os')}
 for name, f in FAM.items():
     for i, s in enumerate(f['shapes']):
         base, k2 = o2k[name]; Dd = O3D[base]; o2 = min(Dd[p][(s, k2)]['cycles'] for p in (0, 1)); o3 = o3cyc(f, s)
         h = best(f['D'], s, f['s'][0])['cycles']
         sp = lambda Dd, k: abs(Dd[0][(s, k)]['cycles'] - Dd[1][(s, k)]['cycles']) / min(Dd[0][(s, k)]['cycles'], Dd[1][(s, k)]['cycles'])
-        rows.append([name if i == 0 else '', s.replace('x', '\\x'), N(o2), N(o3), N(h), X(o2 / o3), f"{o3/h-1:+.1%}".replace('%', '\\%'), P(sp(Dd, k2)), P(sp(Dd, f['o3'][1])), P(sp(f['D'], f['s'][0]))])
+        ob, ok_ = osk[name]; os_ = min(OSD[ob][p][(s, ok_)]['cycles'] for p in (0, 1))
+        rows.append([name if i == 0 else '', s.replace('x', '\\x'), N(os_), N(o2), N(o3), N(h), X(o2 / o3), f"{o3/h-1:+.1%}".replace('%', '\\%'), P(sp(Dd, k2)), P(sp(Dd, f['o3'][1])), P(sp(f['D'], f['s'][0]))])
     if name != '1\\x1 pw': rows.append('MIDRULE')
-write_tab('tab_baseline', 'llrrrrrrrr', ['kernel', 'shape', '\\texttt{-O2}', '\\texttt{-O3}', 'hand', '\\texttt{-O2}/\\texttt{-O3}', 'hand vs \\texttt{-O3}', 'spread \\texttt{-O2}', '\\texttt{-O3}', 'hand'], rows)
+write_tab('tab_baseline', 'llrrrrrrrrr', ['kernel', 'shape', '\\texttt{-Os}', '\\texttt{-O2}', '\\texttt{-O3}', 'hand', '\\texttt{-O2}/\\texttt{-O3}', 'hand vs \\texttt{-O3}', 'spread \\texttt{-O2}', '\\texttt{-O3}', 'hand'], rows)
 
 # ---------------------------------------------------------------- G. decomposition over all shapes
 rows = []; figrows = []
@@ -216,8 +227,12 @@ write_tab('tab_ifetch', 'llrrrrrrrrrrrr', ['shape', 'kernel', 'RV32IMC $w_i{=}0$
 write_dat('fig_ifetch', ['w', 'scalar', 'unal', 'al'], figrows)
 
 # ---------------------------------------------------------------- K. area: headline table from area_table.py, per-module table from attrib_area.txt
-run(['python3', 'area_table.py', '--latex', f'{GEN}/tab_area.tex']); run(['python3', 'clip_model.py', '--latex', f'{GEN}/tab_decomp.tex'])
-run(['python3', 'pulpnn_model.py', '--latex', f'{GEN}/tab_pulpnn.tex'])   # PULP-NN as the accelerated side (needs CORE-V GCC, COREV_BIN)
+run(['python3', 'area_table.py', '--latex', f'{GEN}/tab_area.tex', '--routed']); run(['python3', 'clip_model.py', '--latex', f'{GEN}/tab_decomp.tex', '--lattice'])
+run(['python3', 'pw_blocked_model.py', '--latex', f'{GEN}/tab_pwb.tex'])   # review round R7: pointwise beyond 16 input channels
+run(['python3', 'pulpnn_model.py', '--latex', f'{GEN}/tab_pulpnn.tex', '--fit', f'{GEN}/pulpnn_fit.csv'])   # PULP-NN as the accelerated side (needs CORE-V GCC, COREV_BIN)
+pn = [dict(cycles=int(r['cycles']), resid4=int(r['cycles']) - int(r['pred4']), pred5=int(r['pred5']), resid=int(r['resid'])) for r in csv.DictReader(open(f'{GEN}/pulpnn_fit.csv'))]
+fitrows.append(stats(pn, 'PULP-NN'))   # four terms: split loads only; +B_a: with split stores and B_a; exact: with J too
+write_tab('tab_modelfit', 'lrrrrrr', ['runs', '$n$', '4 terms: mean', 'max', '$+B_a$: mean', 'max', 'exact'], fitrows)
 rows = []; other = [0, 0, 0]; mods = []
 for l in open(f'{ROOT}/syn/build/attrib_area.txt'):
     m = re.match(r'(cv32e40p_core\S*|design total)\s+([\d,]+)\s+([\d,]+)\s+(-?[\d,]+)', l)
@@ -266,4 +281,48 @@ write_tab('tab_ibex', 'llrrrrrrl', ['kernel', 'shape', '$I$', 'CV32E40P', 'Ibex 
 hdr, jrows = it[1]
 rows = [[short(r[0]), r[1].replace('x', '\\x')] + [c.replace('x', '\\x') for c in r[2:]] for r in jrows if r[1] in head]
 write_tab('tab_ibex_ratio', 'llrrrrrr', ['kernel', 'shape', 'CV', 'Ibex2', 'Ibex3', 'CV', 'Ibex2', 'Ibex3'], rows, prehead=' & & \\multicolumn{3}{c}{\\texttt{-O2} / \\texttt{-O3}} & \\multicolumn{3}{c}{\\texttt{-O3} / hand}', size='\\setlength{\\tabcolsep}{2.5pt}')
+# ---------------------------------------------------------------- O. run inventory (review round R6), for the supplementary material
+def runs(*bases):   # distinct (shape, kernel, alignment) runs in wait-0 datasets, read from the raw CSVs
+    ks, sh, n = set(), collections.defaultdict(set), 0   # shapes: per kernel, the most any kernel of the set runs at
+    for base in bases:
+        for p in (0, 1):
+            d = {(r['shape'], r['kernel']) for r in csv.DictReader(l for l in open(f'{RES}/{base}_pad{p}.csv') if not l.startswith('DONE'))}
+            n += len(d); ks |= {k for _, k in d}
+            for s_, k in d: sh[(base, k)].add(s_)
+    return len(ks), max(len(v) for v in sh.values()), n
+def ds(pat): return sorted(f[:-9] for f in os.listdir(RES) if re.fullmatch(pat, f[:-9] if f.endswith('_pad0.csv') else ''))
+def sweep_runs(fn, waits):
+    t = [l for l in open(f'{RES}/{fn}') if re.match(r'\S+\s+\S+\s+\d+\s+\d+', l) and not l.startswith(('shape', '###'))]
+    return len({l.split()[1] for l in t}), len({l.split()[0] for l in t}), len(t) * waits
+inv = []
+def irow(lab, k, s, al, n, use): inv.append([lab, str(k), str(s), al, N(n), use])
+def rset(lab, use, *pats):   # every dataset whose name matches one of the patterns
+    k, s, n = runs(*[b_ for pt in pats for b_ in ds(pt)]); irow(lab, k, s, '2', n, use)
+def kcount(sets): return len({k[1] for b_, pat in sets for k in load(b_, 0) if re.search(pat, k[1])})
+irow('equalised 3\\x3 set', *runs('wait0_eqrequant')[:2], '2', len(eq), 'Sec. IV, V')
+for fam, sets in (('3\\x3', (('wait0_decomp', 'asm'), ('wait0_clip_dw3', 'asm'))),
+                  ('5\\x5, both loop orders', (('wait0_dw5', 'dw5_asm|dw5_simd'), ('wait0_clip_dw5', 'dw5_asm|dw5_simd'), ('wait0_dw5os', 'dw5_os'))),
+                  ('1\\x1', (('wait0_pw', 'pw_asm|pw_simd_asm'), ('wait0_clip_pw', 'pw_asm|pw_simd_asm')))):
+    n = sum(1 for b_, pat in sets for p in (0, 1) for k in load(b_, p) if re.search(pat, k[1]))
+    irow(f'hand-written grid, {fam}', kcount(sets), 4, '2', n, 'Sec. IV, VI, VII')
+irow('\\quad of which full Xpulp', 4, 4, '2', len(fullx), 'Sec. IV, VI')
+irow('compiler-generated 5\\x5 and 1\\x1; block', kcount((('wait0_dw5', '^dw5_C_'), ('wait0_pw', '^pw_C_|^pw_simd_C_'), ('wait0_block', '^blk_'))), '4; 1', '2', len(extra), 'Sec. IV, V, X')
+irow('stride 2, 3\\x3 grid', *runs('wait0_s2_dw3')[:2], '2', len(s2), 'Sec. IV, VI')
+irow('1\\x1 with 32 to 128 input channels, grid', *runs('wait0_pwb')[:2], '2', len(pwb), 'Sec. IV, VII')
+rset('Zbb-style saturation grid', 'Sec. VI', r'wait0_zbb_(dw3|dw5|pw)')
+rset('C at \\texttt{-Os}', 'Sec. V', r'wait0_Os_(dw|pw)')
+rset("compiler's saturation branches", 'Sec. XI', r'wait0_branch_(dw3|dw5|pw)')
+rset('real MobileNetV1 data', 'Sec. X, XI', r'wait0_(real|clip_real|zbb_real|branch_real)_(dw3|pw)')
+rset('synthetic data as unsigned', 'Sec. X', r'wait0_syn_(dw3|pw)')
+k_, s_, _ = runs(*ds(r'wait0_pulpnn(cv0|cv)?(_spec)?_(dw3|dw5|pw)')); irow('PULP-NN, six builds', k_, s_, '2', len(pn), 'Sec. IV, XI')
+rset('PULP-NN, six builds, real data', 'Sec. XI', r'wait0_pulpnn(cv0|cv)?(_spec)?_real_(dw3|pw)')
+for c, lab in (('ibex2', '2-stage'), ('ibex3', '3-stage')):
+    rset(f'Ibex {lab}, scalar kernels', 'Sec. XII', rf'wait0_{c}_(dw3|dw5|dw5os|pw)')
+    rset(f'Ibex {lab} with bitmanip', 'Sec. XII', rf'wait0_{c}b_\w+')
+inv.append('MIDRULE')
+k_, s_, n_ = sweep_runs('decomp_latency_sweep.txt', 4); irow('data-port wait states 0 to 3', k_, s_, 'pad 0', n_, 'Sec. VIII')
+k_, s_, n_ = sweep_runs('ifetch_latency_sweep.txt', 1); irow('instruction-port wait states 0 to 3', k_, s_, 'pad 0', n_, 'Sec. VIII')
+bp = list(csv.DictReader(open(f'{RES}/both_ports.csv'))); irow('wait states on both ports', len({r['kernel'] for r in bp}), 1, 'better', len(bp), 'Sec. XIII')
+er = list(csv.DictReader(open(f'{RES}/energy_runs.csv'))); irow('gate-level energy, routed netlists', len({(r['family'], r['role']) for r in er}), len({r['shape'] for r in er}), 'better', len(er), 'Sec. IX')
+write_tab('tab_inventory', 'lrrrrl', ['run set', 'kernels', 'shapes', 'alignments', 'runs', 'used in'], inv)
 print('wrote', sorted(os.listdir(GEN)))
