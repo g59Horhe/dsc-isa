@@ -1022,8 +1022,10 @@ the access counts already in the tables, which is why the wait-0 tables
 carry the counts.
 
 Two consequences. The control-and-addressing gain on the scalar kernel
-vanishes with latency, because post-increment addressing issues a few
-more loads per row; at three wait states the Xpulp scalar kernel is
+vanishes with latency, because post-increment needs a pointer per kernel
+row where immediate offsets need one base pointer, and the two extra
+registers make GCC spill two values around each row's loop: at 8x16x16
+7,048 against 6,824 reads and 1,826 against 1,586 writes; at three wait states the Xpulp scalar kernel is
 level with or marginally behind the RV32IMC one. And the choice of
 fastest SIMD kernel depends on latency. Aligned over unaligned, both with
 Xpulp control (below 1.00 means aligned is faster):
@@ -2202,6 +2204,17 @@ a stride-2 row has 3 pixels and the aligned kernel degenerates to its tail). Col
 | 8x32x32 | aligned | 31,878 | 1.99x | 2.36x | 1.18x | 1.45x | 1.04x | 1.32x | 1.1% | 1.37 |
 | 16x32x32 | unaligned | 46,598 | 2.73x | 3.24x | 1.19x | 1.69x | 1.18x | 1.37x | 10.8% | 1.37 |
 | 16x32x32 | aligned | 63,623 | 2.00x | 2.37x | 1.19x | 1.45x | 1.04x | 1.32x | 1.1% | 1.37 |
+
+Against the stronger baseline (the better of hand and -O3), unaligned SIMD:
+
+| shape | stronger baseline | cycles | full Xpulp vs it | Shapley: datapath | control | clip |
+|---|---|---|---|---|---|---|
+| 8x16x16 | -O3 | 13,704 | 2.53x | 1.70x | 1.12x | 1.32x |
+| 32x16x16 | -O3 | 54,214 | 2.51x | 1.70x | 1.12x | 1.32x |
+| 8x32x32 | hand | 63,547 | 2.73x | 1.69x | 1.18x | 1.37x |
+| 16x32x32 | hand | 127,059 | 2.73x | 1.69x | 1.18x | 1.37x |
+
+over the stronger baseline: full Xpulp 2.51x to 2.73x; Shapley datapath 1.69x to 1.70x, control 1.12x to 1.18x, clip 1.32x to 1.37x
 
 Per output (loads: retired load instructions):
 

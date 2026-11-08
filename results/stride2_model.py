@@ -59,6 +59,19 @@ for s in SHAPES:
         print(f"| {s} | {'unaligned' if 'unal' in simd else 'aligned'} | {g[(1,1,1)]:,} | {g[(0,0,0)]/g[(1,1,1)]:.2f}x | {c('scalar_O3')/g[(1,1,1)]:.2f}x | "
               f"{c('scalar_O3')/c('scalar_asm_rv'):.2f}x | {sh[0]:.2f}x | {sh[1]:.2f}x | {sh[2]:.2f}x | {(f['dread'] - f['ev5'])/f['cycles']:.1%} | "
               f"{c('simd_al_asm_xp_clip')/c('simd_unal_asm_xp_clip'):.2f} |")
+# review round R8: against the stronger baseline, the better of the hand kernel and -O3 (as Table IV of the paper does
+# at stride 1). Where -O3 is the stronger, it replaces the grid's base cell and the other seven cells stay; every
+# Shapley value then scales by the cube root of the two baselines' cycle ratio.
+print('\nAgainst the stronger baseline (the better of hand and -O3), unaligned SIMD:\n\n| shape | stronger baseline | cycles | full Xpulp vs it | Shapley: datapath | control | clip |\n|---|---|---|---|---|---|---|')
+sb = []
+for s in SHAPES:
+    c = lambda k: best(s, k)['cycles']
+    g = {(0, 0, 0): min(c('scalar_asm_rv'), c('scalar_O3')), (0, 1, 0): c('scalar_asm_xp'), (0, 0, 1): c('scalar_asm_rv_clip'), (0, 1, 1): c('scalar_asm_xp_clip'),
+         (1, 0, 0): c('simd_unal_asm_rv'), (1, 1, 0): c('simd_unal_asm_xp'), (1, 0, 1): c('simd_unal_asm_rv_clip'), (1, 1, 1): c('simd_unal_asm_xp_clip')}
+    sh = shapley(g); sb.append((g[(0, 0, 0)] / g[(1, 1, 1)], sh))
+    print(f"| {s} | {'-O3' if c('scalar_O3') < c('scalar_asm_rv') else 'hand'} | {g[(0,0,0)]:,} | {g[(0,0,0)]/g[(1,1,1)]:.2f}x | {sh[0]:.2f}x | {sh[1]:.2f}x | {sh[2]:.2f}x |")
+print(f"\nover the stronger baseline: full Xpulp {min(x for x, _ in sb):.2f}x to {max(x for x, _ in sb):.2f}x; Shapley datapath {min(h[0] for _, h in sb):.2f}x to {max(h[0] for _, h in sb):.2f}x, "
+      f"control {min(h[1] for _, h in sb):.2f}x to {max(h[1] for _, h in sb):.2f}x, clip {min(h[2] for _, h in sb):.2f}x to {max(h[2] for _, h in sb):.2f}x")
 # review round R5: why the speedup over the hand kernel grows at stride 2. Per output, at the better alignment, the hand
 # scalar kernel against the full-Xpulp unaligned kernel, stride 1 (wait0_decomp, wait0_clip_dw3) against stride 2,
 # at the two stride-1 shapes that are also stride-2 shapes.
