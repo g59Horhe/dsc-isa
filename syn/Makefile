@@ -22,7 +22,7 @@ NAND2_AREA ?= 3.7536
 SRCS = $(CORE)/rtl/include/cv32e40p_pkg.sv \
        $(CORE)/rtl/include/cv32e40p_apu_core_pkg.sv \
        $(CORE)/rtl/include/cv32e40p_fpu_pkg.sv \
-       $(filter-out %fp_wrapper.sv %cv32e40p_top.sv %register_file_latch.sv,$(wildcard $(CORE)/rtl/*.sv)) \
+       $(filter-out %fp_wrapper.sv %cv32e40p_top.sv %register_file_latch.sv,$(sort $(wildcard $(CORE)/rtl/*.sv))) \
        $(CORE)/bhv/cv32e40p_sim_clock_gate.sv
 
 .PHONY: all convert base pulp clean

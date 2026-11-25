@@ -27,10 +27,10 @@ committed files; the `compare` stage diffs them. What should come out:
 | alignment term (`results/wait0_align.csv`) | identical |
 | saturation-idiom and `-Os` sets (`results/wait0_{zbb,branch,Os}_*.csv`) | identical, row for row |
 | both-port wait-state runs (`results/both_ports.csv`) | identical |
-| synthesis totals, flat (`syn/build/{base,pulp}/area.txt`) | identical: 43,771 and 68,703 GE |
-| per-module attribution (`syn/build/attrib_area.txt`) | delta within about 20 GE of 24,218 (ABC varies between checkouts; no derived figure moves) |
+| synthesis totals, flat (`syn/build/{base,pulp}/area.txt`) | identical: 43,771 and 68,677 GE |
+| per-module attribution (`syn/build/attrib_area.txt`) | varies between runs: delta 24,201 GE in six of eight, 24,304 in two, the difference in the controller |
 | placement (`syn/build/place-*/openroad.txt`) | identical: slack $-1.521$ / $-2.984$ ns after repair, 187,770 / 297,737 um^2 |
-| unplaced-netlist STA (`syn/build/net-*/sta.txt`) | register-to-register arrival 22.0 / 29.1 ns (area-mapped) and 26.7 / 29.9 ns (delay-mapped): not meaningful, kept as the negative example |
+| unplaced-netlist STA (`syn/build/net-*/sta.txt`) | register-to-register arrival 22.0 / 29.1 ns (area-mapped) and 26.7 / 24.5 ns (delay-mapped): not meaningful, kept as the negative example |
 
 Two stages are not in the default run because of their length. The routed
 timing sweep (`make -C syn sweep`: CTS, routing, extraction and post-route

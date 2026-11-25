@@ -13,7 +13,7 @@ def load(fn):
     own = {n: incl[n] - sum(incl[k] * c for k, c in kids[n].items()) for n in mods}
     return own, d["design"]["area"]
 a, ta = load(sys.argv[1]); b, tb = load(sys.argv[2]); nand2 = float(sys.argv[3])
-names = sorted(set(a) | set(b), key=lambda n: -(b.get(n, 0) - a.get(n, 0)))
+names = sorted(set(a) | set(b), key=lambda n: (-(b.get(n, 0) - a.get(n, 0)), n))   # ties by name: Yosys lists modules in a run-dependent order
 print(f"{'module (own cells)':<30}{'base GE':>10}{'pulp GE':>10}{'delta GE':>10}{'delta %':>9}{'share of delta':>15}")
 for n in names:
     x, y = a.get(n, 0) / nand2, b.get(n, 0) / nand2

@@ -119,8 +119,8 @@ survive verification. The retired claims and why are listed at the end.
    both pipelines. The output-stationary 5x5 kernel is 16 to 29% faster
    than -O3 on the 3-stage Ibex, but on the 2-stage one, where each of its
    50 loads per output stalls a cycle, it is 1 to 4% slower at three shapes
-   and 14% faster at 32x8x8. Two RV32IMC cores synthesise 0.5% apart
-   (43,771 and 43,548 GE); the Xpulp extension is more than half of either.
+   and 14% faster at 32x8x8. Two RV32IMC cores synthesise 0.1% apart
+   (43,771 and 43,818 GE); the Xpulp extension is more than half of either.
 17. PULP-NN's unchanged kernels on the same data (identical outputs) are
    slower than this study's in every build except GCC 16's
    shape-specialised 3x3 at the two 16x16 shapes (6% faster per valid
@@ -186,7 +186,7 @@ survive verification. The retired claims and why are listed at the end.
    standard max and min save 5.75 to 5.97 cycles per output (5.00 to 5.07 on
    real data), the same as cv.max and cv.min on CV32E40P, with every checksum
    equal: 1.21x, 1.06x and 1.11x on the 3-stage pipeline. The whole bitmanip
-   option adds 3,404 GE (2-stage, 7.8%) and 2,854 GE (3-stage, 6.4%) at
+   option adds 3,134 GE (2-stage, 7.2%) and 2,721 GE (3-stage, 6.1%) at
    synthesis, a loose upper bound on min and max: RV32BBalanced implements
    Zba, Zbb and Zbs and the draft Zbf (bfp) and Zbt (cmix, cmov, fsl, fsr),
    per Ibex's integration guide and decoder.
@@ -576,8 +576,8 @@ use `sky130_fd_sc_hd__nand2_1` = 3.7536 um^2.
 | configuration | cells | area (um^2) | GE | flops |
 |---|---|---|---|---|
 | COREV_PULP=0 (RV32IMC) | 19,989 | 164,298 | 43,771 | 2,128 |
-| COREV_PULP=1 (Xpulp) | 33,418 | 257,885 | 68,703 | 2,479 |
-| delta | | | +24,932 | +351 |
+| COREV_PULP=1 (Xpulp) | 33,576 | 257,787 | 68,677 | 2,479 |
+| delta | | | +24,906 | +351 |
 
 The whole Xpulp extension costs 57% of the RV32IMC core at this flow. That
 is the entire extension: SIMD ALU and dot products, hardware loops,
@@ -603,7 +603,7 @@ because the decoder's constant zeros never cross the module boundary.
 | register_file | 15,319 | 17,540 | 2,221 | 14% | 9% |
 | hwloop_regs | 0 | 2,088 | 2,088 | nan% | 9% |
 | id_stage | 4,147 | 6,060 | 1,912 | 46% | 8% |
-| controller | 514 | 2,031 | 1,518 | 295% | 6% |
+| controller | 509 | 2,010 | 1,500 | 295% | 6% |
 | decoder | 697 | 1,309 | 612 | 88% | 3% |
 | aligner | 826 | 1,404 | 578 | 70% | 2% |
 | cs_registers | 6,958 | 7,211 | 253 | 4% | 1% |
@@ -616,12 +616,12 @@ because the decoder's constant zeros never cross the module boundary.
 | alu_div | 2,006 | 1,995 | -12 | -1% | -0% |
 | load_store_unit | 1,375 | 1,360 | -14 | -1% | -0% |
 | if_stage | 1,148 | 1,086 | -62 | -5% | -0% |
-| **total** | **47,969** | **72,187** | **24,218** | **50%** | |
+| **total** | **47,965** | **72,165** | **24,201** | **50%** | |
 
 Grouped for the paper (`results/area_table.py`), with the rows that the
 named groups leave out collected under "other":
 
-Attribution of the extension's synthesis area, grouped (delta 24,218 GE in the attribution pass; 24,932 GE flat, +2.9% apart):
+attribution of the extension's synthesis area, grouped (delta 24,201 GE in the attribution pass; 24,906 GE flat, +2.9% apart):
 
 | group (modules of origin) | delta GE | share of attribution delta |
 |---|---|---|
@@ -629,17 +629,19 @@ Attribution of the extension's synthesis area, grouped (delta 24,218 GE in the a
 | SIMD ALU (carries clip and all vector ops; upper bound for clip) | +2,688 | 11% |
 | register file, third read port | +2,221 | 9% |
 | hardware-loop registers | +2,088 | 9% |
-| controller + decoder | +2,130 | 9% |
+| controller + decoder | +2,112 | 9% |
 | ID stage | +1,912 | 8% |
-| other (18 modules: aligner, CSRs, untagged, prefetch, ...) | +1,039 | 4% |
-| **total, attribution pass** | **+24,218** | |
+| other (18 modules: aligner, CSRs, untagged, prefetch, ...) | +1,040 | 4% |
+| **total, attribution pass** | **+24,201** | |
 
-hwloop_regs + controller + decoder = 4,218 GE; with id_stage 6,130 GE. SIMD ALU 2,688 GE = 64% of the first, 44% of the second.
-listed rows (six groups) sum to 23,179; the other 18 modules sum to 1,039 GE: aligner +578, cs_registers +253, untagged +195, prefetch_controller +89, if_stage -62, load_store_unit -14, alu_div -12, ex_stage +4, fifo +4, compressed_decoder +4, ff_one +1, popcnt +0, obi_interface +0, clock_gate +0, sleep_unit +0, prefetch_buffer +0, int_controller +0, core +0
+hwloop_regs + controller + decoder = 4,200 GE; with id_stage 6,112 GE. SIMD ALU 2,688 GE = 64% of the first, 44% of the second.
+listed rows (six groups) sum to 23,161; the other 18 modules sum to 1,040 GE: aligner +578, cs_registers +253, untagged +195, prefetch_controller +89, if_stage -62, load_store_unit -14, alu_div -12, ex_stage +4, fifo +4, compressed_decoder +4, ff_one +1, clock_gate +0, core +0, int_controller +0, obi_interface +0, popcnt +0, prefetch_buffer +0, sleep_unit +0
 
 Totals in this pass are 10% above the flat pass because the partition
-blocks cross-origin optimisation in ABC; the delta, 24,218 GE, is within
-2.9% of the flat pass's 24,932 GE. Yosys reports undriven-wire warnings after partitioning
+blocks cross-origin optimisation in ABC; the delta, 24,201 GE, is within
+2.9% of the flat pass's 24,906 GE. The pass is not deterministic: of eight
+runs from the same netlist, six give this delta and two 24,304 GE, the
+difference all in the controller (+1,604 against +1,500 GE). Yosys reports undriven-wire warnings after partitioning
 (x0 write-enable bit and similar), not investigated further.
 
 Half of the extension is the dot-product multiplier (+12.1 kGE).
@@ -659,9 +661,9 @@ addressing are measured separately in the decomposition section below.
 
 Static timing on the raw synthesised netlist is not meaningful: the
 netlist has no buffer trees, so a minimum-size gate driving a few hundred
-pins shows a 15 ns slew, and the four mapped netlists report 22 to 30 ns
+pins shows a 15 ns slew, and the four mapped netlists report 22 to 29 ns
 register-to-register paths dominated by such nets (22.0 and 29.1 ns for
-the area-mapped RV32IMC and Xpulp netlists, 26.7 and 29.9 ns for the
+the area-mapped RV32IMC and Xpulp netlists, 26.7 and 24.5 ns for the
 delay-mapped ones) (`syn/sta.tcl`, kept as
 the negative example). Area comes from OpenROAD (`syn/place.tcl`):
 floorplan at 45% target utilisation on the sky130hd site, pin placement,
@@ -682,8 +684,8 @@ shortest.
 | configuration | synthesis GE (flat) | placed GE | shortest routed period, extracted | Fmax |
 |---|---|---|---|---|
 | RV32IMC | 43,771 | 50,024 | 11.35 ns | 88.1 MHz |
-| Xpulp | 68,703 | 79,320 | 14.14 ns | 70.7 MHz |
-| delta | +24,932 (+57.0%) | +29,296 (+58.6%) | +24.6% | -19.7% |
+| Xpulp | 68,677 | 79,320 | 14.14 ns | 70.7 MHz |
+| delta | +24,906 (+56.9%) | +29,296 (+58.6%) | +24.6% | -19.7% |
 
 Generated by `results/area_table.py` from the placement logs and the
 sweep's `penalty.csv` (`syn/sweep_table.py --stats-csv`). Placed area
@@ -2150,12 +2152,12 @@ Same sv2v and yosys flow as the CV32E40P numbers (`syn/ibex/Makefile`):
 | core | configuration | cells | GE |
 |---|---|---|---|
 | CV32E40P | RV32IMC | 19,989 | 43,771 |
-| Ibex | RV32IMC, 2-stage | 19,625 | 43,548 |
-| Ibex | RV32IMC, 3-stage | 20,215 | 44,746 |
-| CV32E40P | RV32IMC + Xpulp | 33,418 | 68,703 |
+| Ibex | RV32IMC, 2-stage | 19,530 | 43,818 |
+| Ibex | RV32IMC, 3-stage | 20,439 | 44,879 |
+| CV32E40P | RV32IMC + Xpulp | 33,576 | 68,677 |
 
-Two independently designed RV32IMC cores land 0.5% apart in
-synthesised area, and the 3-stage pipeline costs 2.8%. The Xpulp extension
+Two independently designed RV32IMC cores land 0.1% apart in
+synthesised area, and the 3-stage pipeline costs 2.4%. The Xpulp extension
 costs more than half of either baseline core. Ibex here carries ten 40-bit
 counters against CV32E40P's one 64-bit counter, which inflates its number
 slightly; neither has been placed.
@@ -2289,8 +2291,8 @@ branch-free binaries on RV32B=1 against RV32B=0: 48 runs identical in cycles; mi
 
 ## Area, Sky130 HD, synthesis (yosys), same flow as the RV32B=0 cores
 
-2-stage (wb0): RV32B=0 43,548 GE; RV32B=1 46,952 GE; the bitmanip option adds 3,404 GE, 7.8%
-3-stage (wb1): RV32B=0 44,746 GE; RV32B=1 47,600 GE; the bitmanip option adds 2,854 GE, 6.4%
+2-stage (wb0): RV32B=0 43,818 GE; RV32B=1 46,952 GE; the bitmanip option adds 3,134 GE, 7.2%
+3-stage (wb1): RV32B=0 44,879 GE; RV32B=1 47,600 GE; the bitmanip option adds 2,721 GE, 6.1%
 
 ## Pointwise beyond 16 input channels (review round R7)
 
@@ -2463,8 +2465,11 @@ against the committed ones; `./reproduce.sh list` names the stages and
 any subset can be run. README.md lists the prerequisites, the override
 variables for tool locations, and what reproduces exactly (counters,
 sweeps, alignment term, flat synthesis totals, placement) and what varies
-(the attribution pass, by about 20 GE between checkouts). The kernel lists
-behind each dataset are the `K_*` variables in the script. Tested from a
+(the attribution pass, which varies between runs, by 103 GE in the controller). The kernel lists
+behind each dataset are the `K_*` variables in the script. Tested again from a fresh clone of v1.1-tc-submission on 2026-11-09, in a minimal
+environment: every dataset, sweep, the alignment term, placement and every table reproduced
+exactly; the flat Xpulp and the Ibex synthesis outputs did not, and were regenerated (round R9).
+Tested from a
 fresh clone on 2026-10-25: every dataset reproduced row for row except the
 block set, whose C -O3 transform variant had moved by 0.6% when sw/bench.h
 gained the Ibex counter mapping after the block data was collected; the

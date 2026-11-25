@@ -1,13 +1,13 @@
-cells      33418
-area       257,884.8 um^2
-NAND2 eq   68,703
-  sky130_fd_sc_hd__nand2_1                 5302
-  sky130_fd_sc_hd__nor2_1                  3461
-  sky130_fd_sc_hd__o21ai_0                 2977
-  sky130_fd_sc_hd__a21oi_1                 2791
-  sky130_fd_sc_hd__xnor2_1                 2634
+cells      33576
+area       257,787.2 um^2
+NAND2 eq   68,677
+  sky130_fd_sc_hd__nand2_1                 4834
+  sky130_fd_sc_hd__nor2_1                  4084
+  sky130_fd_sc_hd__o21ai_0                 3044
+  sky130_fd_sc_hd__a21oi_1                 2769
+  sky130_fd_sc_hd__xnor2_1                 2690
   sky130_fd_sc_hd__dfrtp_1                 2479
-  sky130_fd_sc_hd__xor2_1                  1460
-  sky130_fd_sc_hd__maj3_1                  1003
-  sky130_fd_sc_hd__o221ai_1                799
-  sky130_fd_sc_hd__a22oi_1                 745
+  sky130_fd_sc_hd__xor2_1                  1508
+  sky130_fd_sc_hd__maj3_1                  1041
+  sky130_fd_sc_hd__a221o_1                 895
+  sky130_fd_sc_hd__a22oi_1                 773

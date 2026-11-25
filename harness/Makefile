@@ -18,7 +18,7 @@ SRCS = \
   $(CORE)/rtl/include/cv32e40p_pkg.sv \
   $(CORE)/rtl/include/cv32e40p_apu_core_pkg.sv \
   $(CORE)/rtl/include/cv32e40p_fpu_pkg.sv \
-  $(filter-out %fp_wrapper.sv %cv32e40p_top.sv,$(wildcard $(CORE)/rtl/*.sv)) \
+  $(filter-out %fp_wrapper.sv %cv32e40p_top.sv,$(sort $(wildcard $(CORE)/rtl/*.sv))) \
   $(CORE)/bhv/cv32e40p_sim_clock_gate.sv
 
 # -Wno-BLKANDNBLK: cs_registers mixes blocking/non-blocking assignment on the

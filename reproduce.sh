@@ -197,6 +197,10 @@ for cfg in ('base', 'pulp'):
     if os.path.exists(f): print(f'placement {cfg:5s} slack after repair:', ge(f, r'WORST_SLACK_AFTER_REPAIR (-?[\d.]+)'), 'area:', ge(f, r'Design area (\d+)'), '(committed: see git show HEAD:' + f + ')')
 print('\nsummary:', 'all compared datasets identical' if not bad else f'{bad} dataset(s) differ')
 EOF
+  if git rev-parse --git-dir > /dev/null 2>&1; then   # review round R9: committed synthesis and placement outputs that the run changed
+    if git diff --quiet -- syn/build syn/ibex; then echo 'synthesis and placement outputs: identical to the committed ones'
+    else echo 'synthesis and placement outputs that differ from the committed ones (the attribution pass varies between runs):'; git diff --stat -- syn/build syn/ibex; fi
+  fi
 }
 STAGES="sims check validate collect ibex sweeps align questions syn place models papers compare"
 [ $# -gt 0 ] && STAGES="$*"
