@@ -191,7 +191,7 @@ def ge(fn, pat):
 for cfg in ('base', 'pulp'):
     print(f'synthesis {cfg:5s} NAND2 eq: {ge(f"syn/build/{cfg}/area.txt", r"NAND2 eq\s+([\d,]+)")} (committed value is in git: git show HEAD:syn/build/{cfg}/area.txt)')
 if os.path.exists('syn/build/attrib_area.txt'):
-    print('attribution delta GE:', ge('syn/build/attrib_area.txt', r'design total\s+[\d,]+\s+[\d,]+\s+([\d,]+)'), '(committed 24,218; reproduces to within about 20 GE)')
+    print('attribution delta GE:', ge('syn/build/attrib_area.txt', r'design total\s+[\d,]+\s+[\d,]+\s+([\d,]+)'), '(committed 24,201; the attribution pass varies between runs, 24,201 or 24,304 GE)')
 for cfg in ('base', 'pulp'):
     f = f'syn/build/place-{cfg}/openroad.txt'
     if os.path.exists(f): print(f'placement {cfg:5s} slack after repair:', ge(f, r'WORST_SLACK_AFTER_REPAIR (-?[\d.]+)'), 'area:', ge(f, r'Design area (\d+)'), '(committed: see git show HEAD:' + f + ')')
